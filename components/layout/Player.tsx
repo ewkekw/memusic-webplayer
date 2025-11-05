@@ -29,18 +29,6 @@ const PrevIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const ShuffleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-4.991-2.691L7.5 4.5M2.985 19.644L7.5 15.05M21.015 4.356L16.5 8.94m4.5-4.59L12.75 12" />
-    </svg>
-);
-
-const RepeatIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 15.485A7.5 7.5 0 0118 12.75a7.5 7.5 0 00-14.99-1.305 7.5 7.5 0 0011.488 6.044M16.023 15.485L18.75 12.75m-2.727 2.735l-2.728-2.728" />
-  </svg>
-);
-
 const VolumeUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
@@ -168,7 +156,7 @@ export const Player: React.FC<PlayerProps> = ({ navigateToArtist }) => {
   const smallImage = currentSong.image?.find(img => img.quality === '50x50')?.url || currentSong.image?.[0]?.url;
 
   return (
-    <div className="h-24 bg-black/40 backdrop-blur-lg border-t border-white/10 p-4 grid grid-cols-3 items-center gap-4">
+    <div className="h-24 bg-black/40 backdrop-blur-lg border-t border-white/10 p-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4">
       {/* Song Info */}
        <div className="flex items-center space-x-4 min-w-0 overflow-hidden">
         {smallImage && <img src={smallImage} alt={decodeHtml(currentSong.name)} className="w-14 h-14 rounded-md shadow-lg flex-shrink-0" />}
@@ -189,10 +177,10 @@ export const Player: React.FC<PlayerProps> = ({ navigateToArtist }) => {
 
       {/* Player Controls */}
       <div className="flex flex-col items-center">
-        <div className="flex items-center space-x-4">
-           <button onClick={toggleShuffle} title="Shuffle" className={`relative transition-colors p-2 rounded-full ${isShuffle ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'} hover:bg-white/10`}>
-                <ShuffleIcon className="w-6 h-6" />
-                {isShuffle && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#fc4b08] rounded-full"></div>}
+        <div className="flex items-center space-x-2">
+            <button onClick={toggleShuffle} title="Shuffle" className={`relative transition-colors w-10 h-10 rounded-full flex items-center justify-center ${isShuffle ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'} hover:bg-white/10`}>
+                <span className="font-bold text-xl leading-none">S</span>
+                {isShuffle && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#fc4b08] rounded-full"></div>}
             </button>
             <button onClick={playPrev} className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"><PrevIcon className="w-8 h-8" /></button>
             <button
@@ -202,10 +190,10 @@ export const Player: React.FC<PlayerProps> = ({ navigateToArtist }) => {
                 {isPlaying ? <PauseIcon className="w-8 h-8" /> : <PlayIcon className="w-8 h-8 ml-0.5" />}
             </button>
             <button onClick={playNext} className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"><NextIcon className="w-8 h-8" /></button>
-            <button onClick={cycleRepeatMode} title={`Repeat: ${repeatMode}`} className={`relative transition-colors p-2 rounded-full ${repeatMode !== 'off' ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'} hover:bg-white/10`}>
-                <RepeatIcon className="w-6 h-6" />
-                {repeatMode !== 'off' && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#fc4b08] rounded-full"></div>}
-                {repeatMode === 'one' && <span className="absolute -top-0.5 -right-0.5 bg-[#fc4b08] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none border-2 border-[#121212]">1</span>}
+            <button onClick={cycleRepeatMode} title={`Repeat: ${repeatMode}`} className={`relative transition-colors w-10 h-10 rounded-full flex items-center justify-center ${repeatMode !== 'off' ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'} hover:bg-white/10`}>
+                <span className="font-bold text-xl leading-none">R</span>
+                {repeatMode !== 'off' && <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#fc4b08] rounded-full"></div>}
+                {repeatMode === 'one' && <span className="absolute top-1 right-1 text-[#fc4b08] text-[11px] font-bold leading-none">1</span>}
             </button>
         </div>
         <div className="w-full flex items-center space-x-2 mt-2">
@@ -223,7 +211,7 @@ export const Player: React.FC<PlayerProps> = ({ navigateToArtist }) => {
       </div>
       
       {/* Volume & Extra Controls */}
-      <div className="flex items-center justify-end space-x-3">
+      <div className="flex items-center justify-end space-x-2">
         <div className="relative" ref={bitrateButtonRef}>
           <button
             onClick={() => setIsBitrateModalOpen(prev => !prev)}

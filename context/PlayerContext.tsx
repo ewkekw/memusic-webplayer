@@ -29,6 +29,7 @@ interface PlayerContextType {
   repeatMode: 'off' | 'all' | 'one';
   toggleShuffle: () => void;
   cycleRepeatMode: () => void;
+  analyser: AnalyserNode | null;
 }
 
 export const PlayerContext = createContext<PlayerContextType>({} as PlayerContextType);
@@ -45,9 +46,46 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isShuffle, setIsShuffle] = useLocalStorage('metromusic-shuffle', false);
   const [repeatMode, setRepeatMode] = useLocalStorage<'off' | 'all' | 'one'>('metromusic-repeat', 'all');
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const prevSongIdRef = useRef<string | null>(null);
+  const audioContextInitiated = useRef(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const initAudioContext = () => {
+      // Prevent multiple initializations
+      if (audioContextInitiated.current || !audio) return;
+      audioContextInitiated.current = true;
+
+      const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Resume context if it's suspended, which is common in modern browsers
+      // before user interaction.
+      if (context.state === 'suspended') {
+          context.resume();
+      }
+
+      const source = context.createMediaElementSource(audio);
+      const analyserNode = context.createAnalyser();
+      analyserNode.fftSize = 256;
+      source.connect(analyserNode);
+      analyserNode.connect(context.destination);
+      setAnalyser(analyserNode);
+    };
+
+    // User interaction is needed to start AudioContext in some browsers.
+    // We use 'click' and 'keydown' as universal triggers.
+    document.body.addEventListener('click', initAudioContext, { once: true });
+    document.body.addEventListener('keydown', initAudioContext, { once: true });
+    
+    return () => {
+      document.body.removeEventListener('click', initAudioContext);
+      document.body.removeEventListener('keydown', initAudioContext);
+    }
+  }, []);
   
   const currentSong = currentIndex >= 0 && currentIndex < currentQueue.length ? currentQueue[currentIndex] : null;
 
@@ -343,7 +381,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 
   return (
-    <PlayerContext.Provider value={{ currentSong, isPlaying, duration, currentTime, volume, playSong, togglePlay, seek, setVolume: handleSetVolume, playNext, playPrev, currentQueue, selectedQuality, setSelectedQuality, currentQuality, isQueueOpen, toggleQueue, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue, isShuffle, repeatMode, toggleShuffle, cycleRepeatMode }}>
+    <PlayerContext.Provider value={{ currentSong, isPlaying, duration, currentTime, volume, playSong, togglePlay, seek, setVolume: handleSetVolume, playNext, playPrev, currentQueue, selectedQuality, setSelectedQuality, currentQuality, isQueueOpen, toggleQueue, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue, isShuffle, repeatMode, toggleShuffle, cycleRepeatMode, analyser }}>
       {children}
       <audio ref={audioRef} crossOrigin="anonymous" />
     </PlayerContext.Provider>

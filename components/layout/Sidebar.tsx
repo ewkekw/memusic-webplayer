@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { View } from '../../types';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { v4 as uuidv4 } from 'uuid';
+import AsciiLogo from './AsciiLogo';
 
 interface SidebarProps {
   activeView: View;
@@ -73,14 +74,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) =
   }
   
   return (
-    <aside className="w-64 bg-black/30 backdrop-blur-md p-4 flex flex-col space-y-2 h-full border-r border-white/10">
-      <div className="flex items-center mb-6 px-2">
-         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#fc4b08]" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.084l.955 3.43A1 1 0 007 16h6a1 1 0 00.955-.57l.955-3.43H15a3 3 0 000-6h-3.763l6.237-4.106A1 1 0 0018 3z" />
-        </svg>
-        <h1 className="text-2xl font-bold ml-2 text-white tracking-wider">
-          Metro<span className="text-[#fc4b08]">Music</span>
-        </h1>
+    <aside className="w-64 bg-black/30 backdrop-blur-md p-4 flex flex-col h-full border-r border-white/10">
+      <div className="my-8">
+        <AsciiLogo />
       </div>
 
       <nav className="flex flex-col space-y-2">
