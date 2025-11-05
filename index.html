@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MetroMusic - Frutiger Metro Webplayer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "uuid": "https://aistudiocdn.com/uuid@^13.0.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+<style>
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .volume-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        cursor: pointer;
+        width: 96px; /* w-24 */
+    }
+
+    /* Track: Chrome, Safari, Opera, Edge */
+    .volume-slider::-webkit-slider-runnable-track {
+        background: rgba(107, 114, 128, 0.5); /* gray-600/50 */
+        height: 0.25rem; /* h-1 */
+        border-radius: 0.5rem; /* rounded-lg */
+    }
+
+    /* Track: Firefox */
+    .volume-slider::-moz-range-track {
+        background: rgba(107, 114, 128, 0.5); /* gray-600/50 */
+        height: 0.25rem; /* h-1 */
+        border-radius: 0.5rem; /* rounded-lg */
+    }
+
+    /* Thumb: Chrome, Safari, Opera, Edge */
+    .volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        margin-top: -6px; /* Center thumb on track */
+        width: 16px;
+        height: 16px;
+        background: #000;
+        border: 2px solid #fc4b08;
+        border-radius: 9999px; /* rounded-full */
+        transition: background 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    }
+    .volume-slider::-webkit-slider-thumb:hover {
+        background: #fc4b08;
+        border-color: #000;
+    }
+
+    /* Thumb: Firefox */
+    .volume-slider::-moz-range-thumb {
+        width: 12px; /* width without border */
+        height: 12px;
+        background: #000;
+        border: 2px solid #fc4b08;
+        border-radius: 9999px; /* rounded-full */
+        transition: background 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    }
+     .volume-slider::-moz-range-thumb:hover {
+        background: #fc4b08;
+        border-color: #000;
+    }
+
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: rgba(107, 114, 128, 0.4);
+      border-radius: 5px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background-color: #fc4b08;
+    }
+</style>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-[#121212]">
+    <div id="root"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

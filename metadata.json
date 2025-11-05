@@ -1,0 +1,5 @@
+{
+  "name": "MeMusic - Frutiger Metro Webplayer",
+  "description": "A complete music web player with a Frutiger Metro aesthetic, allowing users to listen to, organize, and explore music directly from the browser without an account. Playlists, favorites, and history are saved locally.",
+  "requestFramePermissions": []
+}
