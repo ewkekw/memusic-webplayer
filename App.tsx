@@ -1,10 +1,13 @@
-import React, { useState, useContext, useEffect, ReactNode } from 'react';
+
+
+
+
+import React, { useState, useContext, useEffect, ReactNode, createContext } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { Player } from './components/layout/Player';
 import Home from './components/views/Home';
 import Search from './components/views/Search';
 import Library from './components/views/Library';
-import Favorites from './components/views/Favorites';
 import AlbumView from './components/views/AlbumView';
 import PlaylistView from './components/views/PlaylistView';
 import ArtistView from './components/views/ArtistView';
@@ -14,22 +17,25 @@ import { UserMusicProvider } from './context/UserMusicContext';
 import { View, Playlist } from './types';
 import { QueueSidebar } from './components/layout/QueueSidebar';
 
+interface ModalContextType {
+  showModal: (content: { title: string; content: ReactNode; }) => void;
+  hideModal: () => void;
+}
+export const ModalContext = createContext<ModalContextType>({} as ModalContextType);
+
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  // Fix: Corrected invalid type 'React.React.ReactNode' to 'React.ReactNode'.
   children: React.ReactNode;
-  // Fix: Corrected invalid type 'React.React.ReactNode' to 'React.ReactNode'.
-  actions: React.ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, actions }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   const [isShowing, setIsShowing] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      // Use a timeout to allow the component to mount before starting the animation
       const timer = setTimeout(() => setIsShowing(true), 10);
       return () => clearTimeout(timer);
     }
@@ -37,7 +43,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, actions
 
   const handleClose = () => {
     setIsShowing(false);
-    setTimeout(onClose, 300); // Must match animation duration
+    setTimeout(onClose, 300); 
   };
 
   if (!isOpen) {
@@ -60,8 +66,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, actions
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-2xl font-bold mb-4">{title}</h2>
-        <div className="text-gray-300 mb-6">{children}</div>
-        <div className="flex justify-end space-x-4">{actions}</div>
+        {children}
       </div>
     </div>
   );
@@ -83,17 +88,20 @@ const MainApp: React.FC = () => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [selectedApiPlaylist, setSelectedApiPlaylist] = useState<Playlist | null>(null);
+  const [initialSearchQuery, setInitialSearchQuery] = useState<string>('');
   const { currentSong, isQueueOpen } = useContext(PlayerContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<{ title: string; content: ReactNode; actions: ReactNode; } | null>(null);
+  const [modalContent, setModalContent] = useState<{ title: string; content: ReactNode; } | null>(null);
 
-  const showModal = (content: { title: string; content: ReactNode; actions: ReactNode; }) => {
+  const showModal = (content: { title: string; content: ReactNode; }) => {
     setModalContent(content);
     setIsModalOpen(true);
   };
 
   const hideModal = () => {
     setIsModalOpen(false);
+    // Delay clearing content to allow for fade-out animation
+    setTimeout(() => setModalContent(null), 300);
   };
 
   const changeView = (view: View) => {
@@ -124,76 +132,77 @@ const MainApp: React.FC = () => {
     setActiveView('artist');
   }
 
+  const navigateToSearch = (query: string) => {
+    setInitialSearchQuery(query);
+    setActiveView('search');
+  };
+
+  const clearInitialSearchQuery = () => {
+    setInitialSearchQuery('');
+  };
+
   const renderView = () => {
     switch (activeView) {
       case 'home':
-        return <Home setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} />;
+        return <Home setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToSearch={navigateToSearch} navigateToApiPlaylist={navigateToApiPlaylist} />;
       case 'search':
-        return <Search navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToApiPlaylist={navigateToApiPlaylist} />;
+        return <Search navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToApiPlaylist={navigateToApiPlaylist} initialQuery={initialSearchQuery} onQueryConsumed={clearInitialSearchQuery} />;
       case 'library':
-        return <Library navigateToAlbum={navigateToAlbum} navigateToPlaylist={navigateToPlaylist} navigateToArtist={navigateToArtist} />;
-      case 'favorites':
-        return <Favorites navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToApiPlaylist={navigateToApiPlaylist} />;
+        return <Library setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToPlaylist={navigateToPlaylist} navigateToArtist={navigateToArtist} navigateToApiPlaylist={navigateToApiPlaylist} />;
       case 'album':
-        return <AlbumView albumId={selectedAlbumId!} setActiveView={changeView} navigateToArtist={navigateToArtist} showModal={showModal} hideModal={hideModal} />;
+        return <AlbumView albumId={selectedAlbumId!} setActiveView={changeView} navigateToArtist={navigateToArtist} navigateToPlaylist={navigateToPlaylist} />;
       case 'playlist':
-        return <PlaylistView playlistId={selectedPlaylistId!} setActiveView={changeView} navigateToArtist={navigateToArtist} showModal={showModal} hideModal={hideModal} />;
+        return <PlaylistView playlistId={selectedPlaylistId!} setActiveView={changeView} navigateToArtist={navigateToArtist} />;
       case 'api_playlist':
-        return <ApiPlaylistView playlist={selectedApiPlaylist!} setActiveView={changeView} navigateToArtist={navigateToArtist} showModal={showModal} hideModal={hideModal} />;
+        return <ApiPlaylistView playlist={selectedApiPlaylist!} setActiveView={changeView} navigateToArtist={navigateToArtist} />;
       case 'artist':
         return <ArtistView artistId={selectedArtistId!} setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} />;
       default:
-        return <Home setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} />;
+        return <Home setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToSearch={navigateToSearch} navigateToApiPlaylist={navigateToApiPlaylist} />;
     }
   };
   
   const highQualityImage = currentSong?.image?.find(img => img.quality === '500x500')?.url || currentSong?.image?.[0]?.url || '';
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden text-gray-200 font-sans bg-[#121212]">
-      {highQualityImage && (
-        <div 
-          className="absolute inset-0 z-0 transition-all duration-1000"
-          style={{
-            backgroundImage: `url(${highQualityImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
+    <ModalContext.Provider value={{ showModal, hideModal }}>
+      <div className="relative h-screen w-screen overflow-hidden text-gray-200 font-sans bg-[#121212]">
+        {highQualityImage && (
+          <div 
+            className="absolute inset-0 z-0 transition-all duration-1000"
+            style={{
+              backgroundImage: `url(${highQualityImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-3xl"></div>
+          </div>
+        )}
+        <div className="relative z-10 flex flex-col h-full">
+          <div className="flex flex-1 overflow-hidden">
+              <Sidebar activeView={activeView} setActiveView={changeView} navigateToPlaylist={navigateToPlaylist} />
+              <main className="flex-1 overflow-y-auto custom-scrollbar">
+                {renderView()}
+              </main>
+              <div className={`flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${isQueueOpen ? 'w-80' : 'w-0'}`}>
+                <QueueSidebar navigateToArtist={navigateToArtist} />
+              </div>
+          </div>
+          
+          <div className="z-20 shrink-0">
+              <Player navigateToArtist={navigateToArtist} />
+          </div>
+        </div>
+        <Modal
+          isOpen={isModalOpen}
+          onClose={hideModal}
+          title={modalContent?.title || ''}
         >
-           <div className="absolute inset-0 bg-black/70 backdrop-blur-3xl"></div>
-        </div>
-      )}
-
-      {/* Changed to a flex-col layout to ensure sidebars touch the player */}
-      <div className="relative z-10 flex flex-col h-full">
-        {/* Main content area that fills available space */}
-        <div className="flex flex-1 overflow-hidden">
-            <Sidebar activeView={activeView} setActiveView={changeView} />
-            <main className="flex-1 overflow-y-auto custom-scrollbar">
-              {renderView()}
-            </main>
-            {isQueueOpen && <QueueSidebar navigateToArtist={navigateToArtist} />}
-        </div>
-        
-        {/* Player with a fixed height */}
-        <div className="z-20 shrink-0">
-            <Player navigateToArtist={navigateToArtist} />
-        </div>
+          {modalContent?.content}
+        </Modal>
       </div>
-       <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-            // The modal's internal state handles the closing animation
-            hideModal();
-            // Clear content after animation is finished in the modal itself if needed
-            setTimeout(() => setModalContent(null), 300);
-        }}
-        title={modalContent?.title || ''}
-        actions={modalContent?.actions}
-      >
-        {modalContent?.content}
-      </Modal>
-    </div>
+    </ModalContext.Provider>
   );
 };
 

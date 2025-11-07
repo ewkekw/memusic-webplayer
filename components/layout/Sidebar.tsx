@@ -1,15 +1,18 @@
-import React, { useContext } from 'react';
-import { View } from '../../types';
-import { UserMusicContext } from '../../context/UserMusicContext';
-import { v4 as uuidv4 } from 'uuid';
+
+
+
+
+import React, { useContext, useMemo } from 'react';
+import { View, LocalPlaylist } from '../../types';
 import AsciiLogo from './AsciiLogo';
+import { UserMusicContext } from '../../context/UserMusicContext';
 
 interface SidebarProps {
   activeView: View;
   setActiveView: (view: View) => void;
+  navigateToPlaylist: (playlistId: string) => void;
 }
 
-// Fix: Changed icon type to React.ReactElement<{ className?: string }> to provide more specific typing for React.cloneElement.
 interface NavItemProps {
   icon: React.ReactElement<{ className?: string }>;
   label: string;
@@ -35,16 +38,10 @@ const LibraryIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-  </svg>
-);
-
-const PlusIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-  </svg>
+const MinimalistMusicIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l6-2m0 0l-6 2m6-2v6a2 2 0 01-2 2h-2a2 2 0 01-2-2V9a2 2 0 012-2h2a2 2 0 012 2zm-6 2v6a2 2 0 002 2h2a2 2 0 002-2v-6" />
+    </svg>
 );
 
 
@@ -62,16 +59,47 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => 
   </button>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
-  const { createPlaylist } = useContext(UserMusicContext);
+interface PlaylistSidebarItemProps {
+  playlist: LocalPlaylist;
+  onClick: () => void;
+  style?: React.CSSProperties;
+  className?: string;
+}
 
-  const handleCreatePlaylist = () => {
-    const playlistName = prompt("Enter new playlist name:", `My Playlist ${uuidv4().substring(0,4)}`);
-    if(playlistName) {
-        createPlaylist(playlistName, "My new collection of songs.");
-        setActiveView('library');
-    }
-  }
+const PlaylistSidebarItem: React.FC<PlaylistSidebarItemProps> = ({ playlist, onClick, style, className }) => {
+  const imageUrl = playlist.coverUrl || playlist.songs[0]?.image?.find(img => img.quality === '50x50')?.url || playlist.songs[0]?.image?.[0]?.url;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center text-left p-2 rounded-lg transition-colors hover:bg-white/10 ${className || ''}`}
+      title={playlist.name}
+      style={style}
+    >
+      {imageUrl ? (
+        <img src={imageUrl} alt={playlist.name} className="w-12 h-12 rounded-md flex-shrink-0 object-cover" />
+      ) : (
+        <div className="w-12 h-12 bg-white/5 rounded-md flex items-center justify-center flex-shrink-0">
+          <MinimalistMusicIcon className="w-6 h-6 text-gray-500" />
+        </div>
+      )}
+      <div className="ml-3 min-w-0">
+        <p className="font-semibold text-white truncate">{playlist.name}</p>
+        <p className="text-sm text-gray-400 truncate">Playlist</p>
+      </div>
+    </button>
+  );
+};
+
+
+export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, navigateToPlaylist }) => {
+  const { playlists, playlistHistory } = useContext(UserMusicContext);
+  
+  const recentPlaylists = useMemo(() => {
+    return playlistHistory
+      .map(id => playlists.find(p => p.id === id))
+      .filter((p): p is NonNullable<typeof p> => p !== undefined);
+  }, [playlistHistory, playlists]);
   
   return (
     <aside className="w-64 bg-black/30 backdrop-blur-md p-4 flex flex-col h-full border-r border-white/10">
@@ -95,22 +123,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) =
         <NavItem
           icon={<LibraryIcon />}
           label="Library"
-          isActive={activeView === 'library'}
+          isActive={activeView === 'library' || activeView === 'playlist'}
           onClick={() => setActiveView('library')}
         />
-        <NavItem
-          icon={<HeartIcon />}
-          label="Favorites"
-          isActive={activeView === 'favorites'}
-          onClick={() => setActiveView('favorites')}
-        />
-        <NavItem
-          icon={<PlusIcon />}
-          label="New Playlist"
-          isActive={false}
-          onClick={handleCreatePlaylist}
-        />
       </nav>
+      
+      <hr className="my-4 border-t border-white/10" />
+      
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1">
+        {recentPlaylists.map((playlist, index) => (
+          <PlaylistSidebarItem
+            key={playlist.id}
+            playlist={playlist}
+            onClick={() => navigateToPlaylist(playlist.id)}
+            className="playlist-item-enter"
+            style={{ animationDelay: `${index * 50}ms` }}
+          />
+        ))}
+      </div>
     </aside>
   );
 };

@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { PlayerContext } from '../../context/PlayerContext';
 import { Song } from '../../types';
@@ -14,7 +17,6 @@ const SpeakerIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-// Fix: Added QueueIcon definition to resolve "Cannot find name 'QueueIcon'" error.
 const QueueIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
@@ -25,16 +27,10 @@ interface QueueItemProps {
     song: Song;
     isPlaying: boolean;
     onPlay: () => void;
-    index: number;
-    onDragStart: (e: React.DragEvent, index: number) => void;
-    onDragOver: (e: React.DragEvent, index: number) => void;
-    onDrop: (e: React.DragEvent, index: number) => void;
-    onDragEnd: () => void;
-    isDragging: boolean;
     navigateToArtist: (artistId: string) => void;
 }
 
-const QueueItem: React.FC<QueueItemProps> = ({ song, isPlaying, onPlay, index, onDragStart, onDragOver, onDrop, onDragEnd, isDragging, navigateToArtist }) => {
+const QueueItem: React.FC<QueueItemProps> = ({ song, isPlaying, onPlay, navigateToArtist }) => {
     const { removeSongFromQueue, moveSongInQueue } = useContext(PlayerContext);
     const imageUrl = song.image?.find(img => img.quality === '50x50')?.url || song.image?.[0]?.url;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,12 +54,7 @@ const QueueItem: React.FC<QueueItemProps> = ({ song, isPlaying, onPlay, index, o
     return (
         <div 
             onClick={onPlay}
-            draggable
-            onDragStart={(e) => onDragStart(e, index)}
-            onDragOver={(e) => onDragOver(e, index)}
-            onDrop={(e) => onDrop(e, index)}
-            onDragEnd={onDragEnd}
-            className={`flex items-center p-2 rounded-lg cursor-pointer transition-all duration-300 ${isPlaying ? 'bg-white/10' : 'hover:bg-white/10'} ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+            className={`flex items-center p-2 rounded-lg cursor-pointer ${isPlaying ? 'bg-white/10' : 'hover:bg-white/10'}`}
         >
             <img src={imageUrl} alt={song.name} className="w-10 h-10 rounded-md mr-3 flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -113,16 +104,19 @@ export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => vo
     const handleDragStart = (e: React.DragEvent, index: number) => {
         setDraggedIndex(index);
         e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', ''); // For Firefox compatibility
     };
 
     const handleDragOver = (e: React.DragEvent, index: number) => {
         e.preventDefault();
-        setDropTargetIndex(index);
+        if (index !== dropTargetIndex) {
+            setDropTargetIndex(index);
+        }
     };
 
     const handleDrop = (e: React.DragEvent, index: number) => {
         e.preventDefault();
-        if(draggedIndex === null) return;
+        if(draggedIndex === null || draggedIndex === index) return;
         reorderQueue(draggedIndex, index);
         handleDragEnd();
     };
@@ -132,23 +126,40 @@ export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => vo
         setDropTargetIndex(null);
     };
 
+    const DraggableQueueItem: React.FC<{ song: Song, index: number, isNowPlaying?: boolean }> = ({ song, index, isNowPlaying = false }) => {
+        const isDropTarget = dropTargetIndex === index && draggedIndex !== index;
+        const isBeingDragged = draggedIndex === index;
+
+        return (
+            <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+                onDragLeave={() => setDropTargetIndex(null)}
+                className={`transition-all duration-200 ease-out ${isDropTarget ? 'pt-14' : 'pt-0'} ${isBeingDragged ? 'opacity-30' : 'opacity-100'}`}
+            >
+                <QueueItem
+                    song={song}
+                    isPlaying={isNowPlaying}
+                    onPlay={() => isNowPlaying ? {} : playSong(song, currentQueue)}
+                    navigateToArtist={navigateToArtist}
+                />
+            </div>
+        )
+    };
+
+
     return (
         <aside className="w-80 bg-black/30 backdrop-blur-md p-4 flex flex-col space-y-4 h-full border-l border-white/10">
             <h2 className="text-2xl font-bold text-white">Queue</h2>
             
-            <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
+            <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-1">
                  {currentSong && currentSongIndex !== -1 && (
                     <div className="mb-4">
                         <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">Now Playing</p>
-                        <QueueItem 
-                            song={currentSong} 
-                            isPlaying={true} 
-                            onPlay={() => {}} 
-                            index={currentSongIndex}
-                            onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={handleDragEnd}
-                            isDragging={draggedIndex === currentSongIndex}
-                            navigateToArtist={navigateToArtist}
-                        />
+                        <DraggableQueueItem song={currentSong} index={currentSongIndex} isNowPlaying={true} />
                     </div>
                 )}
 
@@ -157,20 +168,7 @@ export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => vo
                         <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">Up Next</p>
                         {upNextSongs.map((song, i) => {
                             const originalIndex = currentSongIndex + 1 + i;
-                            return (
-                                <div key={song.id + i} className="relative">
-                                    <QueueItem
-                                        song={song}
-                                        isPlaying={false}
-                                        onPlay={() => playSong(song, currentQueue)}
-                                        index={originalIndex}
-                                        onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={handleDragEnd}
-                                        isDragging={draggedIndex === originalIndex}
-                                        navigateToArtist={navigateToArtist}
-                                    />
-                                    {dropTargetIndex === originalIndex && <div className="absolute -top-1 left-0 right-0 h-0.5 bg-[#fc4b08]"></div>}
-                                </div>
-                            );
+                            return <DraggableQueueItem key={song.id + i} song={song} index={originalIndex} />;
                         })}
                     </div>
                  )}
@@ -179,18 +177,7 @@ export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => vo
                      <div className="pt-4 border-t border-white/10">
                         <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">Previously Played</p>
                         {previouslyPlayedSongs.map((song, i) => (
-                           <div key={song.id + i} className="relative">
-                             <QueueItem
-                                 song={song}
-                                 isPlaying={false}
-                                 onPlay={() => playSong(song, currentQueue)}
-                                 index={i}
-                                 onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={handleDragEnd}
-                                 isDragging={draggedIndex === i}
-                                 navigateToArtist={navigateToArtist}
-                             />
-                             {dropTargetIndex === i && <div className="absolute -top-1 left-0 right-0 h-0.5 bg-[#fc4b08]"></div>}
-                           </div>
+                           <DraggableQueueItem key={song.id + i} song={song} index={i} />
                         ))}
                     </div>
                  )}

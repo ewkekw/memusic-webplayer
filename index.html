@@ -91,6 +91,26 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background-color: #fc4b08;
     }
+
+    /* Animations */
+    .heart-pop {
+        animation: heart-pop-animation 0.3s ease-out;
+    }
+    @keyframes heart-pop-animation {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.4); }
+        100% { transform: scale(1); }
+    }
+
+    .playlist-item-enter {
+        animation: slide-in-down 0.4s ease-out backwards;
+    }
+    @keyframes slide-in-down {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+    }
 </style>
 <link rel="stylesheet" href="/index.css">
 </head>

@@ -1,7 +1,7 @@
 
-import { SearchSongsResponse, SearchAlbumsResponse, SearchArtistsResponse, SearchPlaylistsResponse, SongSuggestionsResponse, GetAlbumDetailsResponse, GetArtistDetailsResponse } from '../types';
+import { SearchSongsResponse, SearchAlbumsResponse, SearchArtistsResponse, SearchPlaylistsResponse, SongSuggestionsResponse, GetAlbumDetailsResponse, GetArtistDetailsResponse, GetSongsResponse } from '../types';
 
-const API_BASE_URL = 'https://lowkey-backend.vercel.app/api';
+const API_BASE_URL = 'https://lowkey-backend.vercel.app';
 
 const apiRequest = async <T,>(endpoint: string): Promise<T> => {
   try {
@@ -17,29 +17,33 @@ const apiRequest = async <T,>(endpoint: string): Promise<T> => {
 };
 
 export const searchSongs = (query: string, page: number = 1, limit: number = 20): Promise<SearchSongsResponse> => {
-    return apiRequest<SearchSongsResponse>(`/search/songs?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+    return apiRequest<SearchSongsResponse>(`/api/search/songs?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+};
+
+export const getSongsByIds = (ids: string[]): Promise<GetSongsResponse> => {
+    return apiRequest<GetSongsResponse>(`/api/songs?ids=${ids.join(',')}`);
 };
 
 export const searchAlbums = (query: string, page: number = 1, limit: number = 20): Promise<SearchAlbumsResponse> => {
-    return apiRequest<SearchAlbumsResponse>(`/search/albums?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+    return apiRequest<SearchAlbumsResponse>(`/api/search/albums?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
 };
 
 export const getAlbumDetails = (albumId: string): Promise<GetAlbumDetailsResponse> => {
-    return apiRequest<GetAlbumDetailsResponse>(`/albums?id=${albumId}`);
+    return apiRequest<GetAlbumDetailsResponse>(`/api/albums?id=${albumId}`);
 };
 
 export const getArtistDetails = (artistId: string): Promise<GetArtistDetailsResponse> => {
-    return apiRequest<GetArtistDetailsResponse>(`/artists?id=${artistId}`);
+    return apiRequest<GetArtistDetailsResponse>(`/api/artists?id=${artistId}`);
 };
 
 export const searchArtists = (query: string, page: number = 1, limit: number = 20): Promise<SearchArtistsResponse> => {
-    return apiRequest<SearchArtistsResponse>(`/search/artists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+    return apiRequest<SearchArtistsResponse>(`/api/search/artists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
 };
 
 export const searchPlaylists = (query: string, page: number = 1, limit: number = 20): Promise<SearchPlaylistsResponse> => {
-    return apiRequest<SearchPlaylistsResponse>(`/search/playlists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+    return apiRequest<SearchPlaylistsResponse>(`/api/search/playlists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
 };
 
 export const getSongSuggestions = (songId: string, limit: number = 10): Promise<SongSuggestionsResponse> => {
-    return apiRequest<SongSuggestionsResponse>(`/songs/${songId}/suggestions?limit=${limit}`);
+    return apiRequest<SongSuggestionsResponse>(`/api/songs/${songId}/suggestions?limit=${limit}`);
 };

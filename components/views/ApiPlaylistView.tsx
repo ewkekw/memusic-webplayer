@@ -1,10 +1,12 @@
 
+
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { Playlist, Song, View } from '../../types';
 import { searchSongs } from '../../services/jioSaavnApi';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { Loader } from '../ui/Loader';
+import { ModalContext } from '../../App';
 
 declare const JSZip: any;
 
@@ -128,8 +130,6 @@ interface ApiPlaylistViewProps {
     playlist: Playlist;
     setActiveView: (view: View) => void;
     navigateToArtist: (artistId: string) => void;
-    showModal: (content: { title: string; content: React.ReactNode; actions: React.ReactNode; }) => void;
-    hideModal: () => void;
 }
 
 const getTitleClass = (name: string): string => {
@@ -139,7 +139,7 @@ const getTitleClass = (name: string): string => {
     return `${base} text-4xl sm:text-6xl`;
 }
 
-const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveView, navigateToArtist, showModal, hideModal }) => {
+const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveView, navigateToArtist }) => {
     const [songs, setSongs] = useState<Song[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortKey, setSortKey] = useState<'default' | 'title' | 'duration'>('default');
@@ -147,8 +147,9 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
     const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
     const sortMenuRef = useRef<HTMLDivElement>(null);
     const actionMenuRef = useRef<HTMLDivElement>(null);
+    const { showModal, hideModal } = useContext(ModalContext);
 
-    const { playSong, addSongsToEnd, currentSong, isPlaying, togglePlay, selectedQuality } = useContext(PlayerContext);
+    const { playSong, addSongsToEnd, currentSong, isPlaying, togglePlay } = useContext(PlayerContext);
     const { createPlaylist, playlists: localPlaylists, isFavoriteApiPlaylist, toggleFavoriteApiPlaylist } = useContext(UserMusicContext);
     
     useEffect(() => {
@@ -201,11 +202,15 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
             createPlaylist(playlist.name, playlist.description || `From public playlist`, songs);
             showModal({
                 title: "Playlist Saved",
-                content: `"${playlist.name}" has been added to your library.`,
-                actions: ( <>
-                    <button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20">Close</button>
-                    <button onClick={() => { hideModal(); setActiveView('library'); }} className="px-4 py-2 rounded-md bg-[#fc4b08] text-black font-bold">View in Library</button>
-                </> )
+                content: (
+                    <>
+                        <p className="text-gray-300 mb-6">{`"${playlist.name}" has been added to your library.`}</p>
+                        <div className="flex justify-end space-x-4">
+                            <button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20">Close</button>
+                            <button onClick={() => { hideModal(); setActiveView('library'); }} className="px-4 py-2 rounded-md bg-[#fc4b08] text-black font-bold">View in Library</button>
+                        </div>
+                    </>
+                )
             });
         }
     };
@@ -215,7 +220,7 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
         const zip = new JSZip();
         let filesAdded = 0;
         const totalFiles = songs.length;
-        showModal({ title: "Preparing Download", content: `Fetching... (0/${totalFiles})`, actions: <div className="text-gray-400">Please wait...</div> });
+        showModal({ title: "Preparing Download", content: <p>Fetching... (0/${totalFiles})</p> });
         for (const song of songs) {
             const url = song.downloadUrl.find(q => q.quality === '320kbps')?.url || song.downloadUrl[0]?.url;
             if (!url) continue;
@@ -224,16 +229,16 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
                 const blob = await response.blob();
                 zip.file(`${song.artists.primary.map(a => a.name).join(', ')} - ${song.name}.mp3`, blob);
                 filesAdded++;
-                showModal({ title: "Preparing Download", content: <div className="space-y-2"><p>Fetching song {filesAdded} of {totalFiles}...</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${(filesAdded / totalFiles) * 100}%` }}></div></div></div>, actions: <div/> });
+                showModal({ title: "Preparing Download", content: <div className="space-y-2"><p>Fetching song {filesAdded} of {totalFiles}...</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${(filesAdded / totalFiles) * 100}%` }}></div></div></div> });
             } catch (error) { console.error(`Download failed for ${song.name}:`, error); }
         }
         if (filesAdded === 0) {
-            showModal({ title: "Download Failed", content: "Could not download any songs.", actions: <button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10">Close</button> });
+            showModal({ title: "Download Failed", content: <p>Could not download any songs.</p> });
             return;
         }
-        showModal({ title: "Zipping Files", content: "Creating .zip file...", actions: <div/> });
+        showModal({ title: "Zipping Files", content: <p>Creating .zip file...</p> });
         zip.generateAsync({ type: "blob" }, (metadata) => {
-            showModal({ title: "Zipping Files", content: <div className="space-y-2"><p>Compressing... {metadata.percent.toFixed(0)}%</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${metadata.percent}%` }}></div></div></div>, actions: <div/> });
+            showModal({ title: "Zipping Files", content: <div className="space-y-2"><p>Compressing... {metadata.percent.toFixed(0)}%</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${metadata.percent}%` }}></div></div></div> });
         }).then((content) => {
             const zipUrl = URL.createObjectURL(content);
             const a = document.createElement('a');
@@ -245,7 +250,7 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
             a.remove();
             hideModal();
         }).catch(err => {
-            showModal({ title: "Error", content: "Failed to create .zip file.", actions: <button onClick={hideModal} className="px-4 py-2">Close</button> });
+            showModal({ title: "Error", content: <p>Failed to create .zip file.</p> });
         });
       };
 

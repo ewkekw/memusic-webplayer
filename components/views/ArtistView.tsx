@@ -1,8 +1,10 @@
 
+
 import React, { useState, useEffect, useContext } from 'react';
-import { FullArtist, View, Album, Song } from '../../types';
+import { FullArtist, View, Album, Song, Artist } from '../../types';
 import { getArtistDetails } from '../../services/jioSaavnApi';
 import { PlayerContext } from '../../context/PlayerContext';
+import { UserMusicContext } from '../../context/UserMusicContext';
 import { Loader } from '../ui/Loader';
 import { SongList } from '../ui/SongList';
 import { AlbumCard } from '../ui/AlbumCard';
@@ -31,6 +33,7 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
   const [artist, setArtist] = useState<FullArtist | null>(null);
   const [loading, setLoading] = useState(true);
   const { playSong, currentSong, isPlaying, togglePlay } = useContext(PlayerContext);
+  const { isFavoriteArtist, toggleFavoriteArtist } = useContext(UserMusicContext);
   const [showFullBio, setShowFullBio] = useState(false);
 
   useEffect(() => {
@@ -92,6 +95,12 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
           <button onClick={handlePlay} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
             {isArtistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
           </button>
+           <button 
+            onClick={() => toggleFavoriteArtist(artist)}
+            className={`px-6 py-3 border-2 font-bold rounded-full transition-colors ${isFavoriteArtist(artist.id) ? 'bg-white/10 border-gray-500 text-gray-300' : 'border-gray-500 text-gray-300 hover:border-white hover:text-white'}`}
+          >
+            {isFavoriteArtist(artist.id) ? 'Following' : 'Follow'}
+          </button>
         </div>
       </div>
       
@@ -120,13 +129,6 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
                         <AlbumCard key={album.id} album={album} onAlbumClick={navigateToAlbum} onArtistClick={navigateToArtist} />
                     ))}
                 </div>
-            </section>
-        )}
-        
-        {artist.singles && artist.singles.length > 0 && (
-            <section>
-                <h2 className="text-3xl font-bold mb-4">Singles & EPs</h2>
-                <SongList songs={artist.singles} navigateToArtist={navigateToArtist} />
             </section>
         )}
         

@@ -91,7 +91,8 @@ const AsciiLogo: React.FC = () => {
   return (
     <pre 
         ref={preRef} 
-        className="text-[4px] leading-[5px] font-mono whitespace-pre text-center cursor-default select-none"
+        className="font-mono whitespace-pre text-center cursor-default select-none"
+        style={{ fontSize: 'clamp(4px, 0.4vw, 5.5px)', lineHeight: '1.2' }}
     >
       {baseLogo.map((line, i) => (
         <div key={i} className="flex justify-center">

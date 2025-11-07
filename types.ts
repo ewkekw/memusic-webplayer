@@ -1,5 +1,5 @@
 
-export type View = 'home' | 'search' | 'library' | 'favorites' | 'album' | 'playlist' | 'artist' | 'api_playlist';
+export type View = 'home' | 'search' | 'library' | 'album' | 'playlist' | 'artist' | 'api_playlist';
 
 export interface ImageQuality {
   quality: string;
@@ -141,6 +141,11 @@ export interface SongSuggestionsResponse {
   data: Song[];
 }
 
+export interface GetSongsResponse {
+    success: boolean;
+    data: Song[];
+}
+
 export interface FullArtist {
     id: string;
     name: string;
@@ -175,19 +180,24 @@ export interface UserMusicContextType {
   favoriteAlbums: Album[];
   playlists: LocalPlaylist[];
   history: Song[];
+  playlistHistory: string[];
   favoriteApiPlaylists: Playlist[];
+  favoriteArtists: Artist[];
   isFavoriteSong: (songId: string) => boolean;
   toggleFavoriteSong: (song: Song) => void;
   isFavoriteAlbum: (albumId: string) => boolean;
   toggleFavoriteAlbum: (album: Album) => void;
   isFavoriteApiPlaylist: (playlistId: string) => boolean;
   toggleFavoriteApiPlaylist: (playlist: Playlist) => void;
-  createPlaylist: (name: string, description: string, songs?: Song[]) => void;
+  isFavoriteArtist: (artistId: string) => boolean;
+  toggleFavoriteArtist: (artist: Artist | FullArtist) => void;
+  createPlaylist: (name: string, description: string, songs?: Song[]) => LocalPlaylist;
   deletePlaylist: (playlistId: string) => void;
   updatePlaylist: (playlistId: string, updates: Partial<LocalPlaylist>) => void;
   addSongToPlaylist: (playlistId: string, song: Song) => void;
   removeSongFromPlaylist: (playlistId: string, songId: string) => void;
   addToHistory: (song: Song) => void;
+  addToPlaylistHistory: (playlistId: string) => void;
   importData: (data: string) => boolean;
   exportData: () => string;
 }

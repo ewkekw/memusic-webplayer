@@ -1,7 +1,5 @@
 import { useState, useEffect, Dispatch, SetStateAction } from 'react';
 
-// Fix: Updated the return type to use Dispatch and SetStateAction directly,
-// which requires importing them. This resolves the "Cannot find namespace 'React'" error.
 export const useLocalStorage = <T,>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] => {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
@@ -39,8 +37,7 @@ export const useLocalStorage = <T,>(key: string, initialValue: T): [T, Dispatch<
     return () => {
         window.removeEventListener('storage', handleStorageChange);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, initialValue]);
 
   return [storedValue, setValue];
 };
