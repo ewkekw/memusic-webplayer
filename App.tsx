@@ -1,8 +1,7 @@
 
 
-
-
-import React, { useState, useContext, useEffect, ReactNode, createContext } from 'react';
+import React, { useState, useContext, useEffect, ReactNode, createContext, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/layout/Sidebar';
 import { Player } from './components/layout/Player';
 import Home from './components/views/Home';
@@ -16,6 +15,7 @@ import { PlayerProvider, PlayerContext } from './context/PlayerContext';
 import { UserMusicProvider } from './context/UserMusicContext';
 import { View, Playlist } from './types';
 import { QueueSidebar } from './components/layout/QueueSidebar';
+import { Header } from './components/layout/Header';
 
 interface ModalContextType {
   showModal: (content: { title: string; content: ReactNode; }) => void;
@@ -72,6 +72,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   );
 };
 
+interface HistoryEntry {
+  key: string;
+  view: View;
+  albumId?: string | null;
+  playlistId?: string | null;
+  artistId?: string | null;
+  apiPlaylist?: Playlist | null;
+  searchQuery?: string;
+}
+
 const App: React.FC = () => {
   return (
     <UserMusicProvider>
@@ -83,12 +93,10 @@ const App: React.FC = () => {
 };
 
 const MainApp: React.FC = () => {
-  const [activeView, setActiveView] = useState<View>('home');
-  const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
-  const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
-  const [selectedApiPlaylist, setSelectedApiPlaylist] = useState<Playlist | null>(null);
-  const [initialSearchQuery, setInitialSearchQuery] = useState<string>('');
+  const [history, setHistory] = useState<HistoryEntry[]>([{ key: uuidv4(), view: 'home' }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [navDirection, setNavDirection] = useState<'forward' | 'backward' | null>(null);
+  
   const { currentSong, isQueueOpen } = useContext(PlayerContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<{ title: string; content: ReactNode; } | null>(null);
@@ -100,65 +108,71 @@ const MainApp: React.FC = () => {
 
   const hideModal = () => {
     setIsModalOpen(false);
-    // Delay clearing content to allow for fade-out animation
     setTimeout(() => setModalContent(null), 300);
   };
 
-  const changeView = (view: View) => {
-    if (view !== 'album') setSelectedAlbumId(null);
-    if (view !== 'playlist') setSelectedPlaylistId(null);
-    if (view !== 'artist') setSelectedArtistId(null);
-    if (view !== 'api_playlist') setSelectedApiPlaylist(null);
-    setActiveView(view);
-  }
+  const navigate = useCallback((entry: Omit<HistoryEntry, 'key'>, replace = false) => {
+    const currentEntry = history[historyIndex];
+    if ( !replace && currentEntry.view === entry.view && currentEntry.albumId === entry.albumId && currentEntry.playlistId === entry.playlistId && currentEntry.artistId === entry.artistId && currentEntry.apiPlaylist?.id === entry.apiPlaylist?.id && currentEntry.searchQuery === entry.searchQuery ) {
+        return;
+    }
 
-  const navigateToAlbum = (albumId: string) => {
-    setSelectedAlbumId(albumId);
-    setActiveView('album');
-  }
+    setNavDirection('forward');
+    const newHistory = history.slice(0, historyIndex + (replace ? 0 : 1));
+    const newEntry = { ...entry, key: uuidv4() };
+    const finalHistory = [...newHistory, newEntry];
+    setHistory(finalHistory);
+    setHistoryIndex(finalHistory.length - 1);
+  }, [history, historyIndex]);
 
-  const navigateToPlaylist = (playlistId: string) => {
-    setSelectedPlaylistId(playlistId);
-    setActiveView('playlist');
-  }
-  
-  const navigateToApiPlaylist = (playlist: Playlist) => {
-    setSelectedApiPlaylist(playlist);
-    setActiveView('api_playlist');
-  }
+  const goBack = () => {
+    if (historyIndex > 0) {
+      setNavDirection('backward');
+      setHistoryIndex(i => i - 1);
+    }
+  };
 
-  const navigateToArtist = (artistId: string) => {
-    setSelectedArtistId(artistId);
-    setActiveView('artist');
-  }
+  const goForward = () => {
+    if (historyIndex < history.length - 1) {
+      setNavDirection('forward');
+      setHistoryIndex(i => i + 1);
+    }
+  };
 
+  const changeView = (view: View) => navigate({ view });
+  const navigateToAlbum = (albumId: string) => navigate({ view: 'album', albumId });
+  const navigateToPlaylist = (playlistId: string) => navigate({ view: 'playlist', playlistId });
+  const navigateToApiPlaylist = (playlist: Playlist) => navigate({ view: 'api_playlist', apiPlaylist: playlist });
+  const navigateToArtist = (artistId: string) => navigate({ view: 'artist', artistId });
   const navigateToSearch = (query: string) => {
-    setInitialSearchQuery(query);
-    setActiveView('search');
+      const isCurrentlySearch = history[historyIndex].view === 'search';
+      navigate({ view: 'search', searchQuery: query }, isCurrentlySearch);
   };
 
-  const clearInitialSearchQuery = () => {
-    setInitialSearchQuery('');
-  };
+  const currentViewEntry = history[historyIndex];
+  const animationClass = navDirection === 'forward' ? 'view-enter-forward' : navDirection === 'backward' ? 'view-enter-backward' : '';
 
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex < history.length - 1;
+  
   const renderView = () => {
-    switch (activeView) {
+    switch (currentViewEntry.view) {
       case 'home':
-        return <Home setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToSearch={navigateToSearch} navigateToApiPlaylist={navigateToApiPlaylist} />;
+        return <Home setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToSearch={navigateToSearch} navigateToApiPlaylist={navigateToApiPlaylist} navigateToPlaylist={navigateToPlaylist} />;
       case 'search':
-        return <Search navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToApiPlaylist={navigateToApiPlaylist} initialQuery={initialSearchQuery} onQueryConsumed={clearInitialSearchQuery} />;
+        return <Search navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToApiPlaylist={navigateToApiPlaylist} initialQuery={currentViewEntry.searchQuery} />;
       case 'library':
         return <Library setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToPlaylist={navigateToPlaylist} navigateToArtist={navigateToArtist} navigateToApiPlaylist={navigateToApiPlaylist} />;
       case 'album':
-        return <AlbumView albumId={selectedAlbumId!} setActiveView={changeView} navigateToArtist={navigateToArtist} navigateToPlaylist={navigateToPlaylist} />;
+        return <AlbumView albumId={currentViewEntry.albumId!} setActiveView={changeView} navigateToArtist={navigateToArtist} navigateToPlaylist={navigateToPlaylist} />;
       case 'playlist':
-        return <PlaylistView playlistId={selectedPlaylistId!} setActiveView={changeView} navigateToArtist={navigateToArtist} />;
+        return <PlaylistView playlistId={currentViewEntry.playlistId!} setActiveView={changeView} navigateToArtist={navigateToArtist} />;
       case 'api_playlist':
-        return <ApiPlaylistView playlist={selectedApiPlaylist!} setActiveView={changeView} navigateToArtist={navigateToArtist} />;
+        return <ApiPlaylistView playlist={currentViewEntry.apiPlaylist!} setActiveView={changeView} navigateToArtist={navigateToArtist} />;
       case 'artist':
-        return <ArtistView artistId={selectedArtistId!} setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} />;
+        return <ArtistView artistId={currentViewEntry.artistId!} setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} />;
       default:
-        return <Home setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToSearch={navigateToSearch} navigateToApiPlaylist={navigateToApiPlaylist} />;
+        return <Home setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToSearch={navigateToSearch} navigateToApiPlaylist={navigateToApiPlaylist} navigateToPlaylist={navigateToPlaylist} />;
     }
   };
   
@@ -180,18 +194,30 @@ const MainApp: React.FC = () => {
           </div>
         )}
         <div className="relative z-10 flex flex-col h-full">
+          <Header
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            goBack={goBack}
+            goForward={goForward}
+            onSearch={navigateToSearch}
+            activeView={currentViewEntry.view}
+          />
           <div className="flex flex-1 overflow-hidden">
-              <Sidebar activeView={activeView} setActiveView={changeView} navigateToPlaylist={navigateToPlaylist} />
+              <Sidebar activeView={currentViewEntry.view} setActiveView={changeView} navigateToPlaylist={navigateToPlaylist} />
               <main className="flex-1 overflow-y-auto custom-scrollbar">
-                {renderView()}
+                <div key={currentViewEntry.key} className={animationClass} onAnimationEnd={() => setNavDirection(null)}>
+                  {renderView()}
+                </div>
               </main>
               <div className={`flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${isQueueOpen ? 'w-80' : 'w-0'}`}>
                 <QueueSidebar navigateToArtist={navigateToArtist} />
               </div>
           </div>
           
-          <div className="z-20 shrink-0">
-              <Player navigateToArtist={navigateToArtist} />
+          <div className={`z-20 shrink-0 transition-[height] duration-300 ease-in-out ${currentSong ? 'h-24' : 'h-0'}`}>
+              <div className={`h-full transition-opacity duration-200 ${currentSong ? 'opacity-100' : 'opacity-0'}`}>
+                <Player navigateToArtist={navigateToArtist} />
+              </div>
           </div>
         </div>
         <Modal

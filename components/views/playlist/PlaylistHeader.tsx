@@ -236,30 +236,35 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
             
             <div className="sticky top-0 z-20 backdrop-blur-md bg-gradient-to-b from-[#121212] via-[#121212]/70 to-transparent">
                 <div className="px-8 py-5">
-                    <div className="flex items-center gap-5">
-                        <button onClick={handlePlayPlaylist} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-                        {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
-                        </button>
-                        <div className="relative" ref={actionMenuRef}>
-                            <button onClick={() => setIsActionMenuOpen(p => !p)} title="More options" className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                                <MoreIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                    <div className="flex items-center">
+                        <div className="flex items-center gap-5">
+                            <button onClick={handlePlayPlaylist} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
+                            {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
                             </button>
-                            {isActionMenuOpen && (
-                                <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                                    <button onClick={handleAddToQueue} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to queue</button>
-                                    <button onClick={handlePlayShuffle} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Play with shuffle</button>
-                                    <hr className="border-t border-white/10 my-1"/>
-                                    <button onClick={() => {handleEditDetails(); setIsActionMenuOpen(false);}} className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md hover:bg-white/10"><PencilIcon className="w-4 h-4"/>Edit details</button>
-                                    <button onClick={() => {handleDownloadAll(); setIsActionMenuOpen(false);}} className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md hover:bg-white/10"><DownloadIcon className="w-4 h-4"/>Download .zip</button>
-                                    <button onClick={handleDownloadM3U} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Download .m3u playlist</button>
-                                    <hr className="border-t border-white/10 my-1"/>
-                                    <button onClick={handleDelete} className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md text-red-400 hover:bg-white/10 hover:text-red-300"><TrashIcon className="w-4 h-4"/>Delete playlist</button>
-                                </div>
-                            )}
+                            <button onClick={handleDownloadAll} title="Download all songs" className="p-3 rounded-full hover:bg-white/10 transition-colors">
+                                <DownloadIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                            </button>
+                            <div className="relative" ref={actionMenuRef}>
+                                <button onClick={() => setIsActionMenuOpen(p => !p)} title="More options" className="p-3 rounded-full hover:bg-white/10 transition-colors">
+                                    <MoreIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                                </button>
+                                {isActionMenuOpen && (
+                                    <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
+                                        <button onClick={handleAddToQueue} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to queue</button>
+                                        <button onClick={handlePlayShuffle} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Play with shuffle</button>
+                                        <hr className="border-t border-white/10 my-1"/>
+                                        <button onClick={() => {handleEditDetails(); setIsActionMenuOpen(false);}} className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md hover:bg-white/10"><PencilIcon className="w-4 h-4"/>Edit details</button>
+                                        <button onClick={() => {handleDownloadAll(); setIsActionMenuOpen(false);}} className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md hover:bg-white/10"><DownloadIcon className="w-4 h-4"/>Download .zip</button>
+                                        <button onClick={handleDownloadM3U} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Download .m3u playlist</button>
+                                        <hr className="border-t border-white/10 my-1"/>
+                                        <button onClick={handleDelete} className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md text-red-400 hover:bg-white/10 hover:text-red-300"><TrashIcon className="w-4 h-4"/>Delete playlist</button>
+                                    </div>
+                                )}
+                            </div>
+                            <button onClick={onOpenQuickAdd} title="Add songs" className="p-2 rounded-full hover:bg-white/10 transition-colors">
+                                <PlusIcon className="w-7 h-7 text-gray-300 hover:text-white"/>
+                            </button>
                         </div>
-                        <button onClick={onOpenQuickAdd} title="Add songs" className="p-2 rounded-full hover:bg-white/10 transition-colors ml-auto">
-                            <PlusIcon className="w-7 h-7 text-gray-300 hover:text-white"/>
-                        </button>
                     </div>
                 </div>
             </div>

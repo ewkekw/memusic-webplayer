@@ -1,118 +1,126 @@
 import React, { useContext, useEffect, useRef } from 'react';
 import { PlayerContext } from '../../context/PlayerContext';
 
-const meAscii = [
-  "███╗   ███╗ ███████╗ ",
-  "████╗ ████║ ██╔════╝ ",
-  "██╔████╔██║ █████╗   ",
-  "██║╚██╔╝██║ ██╔══╝   ",
-  "██║ ╚═╝ ██║ ███████╗ ",
-  "╚═╝     ╚═╝ ╚══════╝ ",
-];
-
-const musicAscii = [
-  "███╗   ███╗ ██╗   ██╗ ███████╗ ██╗  ██████╗",
-  "████╗ ████║ ██║   ██║ ██╔════╝ ██║ ██╔════╝",
-  "██╔████╔██║ ██║   ██║ ███████╗ ██║ ██║     ",
-  "██║╚██╔╝██║ ██║   ██║ ╚════██║ ██║ ██║     ",
-  "██║ ╚═╝ ██║ ╚██████╔╝ ███████║ ██║ ╚██████╗",
-  "╚═╝     ╚═╝  ╚═════╝  ╚══════╝ ╚═╝  ╚═════╝",
-];
-
-const baseLogo = meAscii.map((line, i) => line + musicAscii[i]);
-const splitPoint = meAscii[0].length;
-
-
-const AsciiLogo: React.FC = () => {
+const Logo: React.FC = () => {
   const { analyser, isPlaying } = useContext(PlayerContext);
-  const requestRef = useRef<number | null>(null);
-  const preRef = useRef<HTMLPreElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameId = useRef<number | null>(null);
+  const staticLogoRef = useRef<HTMLDivElement>(null);
 
+  // This effect runs the canvas animation loop
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !analyser) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
     const animate = () => {
-      requestRef.current = requestAnimationFrame(animate);
+      animationFrameId.current = requestAnimationFrame(animate);
 
-      if (!analyser || !isPlaying || !preRef.current) {
-        if (preRef.current) {
-          const spans = preRef.current.querySelectorAll('.ascii-char') as NodeListOf<HTMLSpanElement>;
-          spans.forEach(span => {
-            span.style.transform = 'translateY(0px)';
-          });
-        }
-        return;
-      }
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
       analyser.getByteFrequencyData(dataArray);
 
-      // Calculate the average volume across all frequency bins to drive the animation.
-      // This makes the entire logo react to the music's intensity.
-      let sum = 0;
-      for(let i = 0; i < dataArray.length; i++) {
-          sum += dataArray[i];
-      }
-      const averageLevel = sum / dataArray.length;
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const lines = preRef.current.children;
-      if (!lines || lines.length === 0) return;
+      // Calculate audio metrics
+      const bass = dataArray.slice(0, Math.floor(bufferLength * 0.05)).reduce((a, b) => a + b, 0) / (Math.floor(bufferLength * 0.05));
+      const mids = dataArray.slice(Math.floor(bufferLength * 0.2), Math.floor(bufferLength * 0.5)).reduce((a, b) => a + b, 0) / (Math.floor(bufferLength * 0.3));
+      const treble = dataArray.slice(Math.floor(bufferLength * 0.5), bufferLength).reduce((a, b) => a + b, 0) / (bufferLength - Math.floor(bufferLength * 0.5));
       
-      for (let i = 0; i < lines.length; i++) {
-        const lineDiv = lines[i];
-        const spans = lineDiv.querySelectorAll('.ascii-char') as NodeListOf<HTMLSpanElement>;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      // Base radius pulsates with bass
+      const baseRadius = (canvas.width / 6) + (bass / 255) * (canvas.width / 8);
 
-        for (let j = 0; j < spans.length; j++) {
-          const span = spans[j];
-          
-          // Use the average level to determine glitch probability and magnitude.
-          // The power function makes the effect more pronounced on peaks.
-          const glitchProbability = Math.pow(averageLevel / 140, 4); 
+      // Draw the "puddle"
+      ctx.beginPath();
+      const points = 128;
+      for (let i = 0; i <= points; i++) {
+        const angle = (i / points) * Math.PI * 2;
+        
+        // Mids for smooth undulation
+        const midOffset = Math.sin(angle * 8 + Date.now() * 0.005) * (mids / 255) * (canvas.width / 20);
+        
+        // Treble for spikes
+        const trebleIndex = Math.floor((i / points) * (bufferLength * 0.5)) + Math.floor(bufferLength * 0.5);
+        const spike = (dataArray[trebleIndex] / 255) * (canvas.width / 6) * (treble / 255);
+        
+        const radius = baseRadius + midOffset + spike;
 
-          if (Math.random() < glitchProbability) {
-            const maxShift = 4; // max vertical shift in pixels
-            const shiftMagnitude = Math.pow(averageLevel / 180, 2) * maxShift;
-            const shift = (Math.random() - 0.5) * 2 * shiftMagnitude;
-            span.style.transform = `translateY(${shift.toFixed(2)}px)`;
-          } else {
-            span.style.transform = 'translateY(0px)';
-          }
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
         }
       }
+      ctx.closePath();
+      ctx.fillStyle = '#fc4b08';
+      ctx.fill();
     };
-    
-    requestRef.current = requestAnimationFrame(animate);
+
+    if (isPlaying) {
+        animate();
+    } else {
+        if (animationFrameId.current) {
+            cancelAnimationFrame(animationFrameId.current);
+            animationFrameId.current = null;
+        }
+        // Clear canvas when stopped
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
     return () => {
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current);
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
       }
     };
   }, [analyser, isPlaying]);
+  
+  // Effect to match canvas size to the "ME" part of the static logo
+   useEffect(() => {
+    const meElement = staticLogoRef.current?.querySelector('.me-logo-part');
+    if (!meElement) return;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      if (!entries || entries.length === 0) return;
+      const { width, height } = entries[0].contentRect;
+      if (canvasRef.current) {
+        canvasRef.current.width = width;
+        canvasRef.current.height = height;
+      }
+    });
+
+    resizeObserver.observe(meElement);
+    
+    return () => resizeObserver.disconnect();
+  }, []);
 
   return (
-    <pre 
-        ref={preRef} 
-        className="font-mono whitespace-pre text-center cursor-default select-none"
-        style={{ fontSize: 'clamp(4px, 0.4vw, 5.5px)', lineHeight: '1.2' }}
-    >
-      {baseLogo.map((line, i) => (
-        <div key={i} className="flex justify-center">
-          {line.split('').map((char, j) => {
-            const isMePart = j < splitPoint;
-            const colorClass = isMePart ? 'text-white' : 'text-[#fc4b08]';
-            return (
-              <span 
-                key={j} 
-                className={`ascii-char ${colorClass}`}
-                style={{ transition: 'transform 0.05s ease-out' }}
-              >
-                {char === ' ' ? '\u00A0' : char}
-              </span>
-            );
-          })}
-        </div>
-      ))}
-    </pre>
+    <div className="relative text-center cursor-default select-none h-20 flex items-center justify-center">
+      <div ref={staticLogoRef} className="flex items-end" style={{ fontFamily: '"Cute Font", sans-serif', fontSize: '60px', lineHeight: '0.9' }}>
+         <div className="relative me-logo-part">
+            <span className={`text-[#fc4b08] transition-all duration-700 ease-in-out ${isPlaying ? 'opacity-0 blur-lg scale-125' : 'opacity-100 blur-0 scale-100'}`}>
+                me
+            </span>
+            <canvas 
+                ref={canvasRef}
+                className={`absolute top-0 left-0 w-full h-full transition-all duration-700 ease-in-out ${isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}
+            />
+         </div>
+         <span className={`text-white transition-all duration-700 ease-in-out ${isPlaying ? 'opacity-80 -translate-x-4' : 'opacity-100 translate-x-0'}`}>
+            MUSIC
+         </span>
+      </div>
+    </div>
   );
 };
 
-export default AsciiLogo;
+export default Logo;

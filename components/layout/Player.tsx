@@ -1,6 +1,6 @@
 
 
-import React, { useContext, useMemo, useState, useRef, useEffect } from 'react';
+import React, { useContext, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { CreatePlaylistForm } from '../ui/CreatePlaylistForm';
@@ -19,15 +19,15 @@ const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 const NextIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-        <path d="M4 4a1 1 0 00-1 1v10a1 1 0 001 1h1.5a1 1 0 001-1V5a1 1 0 00-1-1H4z" />
-        <path d="M7.5 4a1 1 0 00-1 1v10a1 1 0 001 1h5.236a1 1 0 00.825-.447l3.264-5a1 1 0 000-1.106l-3.264-5A1 1 0 0012.736 4H7.5z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+        <path className="chevron-inner" strokeLinecap="round" strokeLinejoin="round" d="M13 5l5 7-5 7" />
+        <path className="chevron-outer" strokeLinecap="round" strokeLinejoin="round" d="M6 5l5 7-5 7" />
     </svg>
 );
 const PrevIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-        <path d="M16 4a1 1 0 011 1v10a1 1 0 01-1 1h-1.5a1 1 0 01-1-1V5a1 1 0 011-1H16z" />
-        <path d="M12.5 4a1 1 0 011 1v10a1 1 0 01-1 1H7.264a1 1 0 01-.825-.447l-3.264-5a1 1 0 010-1.106l3.264-5A1 1 0 017.264 4h5.236z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+        <path className="chevron-inner" strokeLinecap="round" strokeLinejoin="round" d="M11 19l-5-7 5-7" />
+        <path className="chevron-outer" strokeLinecap="round" strokeLinejoin="round" d="M18 19l-5-7 5-7" />
     </svg>
 );
 const VolumeUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -37,7 +37,12 @@ const VolumeUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 const VolumeDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75a4.5 4.5 0 010 4.5m-1.5-4.5a2.25 2.25 0 010 2.25m-1.5-2.25a.75.75 0 010 .75M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 9.75a3 3 0 010 4.5M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+    </svg>
+);
+const VolumeMuteIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
     </svg>
 );
 const DownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -117,49 +122,141 @@ const PlayerControls: React.FC<{
     playNext: () => void;
     toggleShuffle: () => void;
     cycleRepeatMode: () => void;
-}> = ({ isPlaying, isShuffle, repeatMode, togglePlay, playPrev, playNext, toggleShuffle, cycleRepeatMode }) => (
-    <div className="flex items-center space-x-2">
-        <button onClick={toggleShuffle} title="Shuffle" className={`relative transition-colors w-8 h-8 rounded-full flex items-center justify-center ${isShuffle ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'} hover:bg-white/10`}>
-            <span className="font-bold text-lg leading-none">S</span>
-            {isShuffle && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#fc4b08] rounded-full"></div>}
-        </button>
-        <button onClick={playPrev} className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"><PrevIcon className="w-6 h-6" /></button>
-        <button onClick={togglePlay} className="w-10 h-10 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all duration-200">
-            {isPlaying ? <PauseIcon className="w-6 h-6" /> : <PlayIcon className="w-6 h-6" />}
-        </button>
-        <button onClick={playNext} className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"><NextIcon className="w-6 h-6" /></button>
-        <button onClick={cycleRepeatMode} title={`Repeat: ${repeatMode}`} className={`relative transition-colors w-8 h-8 rounded-full flex items-center justify-center ${repeatMode !== 'off' ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'} hover:bg-white/10`}>
-            <span className="font-bold text-lg leading-none">R</span>
-            {repeatMode !== 'off' && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#fc4b08] rounded-full"></div>}
-            {repeatMode === 'one' && <span className="absolute top-0.5 right-0.5 text-[#fc4b08] text-[10px] font-bold leading-none">1</span>}
-        </button>
-    </div>
-);
+}> = ({ isPlaying, isShuffle, repeatMode, togglePlay, playPrev, playNext, toggleShuffle, cycleRepeatMode }) => {
+    const prevButtonRef = useRef<HTMLButtonElement>(null);
+    const nextButtonRef = useRef<HTMLButtonElement>(null);
+
+    const handleAnimation = (buttonRef: React.RefObject<HTMLButtonElement>, animationClass: string) => {
+        const button = buttonRef.current;
+        if (button) {
+            button.classList.remove(animationClass);
+            void button.offsetWidth; // Trigger reflow to restart animation
+            button.classList.add(animationClass);
+            button.addEventListener('animationend', () => button.classList.remove(animationClass), { once: true });
+        }
+    };
+
+    const handlePlayPrev = () => {
+        playPrev();
+        handleAnimation(prevButtonRef, 'animate-skip-prev');
+    };
+
+    const handlePlayNext = () => {
+        playNext();
+        handleAnimation(nextButtonRef, 'animate-skip-next');
+    };
+
+    return (
+        <div className="flex items-center space-x-2">
+            <button onClick={toggleShuffle} title="Shuffle" className={`relative transition-colors w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 ${isShuffle ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}>
+                <span className="font-bold text-lg leading-none transition-transform duration-200 ease-in-out group-hover:scale-105">S</span>
+                <div className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#fc4b08] rounded-full transition-transform duration-200 ease-out origin-bottom ${isShuffle ? 'scale-y-100' : 'scale-y-0'}`}></div>
+            </button>
+            <button ref={prevButtonRef} onClick={handlePlayPrev} className="group text-gray-300 hover:text-[#fc4b08] transition-colors p-2 rounded-full hover:bg-white/10 active:scale-95"><PrevIcon className="w-6 h-6 chevron-prev" /></button>
+            <button 
+                onClick={togglePlay} 
+                className={`w-10 h-10 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 hover:shadow-xl hover:shadow-[#fc4b08]/40 transition-all duration-200 active:scale-95 play-pause-container ${isPlaying ? 'is-playing' : ''}`}
+            >
+                <PauseIcon className="w-6 h-6 pause-icon" />
+                <PlayIcon className="w-6 h-6 play-icon" />
+            </button>
+            <button ref={nextButtonRef} onClick={handlePlayNext} className="group text-gray-300 hover:text-[#fc4b08] transition-colors p-2 rounded-full hover:bg-white/10 active:scale-95"><NextIcon className="w-6 h-6 chevron-next" /></button>
+            <button onClick={cycleRepeatMode} title={`Repeat: ${repeatMode}`} className={`relative transition-colors w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 ${repeatMode !== 'off' ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}>
+                <span className="font-bold text-lg leading-none transition-transform duration-200 ease-in-out group-hover:scale-105">R</span>
+                <div className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#fc4b08] rounded-full transition-transform duration-200 ease-out origin-bottom ${repeatMode !== 'off' ? 'scale-y-100' : 'scale-y-0'}`}></div>
+                <span className={`absolute top-0 right-1.5 text-[#fc4b08] text-[10px] font-bold leading-none transition-all duration-200 ease-out ${repeatMode === 'one' ? 'opacity-100 translate-y-0.5' : 'opacity-0 -translate-y-1'}`}>1</span>
+            </button>
+        </div>
+    );
+};
 
 const PlayerProgressBar: React.FC<{
     currentTime: number;
     duration: number;
     seek: (time: number) => void;
 }> = ({ currentTime, duration, seek }) => {
-    const progress = useMemo(() => (duration > 0 ? (currentTime / duration) * 100 : 0), [currentTime, duration]);
+    const progressBarRef = useRef<HTMLDivElement>(null);
+    const [isSeeking, setIsSeeking] = useState(false);
+    const [seekTime, setSeekTime] = useState(0);
+
+    const progress = useMemo(() => {
+        const time = isSeeking ? seekTime : currentTime;
+        return duration > 0 ? (time / duration) * 100 : 0;
+    }, [isSeeking, seekTime, currentTime, duration]);
+
+    const calculateSeekTime = useCallback((clientX: number) => {
+        if (!progressBarRef.current || duration <= 0) return 0;
+        const rect = progressBarRef.current.getBoundingClientRect();
+        const clickX = clientX - rect.left;
+        const newTime = (clickX / rect.width) * duration;
+        return Math.max(0, Math.min(newTime, duration));
+    }, [duration]);
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsSeeking(true);
+        const newTime = calculateSeekTime(e.clientX);
+        setSeekTime(newTime);
+    };
+
+    useEffect(() => {
+        if (!isSeeking) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const newTime = calculateSeekTime(e.clientX);
+            setSeekTime(newTime);
+        };
+        const handleMouseUp = (e: MouseEvent) => {
+            setIsSeeking(false);
+            const finalTime = calculateSeekTime(e.clientX);
+            seek(finalTime);
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isSeeking, calculateSeekTime, seek]);
     
     return (
         <div className="w-full flex items-center space-x-2">
-            <span className="text-xs text-gray-400 w-10 text-right">{formatTime(currentTime)}</span>
-            <div className="w-full bg-gray-600/50 rounded-full h-1.5 group cursor-pointer" onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const width = rect.width;
-                seek((clickX / width) * duration);
-            }}>
-                <div className="bg-[#fc4b08] h-1.5 rounded-full group-hover:bg-[#ff5f22]" style={{ width: `${progress}%` }}>
-                   <div className="w-3 h-3 bg-white rounded-full float-right -mr-1.5 -mt-1 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                </div>
+            <span className="text-xs text-gray-400 w-10 text-right">{formatTime(isSeeking ? seekTime : currentTime)}</span>
+            <div 
+                ref={progressBarRef}
+                className={`w-full h-1.5 bg-gray-600/50 rounded-full group cursor-pointer relative ${isSeeking ? 'seeking' : ''}`}
+                onMouseDown={handleMouseDown}
+            >
+                <div className="bg-[#fc4b08] h-1.5 rounded-full group-hover:bg-[#ff5f22] progress-bar-fill" style={{ width: `${progress}%` }} />
+                <div 
+                    className="w-3 h-3 bg-white rounded-full absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 progress-bar-thumb"
+                    style={{ left: `${progress}%` }}
+                />
             </div>
             <span className="text-xs text-gray-400 w-10 text-left">{formatTime(duration)}</span>
         </div>
     );
 };
+
+const PlayerActionButton: React.FC<{
+    onClick?: () => void;
+    title: string;
+    children: React.ReactNode;
+    isActive?: boolean;
+    isDisabled?: boolean;
+    className?: string;
+}> = ({ onClick, title, children, isActive = false, isDisabled = false, className = '' }) => (
+    <button
+        onClick={onClick}
+        title={title}
+        disabled={isDisabled}
+        className={`flex items-center justify-center h-10 px-3 rounded-md transition-all duration-200 ease-in-out ${isActive ? 'bg-white/20 text-white' : 'text-gray-300 hover:bg-white/10 hover:text-white'} disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+    >
+        {children}
+    </button>
+);
 
 const PlayerActions: React.FC<{
     onDownload: () => void;
@@ -171,15 +268,43 @@ const PlayerActions: React.FC<{
     const playerContext = useContext(PlayerContext);
     const userMusicContext = useContext(UserMusicContext);
 
-    const [isBitrateModalOpen, setIsBitrateModalOpen] = useState(false);
-    const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+    const [openModal, setOpenModal] = useState<'quality' | 'playlist' | null>(null);
     const bitrateButtonRef = useRef<HTMLDivElement>(null);
     const playlistButtonRef = useRef<HTMLDivElement>(null);
+    const volumeSliderRef = useRef<HTMLInputElement>(null);
+    const [previousVolume, setPreviousVolume] = useState(playerContext.volume);
+    
+    const { volume, setVolume } = playerContext;
+    const isMuted = useMemo(() => volume === 0, [volume]);
+
+    useEffect(() => {
+        if (volumeSliderRef.current) {
+            volumeSliderRef.current.style.setProperty('--volume-progress', `${volume * 100}%`);
+        }
+    }, [volume]);
+    
+    const handleMuteToggle = () => {
+        if (isMuted) {
+            setVolume(previousVolume > 0.01 ? previousVolume : 0.5);
+        } else {
+            setPreviousVolume(volume);
+            setVolume(0);
+        }
+    };
+
+    const VolumeIcon = useMemo(() => {
+        if (isMuted) return VolumeMuteIcon;
+        if (volume > 0.5) return VolumeUpIcon;
+        return VolumeDownIcon;
+    }, [volume, isMuted]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (bitrateButtonRef.current && !bitrateButtonRef.current.contains(event.target as Node)) setIsBitrateModalOpen(false);
-            if (playlistButtonRef.current && !playlistButtonRef.current.contains(event.target as Node)) setIsPlaylistModalOpen(false);
+            const target = event.target as Node;
+            if (bitrateButtonRef.current && !bitrateButtonRef.current.contains(target) &&
+                playlistButtonRef.current && !playlistButtonRef.current.contains(target)) {
+                setOpenModal(null);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -187,18 +312,22 @@ const PlayerActions: React.FC<{
 
     if (!playerContext.currentSong) return null;
 
+    const handleModalToggle = (modal: 'quality' | 'playlist') => {
+        setOpenModal(prev => (prev === modal ? null : modal));
+    };
+
     return (
-        <div className="flex items-center justify-end space-x-2">
+        <div className="flex items-center justify-end space-x-1">
             <div className="relative" ref={bitrateButtonRef}>
-              <button onClick={() => setIsBitrateModalOpen(prev => !prev)} className={`flex items-center space-x-1 px-3 py-2 text-sm rounded-md transition-all ${isBitrateModalOpen ? 'bg-white/20 text-white' : 'text-gray-400 hover:bg-white/10 hover:text-white'}`}>
-                <span className="w-16 text-center">{playerContext.currentQuality || 'auto'}</span>
-                <ChevronDownIcon className="w-4 h-4 flex-shrink-0"/>
-              </button>
-              <div className={`absolute bottom-full right-0 mb-2 w-40 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30 transition-all duration-200 ease-out origin-bottom-right ${isBitrateModalOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+                <PlayerActionButton onClick={() => handleModalToggle('quality')} isActive={openModal === 'quality'} title="Select quality" className="min-w-[7rem] justify-between">
+                    <span className="text-sm">{playerContext.currentQuality || 'auto'}</span>
+                    <ChevronDownIcon className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 ease-in-out ${openModal === 'quality' ? 'rotate-180' : ''}`}/>
+                </PlayerActionButton>
+              <div className={`absolute bottom-full right-0 mb-2 w-40 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30 transition-all duration-200 ease-out origin-bottom-right ${openModal === 'quality' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
                   <p className="px-2 py-1 text-xs text-gray-400 font-bold uppercase tracking-widest">Quality</p>
                   <div className="mt-1 flex flex-col">
                       {playerContext.currentSong.downloadUrl.map(q => (
-                        <button key={q.quality} onClick={() => { playerContext.setSelectedQuality(q.quality); setIsBitrateModalOpen(false); }} className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${playerContext.selectedQuality === q.quality ? 'bg-[#fc4b08] text-white font-bold' : 'text-gray-300 hover:bg-white/10'}`}>
+                        <button key={q.quality} onClick={() => { playerContext.setSelectedQuality(q.quality); setOpenModal(null); }} className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${playerContext.selectedQuality === q.quality ? 'bg-[#fc4b08] text-white font-bold' : 'text-gray-300 hover:bg-white/10'}`}>
                           {q.quality}
                         </button>
                       ))}
@@ -206,35 +335,46 @@ const PlayerActions: React.FC<{
               </div>
             </div>
 
-            <button onClick={onDownload} disabled={isDownloading} title="Download song" className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 disabled:opacity-50 disabled:cursor-wait">
+            <PlayerActionButton onClick={onDownload} isDisabled={isDownloading} title="Download song">
               {isDownloading ? <SpinnerIcon className="w-5 h-5 animate-spin" /> : <DownloadIcon className="w-5 h-5"/>}
-            </button>
+            </PlayerActionButton>
             
             <div className="relative" ref={playlistButtonRef}>
-                <button onClick={() => setIsPlaylistModalOpen(p => !p)} title="Add to playlist" className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"><PlusCircleIcon className="w-5 h-5"/></button>
-                <div className={`absolute bottom-full right-0 mb-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-lg p-2 z-30 max-h-48 overflow-y-auto custom-scrollbar transition-all duration-200 ease-out origin-bottom-right ${isPlaylistModalOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+                <PlayerActionButton onClick={() => handleModalToggle('playlist')} isActive={openModal === 'playlist'} title="Add to playlist">
+                    <PlusCircleIcon className={`w-5 h-5 transition-transform duration-300 ease-in-out ${openModal === 'playlist' ? 'rotate-[135deg]' : ''}`}/>
+                </PlayerActionButton>
+                <div className={`absolute bottom-full right-0 mb-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-lg p-2 z-30 max-h-48 overflow-y-auto custom-scrollbar transition-all duration-200 ease-out origin-bottom-right ${openModal === 'playlist' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
                       <p className="px-3 py-1.5 text-xs text-gray-400 font-bold uppercase">Add to playlist</p>
-                      <button onClick={onAddToPlaylist} className="w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-white/10">New Playlist</button>
+                      <button onClick={() => { onAddToPlaylist(); setOpenModal(null); }} className="w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-white/10">New Playlist</button>
                       <hr className="my-1 border-white/10"/>
                       {userMusicContext.playlists.length > 0 ? userMusicContext.playlists.map(p => (
-                        <button key={p.id} onClick={() => { userMusicContext.addSongToPlaylist(p.id, playerContext.currentSong!); setIsPlaylistModalOpen(false); }} className="w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-white/10 truncate">
+                        <button key={p.id} onClick={() => { userMusicContext.addSongToPlaylist(p.id, playerContext.currentSong!); setOpenModal(null); }} className="w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-white/10 truncate">
                           {p.name}
                         </button>
                       )) : <p className="px-3 py-1.5 text-sm text-gray-500">No playlists.</p>}
                 </div>
             </div>
 
-            <button onClick={onToggleFavorite} title="Favorite song" className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
+            <PlayerActionButton onClick={onToggleFavorite} title="Favorite song">
               <HeartIcon className={`w-5 h-5 transition-all ${isHeartAnimating ? 'heart-pop' : ''} ${userMusicContext.isFavoriteSong(playerContext.currentSong.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : ''}`}/>
-            </button>
+            </PlayerActionButton>
 
-            <button onClick={playerContext.toggleQueue} title="Show queue" className={`transition-colors p-2 rounded-full ${playerContext.isQueueOpen ? 'text-[#fc4b08] bg-white/10' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}>
+            <PlayerActionButton onClick={playerContext.toggleQueue} title="Show queue" isActive={playerContext.isQueueOpen}>
                 <QueueIcon className="w-5 h-5"/>
-            </button>
+            </PlayerActionButton>
 
-            <div className="flex items-center space-x-2">
-                {playerContext.volume > 0.5 ? <VolumeUpIcon className="w-5 h-5 text-gray-400"/> : <VolumeDownIcon className="w-5 h-5 text-gray-400"/>}
-                <input type="range" min="0" max="1" step="0.01" value={playerContext.volume} onChange={(e) => playerContext.setVolume(parseFloat(e.target.value))} className="volume-slider" />
+            <div className="group flex items-center">
+                 <PlayerActionButton onClick={handleMuteToggle} title={isMuted ? "Unmute" : "Mute"}>
+                    <VolumeIcon className="w-5 h-5" />
+                </PlayerActionButton>
+                <div className="w-0 group-hover:w-32 transition-[width] duration-300 ease-in-out flex items-center h-10 overflow-hidden">
+                    <input 
+                        ref={volumeSliderRef}
+                        type="range" min="0" max="1" step="0.01" value={volume} 
+                        onChange={(e) => playerContext.setVolume(parseFloat(e.target.value))}
+                        className="volume-slider" 
+                    />
+                </div>
             </div>
         </div>
     );

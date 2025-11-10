@@ -1,12 +1,22 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="https://storage.googleapis.com/aistudio-project-files/assets/d1414441-26c6-4700-928f-7f91752b04c8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MeMusic - Frutiger Metro Webplayer</title>
+    
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:title" content="MeMusic - Frutiger Metro Webplayer" />
+    <meta property="og:description" content="A complete music web player with a Frutiger Metro aesthetic, allowing users to listen to, organize, and explore music directly from the browser without an account. Playlists, favorites, and history are saved locally." />
+    <meta property="og:image" content="https://storage.googleapis.com/aistudio-project-files/assets/c2643a6d-e498-4c3c-8208-d1fc453f6685" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cute+Font&family=Epilogue:wght@400;700;900&display=swap" rel="stylesheet">
   <script type="importmap">
 {
   "imports": {
@@ -18,8 +28,14 @@
 }
 </script>
 <style>
+    :root {
+      --font-sans: 'Epilogue', sans-serif;
+    }
     html {
         scroll-behavior: smooth;
+    }
+    body {
+      font-family: var(--font-sans);
     }
 
     .volume-slider {
@@ -32,17 +48,23 @@
 
     /* Track: Chrome, Safari, Opera, Edge */
     .volume-slider::-webkit-slider-runnable-track {
-        background: rgba(107, 114, 128, 0.5); /* gray-600/50 */
+        background: linear-gradient(to right, #fc4b08 var(--volume-progress, 100%), rgba(107, 114, 128, 0.5) var(--volume-progress, 100%));
         height: 0.25rem; /* h-1 */
         border-radius: 0.5rem; /* rounded-lg */
     }
 
     /* Track: Firefox */
-    .volume-slider::-moz-range-track {
-        background: rgba(107, 114, 128, 0.5); /* gray-600/50 */
-        height: 0.25rem; /* h-1 */
-        border-radius: 0.5rem; /* rounded-lg */
+     .volume-slider::-moz-range-track {
+        background: rgba(107, 114, 128, 0.5);
+        height: 0.25rem;
+        border-radius: 0.5rem;
     }
+    .volume-slider::-moz-range-progress {
+        background-color: #fc4b08;
+        height: 0.25rem;
+        border-radius: 0.5rem;
+    }
+
 
     /* Thumb: Chrome, Safari, Opera, Edge */
     .volume-slider::-webkit-slider-thumb {
@@ -51,28 +73,27 @@
         margin-top: -6px; /* Center thumb on track */
         width: 16px;
         height: 16px;
-        background: #000;
-        border: 2px solid #fc4b08;
-        border-radius: 9999px; /* rounded-full */
-        transition: background 0.2s ease-in-out, border-color 0.2s ease-in-out;
-    }
-    .volume-slider::-webkit-slider-thumb:hover {
         background: #fc4b08;
-        border-color: #000;
+        border-radius: 9999px; /* rounded-full */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.7);
+        transition: transform 0.2s ease-in-out;
+    }
+    .volume-slider:hover::-webkit-slider-thumb {
+        transform: scale(1.1);
     }
 
     /* Thumb: Firefox */
     .volume-slider::-moz-range-thumb {
-        width: 12px; /* width without border */
-        height: 12px;
-        background: #000;
-        border: 2px solid #fc4b08;
-        border-radius: 9999px; /* rounded-full */
-        transition: background 0.2s ease-in-out, border-color 0.2s ease-in-out;
-    }
-     .volume-slider::-moz-range-thumb:hover {
+        width: 16px;
+        height: 16px;
         background: #fc4b08;
-        border-color: #000;
+        border: none;
+        border-radius: 9999px; /* rounded-full */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.7);
+        transition: transform 0.2s ease-in-out;
+    }
+     .volume-slider:hover::-moz-range-thumb {
+        transform: scale(1.1);
     }
 
     /* Custom Scrollbar */
@@ -90,6 +111,14 @@
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background-color: #fc4b08;
+    }
+    
+    .custom-scrollbar-hidden::-webkit-scrollbar {
+        display: none;
+    }
+    .custom-scrollbar-hidden {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
     }
 
     /* Animations */
@@ -110,6 +139,82 @@
             opacity: 0;
             transform: translateY(-10px);
         }
+    }
+    
+    /* Player Control Animations */
+    .group .chevron-inner, .group .chevron-outer {
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .group:hover .chevron-next path { transform: translateX(3px); }
+    .group:hover .chevron-prev path { transform: translateX(-3px); }
+    
+    .animate-skip-next .chevron-inner { animation: skip-next 0.3s cubic-bezier(0.45, 0, 0.55, 1); }
+    .animate-skip-next .chevron-outer { animation: skip-next 0.3s cubic-bezier(0.45, 0, 0.55, 1) 0.05s; }
+    
+    @keyframes skip-next {
+      from { transform: translateX(0); opacity: 1; }
+      to   { transform: translateX(15px); opacity: 0; }
+    }
+
+    .animate-skip-prev .chevron-inner { animation: skip-prev 0.3s cubic-bezier(0.45, 0, 0.55, 1); }
+    .animate-skip-prev .chevron-outer { animation: skip-prev 0.3s cubic-bezier(0.45, 0, 0.55, 1) 0.05s; }
+
+    @keyframes skip-prev {
+      from { transform: translateX(0); opacity: 1; }
+      to   { transform: translateX(-15px); opacity: 0; }
+    }
+
+    .play-pause-container {
+      position: relative;
+    }
+    .play-pause-container svg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .play-pause-container .play-icon {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    }
+    .play-pause-container .pause-icon {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.7) rotate(-90deg);
+    }
+    .play-pause-container.is-playing .play-icon {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.7) rotate(90deg);
+    }
+    .play-pause-container.is-playing .pause-icon {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    }
+
+    .progress-bar-fill, .progress-bar-thumb {
+        transition: width 100ms linear, left 100ms linear;
+    }
+    
+    .seeking .progress-bar-fill, .seeking .progress-bar-thumb {
+        transition: none;
+    }
+
+
+    /* View Transitions */
+    @keyframes slide-in-from-right {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .view-enter-forward {
+      animation: slide-in-from-right 0.3s ease-out;
+    }
+    @keyframes slide-in-from-left {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .view-enter-backward {
+      animation: slide-in-from-left 0.3s ease-out;
     }
 </style>
 <link rel="stylesheet" href="/index.css">

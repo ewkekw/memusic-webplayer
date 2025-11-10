@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { Album, Song, View } from '../../types';
 import { getAlbumDetails } from '../../services/jioSaavnApi';
@@ -263,27 +261,29 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
       <div className="relative">
         <div className="sticky top-0 z-20 backdrop-blur-md bg-gradient-to-b from-[#121212] via-[#121212]/70 to-transparent">
             <div className="px-8 py-5">
-                <div className="flex items-center gap-5">
-                    <button onClick={handlePlayAlbum} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-                      {isAlbumCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
-                    </button>
-                    <button onClick={() => toggleFavoriteAlbum(album)} title={isFavoriteAlbum(album.id) ? "Remove from favorites" : "Add to favorites"} className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                        <HeartIcon className={`w-8 h-8 transition-all ${isFavoriteAlbum(album.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
-                    </button>
-                    <button onClick={handleDownloadAll} title="Download all songs" className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                        <DownloadIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
-                    </button>
-                    <div className="relative" ref={actionMenuRef}>
-                        <button onClick={() => setIsActionMenuOpen(p => !p)} title="More options" className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                            <MoreIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                <div className="flex items-center">
+                    <div className="flex items-center gap-5">
+                        <button onClick={handlePlayAlbum} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
+                          {isAlbumCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
                         </button>
-                        {isActionMenuOpen && (
-                            <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                                <button onClick={handleAddToQueue} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to queue</button>
-                                <button onClick={handlePlayShuffle} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Play with shuffle</button>
-                                <button onClick={handleDownloadM3U} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Download .m3u playlist</button>
-                            </div>
-                        )}
+                        <button onClick={() => toggleFavoriteAlbum(album)} title={isFavoriteAlbum(album.id) ? "Remove from favorites" : "Add to favorites"} className="p-3 rounded-full hover:bg-white/10 transition-colors">
+                            <HeartIcon className={`w-8 h-8 transition-all ${isFavoriteAlbum(album.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
+                        </button>
+                        <button onClick={handleDownloadAll} title="Download all songs" className="p-3 rounded-full hover:bg-white/10 transition-colors">
+                            <DownloadIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                        </button>
+                        <div className="relative" ref={actionMenuRef}>
+                            <button onClick={() => setIsActionMenuOpen(p => !p)} title="More options" className="p-3 rounded-full hover:bg-white/10 transition-colors">
+                                <MoreIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                            </button>
+                            {isActionMenuOpen && (
+                                <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
+                                    <button onClick={handleAddToQueue} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to queue</button>
+                                    <button onClick={handlePlayShuffle} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Play with shuffle</button>
+                                    <button onClick={handleDownloadM3U} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Download .m3u playlist</button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

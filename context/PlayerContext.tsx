@@ -5,6 +5,12 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { UserMusicContext } from './UserMusicContext';
 import { getSongsByIds } from '../services/jioSaavnApi';
 
+const decodeHtml = (html: string | null) => {
+    if (!html) return '';
+    const txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+};
 interface PlayerContextType {
   currentSong: Song | null;
   isPlaying: boolean;
@@ -54,6 +60,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioContextInitiated = useRef(false);
+  const seekTimeOnQualityChangeRef = useRef<number | null>(null);
+  const prevSongIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -196,27 +204,45 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    
-    if (currentSong && currentSong.downloadUrl && currentSong.downloadUrl.length > 0) {
-      const getUrlForQuality = (quality: string) => currentSong.downloadUrl?.find(q => q.quality === quality)?.url;
-      const songUrl = getUrlForQuality(selectedQuality) || getUrlForQuality('320kbps') || getUrlForQuality('160kbps') || getUrlForQuality('96kbps') || currentSong.downloadUrl[0]?.url;
 
-      if (songUrl) {
-          const httpsUrl = songUrl.replace(/^http:/, 'https:');
-          const qualityLabel = currentSong.downloadUrl.find(q => q.url.replace(/^http:/, 'https:') === httpsUrl)?.quality || null;
-          setCurrentQuality(qualityLabel);
-          if (audio.src !== httpsUrl) {
-              audio.src = httpsUrl;
-          }
-      } else {
-        playNext();
-      }
+    // Determine if the song ID has changed from the previous render.
+    const isDifferentSong = prevSongIdRef.current !== currentSong?.id;
+    prevSongIdRef.current = currentSong?.id ?? null;
+
+    if (currentSong && currentSong.downloadUrl && currentSong.downloadUrl.length > 0) {
+        const getUrlForQuality = (quality: string) => currentSong.downloadUrl?.find(q => q.quality === quality)?.url;
+        const songUrl = getUrlForQuality(selectedQuality) || getUrlForQuality('320kbps') || getUrlForQuality('160kbps') || getUrlForQuality('96kbps') || currentSong.downloadUrl[0]?.url;
+
+        if (songUrl) {
+            const httpsUrl = songUrl.replace(/^http:/, 'https:');
+            const qualityLabel = currentSong.downloadUrl.find(q => q.url.replace(/^http:/, 'https:') === httpsUrl)?.quality || null;
+            setCurrentQuality(qualityLabel);
+            
+            if (audio.src !== httpsUrl) {
+                if (isDifferentSong) {
+                    // It's a new song, so reset playback time.
+                    seekTimeOnQualityChangeRef.current = null; 
+                    audio.currentTime = 0;
+                } else {
+                    // It's the same song (quality change), so preserve playback time.
+                    const timeToSeek = audio.currentTime;
+                    if (timeToSeek > 1) { 
+                        seekTimeOnQualityChangeRef.current = timeToSeek;
+                    } else {
+                        seekTimeOnQualityChangeRef.current = null;
+                    }
+                }
+                audio.src = httpsUrl;
+            }
+        } else {
+            playNext();
+        }
     } else if (!currentSong) {
-      audio.src = '';
-      setCurrentQuality(null);
-      if (isPlaying) setIsPlaying(false);
+        audio.src = '';
+        setCurrentQuality(null);
+        if (isPlaying) setIsPlaying(false);
     }
-  }, [currentSong, selectedQuality, playNext, isPlaying]);
+}, [currentSong, selectedQuality, playNext]);
 
 
   useEffect(() => {
@@ -236,7 +262,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       } else {
           audio.pause();
       }
-  }, [isPlaying]);
+  }, [isPlaying, currentSong]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -248,6 +274,21 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
     
+    const handleCanPlay = () => {
+      if (seekTimeOnQualityChangeRef.current) {
+        audio.currentTime = seekTimeOnQualityChangeRef.current;
+        seekTimeOnQualityChangeRef.current = null;
+      }
+      if (isPlaying) {
+        audio.play().catch(error => {
+          if (error.name !== 'AbortError') {
+            console.error("Autoplay after quality change failed:", error);
+            setIsPlaying(false);
+          }
+        });
+      }
+    };
+
     const handleEnded = () => {
         if (audio.loop) return;
         if (isShuffle) {
@@ -268,26 +309,28 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('canplay', handleCanPlay);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('canplay', handleCanPlay);
     };
-  }, [volume, repeatMode, isShuffle, playRandom, currentIndex, currentQueue.length, playNext]);
+  }, [volume, repeatMode, isShuffle, playRandom, currentIndex, currentQueue.length, playNext, isPlaying]);
   
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (currentSong) {
-      setIsPlaying(!isPlaying);
+      setIsPlaying(prev => !prev);
     }
-  };
+  }, [currentSong]);
 
-  const seek = (time: number) => {
+  const seek = useCallback((time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
       setCurrentTime(time);
     }
-  };
+  }, []);
 
   const handleSetVolume = (newVolume: number) => {
       const clampedVolume = Math.max(0, Math.min(1, newVolume));
@@ -362,6 +405,50 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setCurrentIndex(newCurrentIndex);
   };
 
+  // Media Session API Integration
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      if (currentSong) {
+        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+        
+        const artwork = currentSong.image?.map(img => ({
+          src: img.url.replace(/^http:/, 'https:'),
+          sizes: img.quality,
+          type: 'image/jpeg', 
+        })) || [];
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: decodeHtml(currentSong.name),
+          artist: currentSong.artists.primary.map(a => decodeHtml(a.name)).join(', '),
+          album: decodeHtml(currentSong.album.name || ''),
+          artwork: artwork,
+        });
+
+        navigator.mediaSession.setActionHandler('play', togglePlay);
+        navigator.mediaSession.setActionHandler('pause', togglePlay);
+        navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+        navigator.mediaSession.setActionHandler('nexttrack', playNext);
+        navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+            const skipTime = details.seekOffset || 10;
+            seek(Math.max(currentTime - skipTime, 0));
+        });
+        navigator.mediaSession.setActionHandler('seekforward', (details) => {
+            const skipTime = details.seekOffset || 10;
+            seek(Math.min(currentTime + skipTime, duration));
+        });
+      } else {
+        // Clear metadata and handlers when no song is playing
+        navigator.mediaSession.metadata = null;
+        navigator.mediaSession.playbackState = 'none';
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+        navigator.mediaSession.setActionHandler('previoustrack', null);
+        navigator.mediaSession.setActionHandler('nexttrack', null);
+        navigator.mediaSession.setActionHandler('seekbackward', null);
+        navigator.mediaSession.setActionHandler('seekforward', null);
+      }
+    }
+  }, [currentSong, isPlaying, playPrev, playNext, togglePlay, seek, currentTime, duration]);
 
   return (
     <PlayerContext.Provider value={{ currentSong, isPlaying, duration, currentTime, volume, playSong, togglePlay, seek, setVolume: handleSetVolume, playNext, playPrev, currentQueue, selectedQuality, setSelectedQuality, currentQuality, isQueueOpen, toggleQueue, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue, isShuffle, repeatMode, toggleShuffle, cycleRepeatMode, analyser }}>

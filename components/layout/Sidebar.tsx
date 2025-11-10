@@ -1,23 +1,12 @@
-
-
-
-
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState, useRef, useEffect } from 'react';
 import { View, LocalPlaylist } from '../../types';
-import AsciiLogo from './AsciiLogo';
+import Logo from './Logo';
 import { UserMusicContext } from '../../context/UserMusicContext';
 
 interface SidebarProps {
   activeView: View;
   setActiveView: (view: View) => void;
   navigateToPlaylist: (playlistId: string) => void;
-}
-
-interface NavItemProps {
-  icon: React.ReactElement<{ className?: string }>;
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
 }
 
 const HomeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -45,19 +34,33 @@ const MinimalistMusicIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
-      isActive
-        ? 'bg-white/20 text-white shadow-lg'
-        : 'text-gray-400 hover:bg-white/10 hover:text-white'
-    }`}
-  >
-    {React.cloneElement(icon, { className: 'w-6 h-6 mr-4' })}
-    <span className="truncate">{label}</span>
-  </button>
+interface NavItemProps {
+  icon: React.ReactElement<{ className?: string }>;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+const NavItem = React.forwardRef<HTMLButtonElement, NavItemProps>(
+  ({ icon, label, isActive, onClick }, ref) => (
+    <button
+      ref={ref}
+      onClick={onClick}
+      className={`group relative z-10 flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${
+        isActive
+          ? 'text-white'
+          : 'text-gray-400 hover:text-white hover:bg-white/10'
+      }`}
+    >
+      <div className="flex items-center transition-transform duration-300 ease-in-out group-hover:translate-x-1">
+        {React.cloneElement(icon, { className: 'w-6 h-6 mr-4' })}
+        <span className="truncate">{label}</span>
+      </div>
+    </button>
+  )
 );
+NavItem.displayName = 'NavItem';
+
 
 interface PlaylistSidebarItemProps {
   playlist: LocalPlaylist;
@@ -94,6 +97,59 @@ const PlaylistSidebarItem: React.FC<PlaylistSidebarItemProps> = ({ playlist, onC
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, navigateToPlaylist }) => {
   const { playlists, playlistHistory } = useContext(UserMusicContext);
+
+  const [sliderStyle, setSliderStyle] = useState({ top: 0, height: 0, opacity: 0 });
+  const [isReadyForTransition, setIsReadyForTransition] = useState(false);
+  
+  const navRef = useRef<HTMLElement>(null);
+  const homeRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLButtonElement>(null);
+  const libraryRef = useRef<HTMLButtonElement>(null);
+
+  const libraryViews: View[] = ['library', 'playlist', 'album', 'artist', 'api_playlist'];
+
+  const navItems = useMemo(() => [
+    {
+      id: 'home',
+      ref: homeRef,
+      icon: <HomeIcon />,
+      label: 'Home',
+      isActive: activeView === 'home',
+      onClick: () => setActiveView('home'),
+    },
+    {
+      id: 'search',
+      ref: searchRef,
+      icon: <SearchIcon />,
+      label: 'Search',
+      isActive: activeView === 'search',
+      onClick: () => setActiveView('search'),
+    },
+    {
+      id: 'library',
+      ref: libraryRef,
+      icon: <LibraryIcon />,
+      label: 'Library',
+      isActive: libraryViews.includes(activeView),
+      onClick: () => setActiveView('library'),
+    },
+  ], [activeView, setActiveView]);
+
+  useEffect(() => {
+    const activeItem = navItems.find(item => item.isActive);
+    if (activeItem && activeItem.ref.current) {
+      setSliderStyle({
+        top: activeItem.ref.current.offsetTop,
+        height: activeItem.ref.current.offsetHeight,
+        opacity: 1,
+      });
+    }
+
+    if (!isReadyForTransition) {
+        const timer = setTimeout(() => setIsReadyForTransition(true), 50);
+        return () => clearTimeout(timer);
+    }
+  }, [activeView, isReadyForTransition, navItems]);
   
   const recentPlaylists = useMemo(() => {
     return playlistHistory
@@ -103,29 +159,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
   
   return (
     <aside className="w-64 bg-black/30 backdrop-blur-md p-4 flex flex-col h-full border-r border-white/10">
-      <div className="my-8">
-        <AsciiLogo />
-      </div>
 
-      <nav className="flex flex-col space-y-2">
-        <NavItem
-          icon={<HomeIcon />}
-          label="Home"
-          isActive={activeView === 'home'}
-          onClick={() => setActiveView('home')}
+      <nav ref={navRef} className="relative flex flex-col space-y-2 pt-1">
+        <div
+          aria-hidden="true"
+          className="absolute left-0 w-full bg-white/20 rounded-lg shadow-lg"
+          style={{
+            ...sliderStyle,
+            transition: isReadyForTransition
+              ? 'top 0.35s cubic-bezier(0.4, 0, 0.2, 1), height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+              : 'none',
+          }}
         />
-        <NavItem
-          icon={<SearchIcon />}
-          label="Search"
-          isActive={activeView === 'search'}
-          onClick={() => setActiveView('search')}
-        />
-        <NavItem
-          icon={<LibraryIcon />}
-          label="Library"
-          isActive={activeView === 'library' || activeView === 'playlist'}
-          onClick={() => setActiveView('library')}
-        />
+        {navItems.map(item => (
+          <NavItem
+            key={item.id}
+            ref={item.ref}
+            icon={item.icon}
+            label={item.label}
+            isActive={item.isActive}
+            onClick={item.onClick}
+          />
+        ))}
       </nav>
       
       <hr className="my-4 border-t border-white/10" />

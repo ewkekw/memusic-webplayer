@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import { View, LocalPlaylist } from '../../types';
 import { UserMusicContext } from '../../context/UserMusicContext';

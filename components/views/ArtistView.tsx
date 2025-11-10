@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useContext } from 'react';
 import { FullArtist, View, Album, Song, Artist } from '../../types';
 import { getArtistDetails } from '../../services/jioSaavnApi';

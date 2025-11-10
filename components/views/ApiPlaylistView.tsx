@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { Playlist, Song, View } from '../../types';
 import { searchSongs } from '../../services/jioSaavnApi';
@@ -277,28 +275,30 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
             </div>
             
             <div className="sticky top-0 z-20 backdrop-blur-md bg-gradient-to-b from-[#121212] via-[#121212]/70 to-transparent">
-                <div className="px-8 py-5 flex items-center gap-5">
-                    <button onClick={handlePlayPlaylist} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-                      {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
-                    </button>
-                    <button onClick={handleSavePlaylist} disabled={isPlaylistSaved} title={isPlaylistSaved ? "Already in your library" : "Save to your library"} className="p-3 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
-                        {isPlaylistSaved ? <CheckIcon className="w-8 h-8 text-green-400" /> : <PlusIcon className="w-8 h-8 text-gray-400 hover:text-white" />}
-                    </button>
-                    <button onClick={() => toggleFavoriteApiPlaylist(playlist)} title="Favorite" className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                        <HeartIcon className={`w-8 h-8 ${isFavoriteApiPlaylist(playlist.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
-                    </button>
-                    <button onClick={handleDownloadAll} title="Download all" className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                        <DownloadIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
-                    </button>
-                    <div className="relative" ref={actionMenuRef}>
-                        <button onClick={() => setIsActionMenuOpen(p => !p)} title="More..." className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                            <MoreIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                <div className="px-8 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-5">
+                        <button onClick={handlePlayPlaylist} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
+                          {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
                         </button>
-                         {isActionMenuOpen && (
-                            <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                                <button onClick={() => {addSongsToEnd(songs); setIsActionMenuOpen(false);}} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to queue</button>
-                            </div>
-                        )}
+                        <button onClick={handleSavePlaylist} disabled={isPlaylistSaved} title={isPlaylistSaved ? "Already in your library" : "Save to your library"} className="p-3 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                            {isPlaylistSaved ? <CheckIcon className="w-8 h-8 text-green-400" /> : <PlusIcon className="w-8 h-8 text-gray-400 hover:text-white" />}
+                        </button>
+                        <button onClick={() => toggleFavoriteApiPlaylist(playlist)} title="Favorite" className="p-3 rounded-full hover:bg-white/10 transition-colors">
+                            <HeartIcon className={`w-8 h-8 ${isFavoriteApiPlaylist(playlist.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
+                        </button>
+                        <button onClick={handleDownloadAll} title="Download all" className="p-3 rounded-full hover:bg-white/10 transition-colors">
+                            <DownloadIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                        </button>
+                        <div className="relative" ref={actionMenuRef}>
+                            <button onClick={() => setIsActionMenuOpen(p => !p)} title="More..." className="p-3 rounded-full hover:bg-white/10 transition-colors">
+                                <MoreIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                            </button>
+                             {isActionMenuOpen && (
+                                <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
+                                    <button onClick={() => {addSongsToEnd(songs); setIsActionMenuOpen(false);}} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to queue</button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

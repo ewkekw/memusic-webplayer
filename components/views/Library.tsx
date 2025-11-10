@@ -1,5 +1,3 @@
-
-
 import React, { useContext, useState, useRef, useEffect, useMemo } from 'react';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { SongList } from '../ui/SongList';
@@ -9,21 +7,10 @@ import { ArtistCard } from '../ui/ArtistCard';
 import { PlaylistCard as ApiPlaylistCard } from '../ui/PlaylistCard';
 import { ModalContext } from '../../App';
 import { CreatePlaylistForm } from '../ui/CreatePlaylistForm';
+import { AnimatedTabs, TabItem } from '../ui/Loader';
 
 type LibraryFilter = 'all' | 'playlists' | 'songs' | 'artists' | 'albums';
 type NavFunc = (id: any) => void;
-
-// Sub-component: FilterButton
-const FilterButton: React.FC<{
-  label: string;
-  filter: LibraryFilter;
-  activeFilter: LibraryFilter;
-  onClick: (filter: LibraryFilter) => void;
-}> = ({ label, filter, activeFilter, onClick }) => (
-  <button onClick={() => onClick(filter)} className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeFilter === filter ? 'bg-[#fc4b08] text-black' : 'bg-white/10 hover:bg-white/20'}`}>
-    {label}
-  </button>
-);
 
 const PlusIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>);
 
@@ -193,6 +180,14 @@ interface LibraryProps {
     setActiveView: (view: View) => void;
 }
 
+const libraryFilters: TabItem<LibraryFilter>[] = [
+    { id: 'all', label: 'All' },
+    { id: 'playlists', label: 'Playlists' },
+    { id: 'songs', label: 'Songs' },
+    { id: 'artists', label: 'Artists' },
+    { id: 'albums', label: 'Albums' },
+];
+
 const Library: React.FC<LibraryProps> = ({ navigateToAlbum, navigateToPlaylist, navigateToArtist, navigateToApiPlaylist, setActiveView }) => {
     const { createPlaylist } = useContext(UserMusicContext);
     const { showModal, hideModal } = useContext(ModalContext);
@@ -216,18 +211,13 @@ const Library: React.FC<LibraryProps> = ({ navigateToAlbum, navigateToPlaylist, 
     };
     
     return (
-        <div className="p-8 text-white space-y-8">
-            <header>
-                <h1 className="text-5xl font-bold">Library</h1>
-                <p className="text-lg text-gray-400 mt-2">Your personal music collection.</p>
-            </header>
-            
-            <div className="flex space-x-2">
-                <FilterButton label="All" filter="all" activeFilter={activeFilter} onClick={setActiveFilter} />
-                <FilterButton label="Playlists" filter="playlists" activeFilter={activeFilter} onClick={setActiveFilter} />
-                <FilterButton label="Songs" filter="songs" activeFilter={activeFilter} onClick={setActiveFilter} />
-                <FilterButton label="Artists" filter="artists" activeFilter={activeFilter} onClick={setActiveFilter} />
-                <FilterButton label="Albums" filter="albums" activeFilter={activeFilter} onClick={setActiveFilter} />
+        <div className="p-6 text-white space-y-6">
+            <div className="flex">
+                <AnimatedTabs
+                    tabs={libraryFilters}
+                    activeTab={activeFilter}
+                    onTabClick={setActiveFilter}
+                />
             </div>
 
             <div>{renderContent()}</div>

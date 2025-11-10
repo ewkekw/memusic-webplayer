@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback, useContext } from 'react';
+// FIX: import React to use React types like React.MouseEvent
+import React, { useState, useRef, useEffect, useCallback, useContext } from 'react';
 import { Song } from '../types';
 import { PlayerContext } from '../context/PlayerContext';
 
