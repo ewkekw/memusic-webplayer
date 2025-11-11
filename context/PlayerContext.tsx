@@ -63,6 +63,7 @@ interface PlayerContextType {
   toggleReverb: () => void;
   reverbMix: number;
   setReverbMix: (mix: number) => void;
+  audioContext: AudioContext | null;
 }
 
 export const PlayerContext = createContext<PlayerContextType>({} as PlayerContextType);
@@ -105,6 +106,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [is8DEnabled, setIs8DEnabled] = useLocalStorage('metromusic-8d-enabled', false);
   const [isReverbEnabled, setIsReverbEnabled] = useLocalStorage('metromusic-reverb-enabled', false);
   const [reverbMix, setReverbMix] = useLocalStorage('metromusic-reverb-mix', 0.3);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioNodesRef = useRef<{
@@ -116,9 +118,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     convolver: ConvolverNode | null;
     reverbWetGain: GainNode | null;
     reverbDryGain: GainNode | null;
-  }>({ context: null, source: null, eqNodes: [], panner: null, analyser: null, convolver: null, reverbWetGain: null, reverbDryGain: null });
+    pannerOscillator: OscillatorNode | null;
+    pannerGain: GainNode | null;
+    pannerDelay: DelayNode | null;
+  }>({ context: null, source: null, eqNodes: [], panner: null, analyser: null, convolver: null, reverbWetGain: null, reverbDryGain: null, pannerOscillator: null, pannerGain: null, pannerDelay: null });
 
-  const pannerAnimationRef = useRef<number | null>(null);
   const seekTimeOnQualityChangeRef = useRef<number | null>(null);
   const prevSongIdRef = useRef<string | null>(null);
 
@@ -130,6 +134,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (audioNodesRef.current.context || !audioRef.current) return;
         
         const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+        setAudioContext(context);
         if (context.state === 'suspended') {
             context.resume();
         }
@@ -154,29 +159,39 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             lastNode = filter;
         });
 
-        // Reverb Nodes
         const convolver = context.createConvolver();
         convolver.buffer = createImpulseResponse(context);
         const reverbWetGain = context.createGain();
         const reverbDryGain = context.createGain();
-
-        // FIX: Set initial gain values immediately to prevent audio passthrough before useEffect runs
         reverbWetGain.gain.value = 0;
         reverbDryGain.gain.value = 1;
     
-        // Connect EQ output to both dry and wet paths
         lastNode.connect(reverbDryGain);
         lastNode.connect(convolver);
         convolver.connect(reverbWetGain);
     
-        // Connect both reverb paths to the panner
         reverbDryGain.connect(panner);
         reverbWetGain.connect(panner);
         
+        // 8D Audio Nodes (using oscillators for background-safe animation)
+        const pannerOscillator = context.createOscillator();
+        const pannerFrequency = 0.2; // ~5 second rotation
+        pannerOscillator.frequency.setValueAtTime(pannerFrequency, context.currentTime);
+        const pannerGain = context.createGain();
+        pannerGain.gain.setValueAtTime(0, context.currentTime); // Start disabled
+        const pannerDelay = context.createDelay();
+        pannerDelay.delayTime.setValueAtTime((1 / pannerFrequency) / 4, context.currentTime); // 90-degree phase shift
+
+        pannerOscillator.connect(pannerGain);
+        pannerGain.connect(panner.positionZ); // Sine component
+        pannerGain.connect(pannerDelay);
+        pannerDelay.connect(panner.positionX); // Cosine (delayed sine) component
+        pannerOscillator.start();
+
         panner.connect(analyserNode);
         analyserNode.connect(context.destination);
     
-        audioNodesRef.current = { context, source, eqNodes, panner, analyser: analyserNode, convolver, reverbWetGain, reverbDryGain };
+        audioNodesRef.current = { context, source, eqNodes, panner, analyser: analyserNode, convolver, reverbWetGain, reverbDryGain, pannerOscillator, pannerGain, pannerDelay };
         setAnalyser(analyserNode);
     };
 
@@ -221,43 +236,27 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!reverbWetGain || !reverbDryGain || !context) return;
   
     const wetValue = isReverbEnabled ? reverbMix : 0;
-    const dryValue = 1 - wetValue * 0.5;
+    // Keep the dry signal at full volume to avoid perceived loudness drop.
+    // The reverb is ADDED to the original signal.
+    const dryValue = 1; 
   
-    const transitionTime = 0.015; // Quick but smooth fade
+    const transitionTime = 0.015;
     reverbWetGain.gain.setTargetAtTime(wetValue, context.currentTime, transitionTime);
     reverbDryGain.gain.setTargetAtTime(dryValue, context.currentTime, transitionTime);
   }, [isReverbEnabled, reverbMix]);
 
   useEffect(() => {
-    const panner = audioNodesRef.current.panner;
-    const context = audioNodesRef.current.context;
-    if (!panner || !context) return;
-
-    const animatePanner = () => {
-        const time = Date.now() * 0.0005;
-        const radius = 2.5;
-        panner.positionX.setValueAtTime(Math.cos(time) * radius, context.currentTime);
-        panner.positionZ.setValueAtTime(Math.sin(time) * radius, context.currentTime);
-        pannerAnimationRef.current = requestAnimationFrame(animatePanner);
-    };
+    const { pannerGain, context } = audioNodesRef.current;
+    if (!pannerGain || !context) return;
+    
+    const radius = 2.5;
+    const transitionTime = 0.5; // Smoothly fade effect in/out
 
     if (is8DEnabled && isPlaying) {
-        animatePanner();
+        pannerGain.gain.setTargetAtTime(radius, context.currentTime, transitionTime);
     } else {
-        if (pannerAnimationRef.current) {
-            cancelAnimationFrame(pannerAnimationRef.current);
-            pannerAnimationRef.current = null;
-        }
-        panner.positionX.setValueAtTime(0, context.currentTime);
-        panner.positionY.setValueAtTime(0, context.currentTime);
-        panner.positionZ.setValueAtTime(0, context.currentTime);
+        pannerGain.gain.setTargetAtTime(0, context.currentTime, transitionTime);
     }
-
-    return () => {
-        if (pannerAnimationRef.current) {
-            cancelAnimationFrame(pannerAnimationRef.current);
-        }
-    };
   }, [is8DEnabled, isPlaying]);
 
 
@@ -609,7 +608,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [currentSong, isPlaying, playPrev, playNext, togglePlay, seek, currentTime, duration]);
 
   return (
-    <PlayerContext.Provider value={{ currentSong, isPlaying, duration, currentTime, volume, playSong, togglePlay, seek, setVolume: handleSetVolume, playNext, playPrev, currentQueue, selectedQuality, setSelectedQuality, currentQuality, isQueueOpen, toggleQueue, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue, isShuffle, repeatMode, toggleShuffle, cycleRepeatMode, analyser, is8DEnabled, toggle8D, eqSettings, setEqGain, resetEq, isEqEnabled, toggleEq, isReverbEnabled, toggleReverb, reverbMix, setReverbMix }}>
+    <PlayerContext.Provider value={{ currentSong, isPlaying, duration, currentTime, volume, playSong, togglePlay, seek, setVolume: handleSetVolume, playNext, playPrev, currentQueue, selectedQuality, setSelectedQuality, currentQuality, isQueueOpen, toggleQueue, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue, isShuffle, repeatMode, toggleShuffle, cycleRepeatMode, analyser, is8DEnabled, toggle8D, eqSettings, setEqGain, resetEq, isEqEnabled, toggleEq, isReverbEnabled, toggleReverb, reverbMix, setReverbMix, audioContext }}>
       {children}
       <audio ref={audioRef} crossOrigin="anonymous" />
     </PlayerContext.Provider>

@@ -125,40 +125,43 @@ const ToggleSwitch: React.FC<{label: string, enabled: boolean, onChange: () => v
 );
 
 const Audio8DIcon: React.FC<{ isEnabled: boolean }> = ({ isEnabled }) => {
+    const { audioContext } = useContext(PlayerContext);
     const orbitingElementRef = useRef<SVGGElement>(null);
     const animationFrameRef = useRef<number | null>(null);
 
     useEffect(() => {
+        if (!isEnabled || !audioContext) {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
+            if (orbitingElementRef.current) {
+                orbitingElementRef.current.style.transform = 'rotate(0deg)';
+            }
+            return;
+        }
+
         const animate = () => {
-            // This logic is identical to the panner animation in PlayerContext for synchronization
-            const time = Date.now() * 0.0005;
-            const angleDegrees = (time * 180 / Math.PI);
+            // This frequency must match the one in PlayerContext for perfect synchronization.
+            const pannerFrequency = 0.2; // ~5 second rotation
+            // Calculate angle based on the audio context's own clock.
+            // This ensures the visual animation stays perfectly in sync with the audio
+            // effect, even if the tab is in the background.
+            const angleDegrees = (audioContext.currentTime * pannerFrequency * 360) % 360;
             
             if (orbitingElementRef.current) {
                 orbitingElementRef.current.style.transform = `rotate(${angleDegrees}deg)`;
             }
             animationFrameRef.current = requestAnimationFrame(animate);
         };
-
-        if (isEnabled) {
-            animate();
-        } else {
-            if (animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
-                animationFrameRef.current = null;
-            }
-            // Reset position when disabled
-            if (orbitingElementRef.current) {
-                orbitingElementRef.current.style.transform = 'rotate(0deg)';
-            }
-        }
-
+        animate();
+        
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [isEnabled]);
+    }, [isEnabled, audioContext]);
 
     return (
       <svg viewBox="0 0 112 112" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
@@ -178,7 +181,7 @@ const Audio8DIcon: React.FC<{ isEnabled: boolean }> = ({ isEnabled }) => {
             style={{ transformOrigin: '56px 56px', willChange: 'transform' }}
         >
             <g 
-                transform="translate(96 56)"
+                transform="translate(16 56)"
                 className={`transition-opacity duration-500 ${isEnabled ? 'opacity-100' : 'opacity-0'}`}
                 style={{ filter: 'drop-shadow(0 0 6px #fc4b08)' }}
             >
