@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useContext } from 'react';
 import { Song } from '../../../types';
 import { getSongSuggestions } from '../../../services/jioSaavnApi';
@@ -130,4 +131,25 @@ export const PlaylistRecommendations: React.FC<PlaylistRecommendationsProps> = (
 
     if (recsLoading) return <div className="mt-8"><Loader /></div>;
 
-    if (recsError)
+    if (recsError) {
+        return (
+            <div className="mt-8 text-center">
+                <p className="text-red-400">{recsError}</p>
+            </div>
+        );
+    }
+
+    if (recommendations.length === 0) {
+        return null; 
+    }
+
+    return (
+        <div className="mt-12 pt-8 border-t border-white/10">
+            <h3 className="text-2xl font-bold mb-2">Recommended Songs</h3>
+            <p className="text-gray-400 mb-4 text-sm">Based on what's in this playlist.</p>
+            <div className="space-y-2">
+                {recommendations.map(renderSongItem)}
+            </div>
+        </div>
+    );
+};
