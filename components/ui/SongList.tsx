@@ -1,4 +1,6 @@
 
+
+
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { Song } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
@@ -28,7 +30,7 @@ interface SongListItemProps {
   navigateToPlaylist?: (playlistId: string) => void;
 }
 
-const SongListItem: React.FC<SongListItemProps> = ({ song, index, songs, playlistId, navigateToArtist, onInteraction, navigateToPlaylist }) => {
+const SongListItem: React.FC<SongListItemProps> = React.memo(({ song, index, songs, playlistId, navigateToArtist, onInteraction, navigateToPlaylist }) => {
     const { playSong, addSongNext, addSongsToEnd } = useContext(PlayerContext);
     const { isFavoriteSong, toggleFavoriteSong, removeSongFromPlaylist, playlists, createPlaylist, addSongToPlaylist } = useContext(UserMusicContext);
     const { showModal, hideModal } = useContext(ModalContext);
@@ -71,7 +73,7 @@ const SongListItem: React.FC<SongListItemProps> = ({ song, index, songs, playlis
         <div onMouseLeave={() => setActiveMenu(false)} className="group flex items-center p-2 rounded-lg hover:bg-white/10 transition-colors duration-200 h-20">
             <div className="w-8 text-center text-gray-400 mr-4 flex-shrink-0 group-hover:hidden">{index + 1}</div>
             <button onClick={handlePlay} className="w-8 h-8 items-center justify-center rounded-full text-white hidden group-hover:flex mr-4 flex-shrink-0"><PlayIcon className="w-5 h-5 translate-x-px" /></button>
-            <img src={imageUrl} alt={song.name} className="w-12 h-12 rounded-md mr-4 flex-shrink-0" />
+            <img src={imageUrl} alt={song.name} className="w-12 h-12 rounded-md mr-4 flex-shrink-0 animate-image-appear" loading="lazy" />
             <div className="flex-1 min-w-0" onClick={handlePlay}>
                 <p className="font-semibold text-white leading-snug line-clamp-2 cursor-pointer" title={song.name}>{song.name}</p>
                 <p className="text-sm text-gray-400 truncate leading-snug">
@@ -94,11 +96,11 @@ const SongListItem: React.FC<SongListItemProps> = ({ song, index, songs, playlis
                         </div>
                     )}
                 </div>
-                <p className="text-sm text-gray-400 w-12 text-right">{formatDuration(song.duration)}</p>
+                <p className="text-sm text-gray-400 w-12 text-right hidden sm:block">{formatDuration(song.duration)}</p>
             </div>
         </div>
     );
-};
+});
 
 interface SongListProps {
   songs: Song[];

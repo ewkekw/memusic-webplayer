@@ -134,19 +134,22 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ canGoBack, canGoForward, goBack, goForward, onSearch }) => {
     return (
-        <header className="h-24 bg-black/30 backdrop-blur-md px-4 grid grid-cols-[16rem_1fr_16rem] items-center gap-6 z-20 flex-shrink-0 border-b border-white/10">
-            {/* Column 1: Logo, aligned with sidebar content */}
-            <div className="flex items-center pl-4">
+        <header className="h-20 bg-black/30 backdrop-blur-md px-4 flex items-center gap-4 z-20 flex-shrink-0 border-b border-white/10 md:grid md:grid-cols-[16rem_1fr_16rem] md:h-24 md:px-6">
+            {/* Column 1: Logo (Desktop) / History (Mobile) */}
+            <div className="hidden md:flex items-center pl-4">
                 <Logo size="small" />
             </div>
+            <div className="md:hidden">
+                <HistoryNav canGoBack={canGoBack} canGoForward={canGoForward} goBack={goBack} goForward={goForward} />
+            </div>
             
-            {/* Column 2: Search Bar, centered */}
-            <div className="flex justify-center">
+            {/* Column 2: Search Bar */}
+            <div className="flex-1 min-w-0 md:flex md:justify-center">
                 <GlobalSearchBar onSearch={onSearch} />
             </div>
 
-            {/* Column 3: History Nav, right-aligned */}
-            <div className="flex justify-end">
+            {/* Column 3: History Nav (Desktop) */}
+            <div className="hidden md:flex justify-end">
                 <HistoryNav canGoBack={canGoBack} canGoForward={canGoForward} goBack={goBack} goForward={goForward} />
             </div>
         </header>

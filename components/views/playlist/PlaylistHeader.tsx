@@ -218,7 +218,7 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
                 </div>
                 <div className="w-40 h-40 sm:w-52 sm:h-52 rounded-lg shadow-2xl z-10 flex-shrink-0 bg-white/5 flex items-center justify-center group relative overflow-hidden" onClick={() => fileInputRef.current?.click()}>
                     <input type="file" ref={fileInputRef} onChange={handleCoverChange} accept="image/*" className="hidden"/>
-                    {imageUrl ? <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover" /> : <MinimalistMusicIcon className="w-1/2 h-1/2 text-gray-400"/>}
+                    {imageUrl ? <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover animate-image-appear" loading="lazy" /> : <MinimalistMusicIcon className="w-1/2 h-1/2 text-gray-400"/>}
                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                         <CameraIcon className="w-10 h-10"/>
                         <span className="text-sm font-bold mt-1">Choose Photo</span>

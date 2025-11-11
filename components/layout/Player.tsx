@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useContext, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
@@ -91,14 +93,14 @@ const decodeHtml = (html: string | null) => {
     return txt.value;
 };
 
-const SongInfo: React.FC<{ song: Song; navigateToArtist: (id: string) => void }> = ({ song, navigateToArtist }) => {
+const SongInfo: React.FC<{ song: Song; navigateToArtist: (id: string) => void }> = React.memo(({ song, navigateToArtist }) => {
     const smallImage = song.image?.find(img => img.quality === '50x50')?.url || song.image?.[0]?.url;
     return (
-        <div className="flex items-center space-x-4 min-w-0 overflow-hidden">
-            {smallImage && <img src={smallImage} alt={decodeHtml(song.name)} className="w-14 h-14 rounded-md shadow-lg flex-shrink-0" />}
+        <div className="flex items-center space-x-3 md:space-x-4 min-w-0 overflow-hidden">
+            {smallImage && <img src={smallImage} alt={decodeHtml(song.name)} className="w-12 h-12 md:w-14 md:h-14 rounded-md shadow-lg flex-shrink-0 animate-image-appear" loading="lazy" />}
             <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-white truncate" title={decodeHtml(song.name)}>{decodeHtml(song.name)}</h3>
-                <p className="text-sm text-gray-400 truncate">
+                <h3 className="font-bold text-white truncate text-sm md:text-base" title={decodeHtml(song.name)}>{decodeHtml(song.name)}</h3>
+                <p className="text-xs md:text-sm text-gray-400 truncate">
                     {song.artists.primary.map((artist, index) => (
                         <React.Fragment key={artist.id}>
                             <span onClick={(e) => { e.stopPropagation(); navigateToArtist(artist.id); }} className="hover:underline cursor-pointer" title={decodeHtml(artist.name)}>
@@ -111,7 +113,7 @@ const SongInfo: React.FC<{ song: Song; navigateToArtist: (id: string) => void }>
             </div>
         </div>
     );
-};
+});
 
 const PlayerControls: React.FC<{
     isPlaying: boolean;
@@ -252,7 +254,7 @@ const PlayerActionButton: React.FC<{
         onClick={onClick}
         title={title}
         disabled={isDisabled}
-        className={`flex items-center justify-center h-10 px-3 rounded-md transition-all duration-200 ease-in-out ${isActive ? 'bg-white/20 text-white' : 'text-gray-300 hover:bg-white/10 hover:text-white'} disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+        className={`flex items-center justify-center h-10 px-3 rounded-md transition-all duration-200 ease-in-out ${isActive ? 'bg-[#fc4b08]/20 text-[#fc4b08]' : 'text-gray-300 hover:bg-white/10 hover:text-white'} disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
         {children}
     </button>
@@ -447,28 +449,53 @@ export const Player: React.FC<PlayerProps> = ({ navigateToArtist }) => {
 
   if (!playerContext.currentSong) {
     return (
-      <div className="h-24 bg-black/30 backdrop-blur-md border-t border-white/10 flex items-center justify-center">
+      <div className="h-full bg-black/30 backdrop-blur-md border-t border-white/10 flex items-center justify-center">
         <p className="text-gray-500">No song selected</p>
       </div>
     );
   }
 
+  const progress = playerContext.duration > 0 ? (playerContext.currentTime / playerContext.duration) * 100 : 0;
+  const isFav = userMusicContext.isFavoriteSong(playerContext.currentSong.id);
+
   return (
-    <div className="h-24 bg-black/40 backdrop-blur-lg border-t border-white/10 p-4 grid grid-cols-[1fr_2fr_1fr] items-center gap-4">
+    <div className="relative h-full bg-black/40 backdrop-blur-lg border-t border-white/10 p-2 md:p-4 grid grid-cols-[1fr_auto] md:grid-cols-[1fr_2fr_1fr] items-center gap-2 md:gap-4">
+      {/* Mobile-only progress bar */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gray-600/50 md:hidden">
+          <div className="bg-[#fc4b08] h-full transition-[width] ease-linear duration-100" style={{ width: `${progress}%` }} />
+      </div>
+
       <SongInfo song={playerContext.currentSong} navigateToArtist={navigateToArtist} />
       
-      <div className="flex flex-col items-center justify-center gap-1 w-full">
+      {/* Desktop Controls */}
+      <div className="hidden md:flex flex-col items-center justify-center gap-1 w-full">
         <PlayerControls {...playerContext} />
         <PlayerProgressBar {...playerContext} />
       </div>
       
-      <PlayerActions 
-        onDownload={handleDownload}
-        isDownloading={isDownloading}
-        onAddToPlaylist={handleCreateNewPlaylist}
-        onToggleFavorite={handleToggleFavorite}
-        isHeartAnimating={isHeartAnimating}
-      />
+      {/* Desktop Actions */}
+      <div className="hidden md:block">
+          <PlayerActions 
+            onDownload={handleDownload}
+            isDownloading={isDownloading}
+            onAddToPlaylist={handleCreateNewPlaylist}
+            onToggleFavorite={handleToggleFavorite}
+            isHeartAnimating={isHeartAnimating}
+          />
+      </div>
+
+      {/* Mobile Controls */}
+      <div className="flex md:hidden items-center gap-2">
+           <button onClick={handleToggleFavorite} title="Favorite song" className="p-2">
+              <HeartIcon className={`w-6 h-6 transition-all ${isHeartAnimating ? 'heart-pop' : ''} ${isFav ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-300'}`}/>
+            </button>
+            <button 
+                onClick={playerContext.togglePlay} 
+                className={`w-10 h-10 bg-white/90 rounded-full flex items-center justify-center text-black transition-transform active:scale-95`}
+            >
+                {playerContext.isPlaying ? <PauseIcon className="w-6 h-6" /> : <PlayIcon className="w-6 h-6 pl-0.5" />}
+            </button>
+      </div>
     </div>
   );
 };

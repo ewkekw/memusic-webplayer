@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useContext } from 'react';
 import { Song } from '../../../types';
 import { getSongSuggestions } from '../../../services/jioSaavnApi';
@@ -91,7 +92,7 @@ export const PlaylistRecommendations: React.FC<PlaylistRecommendationsProps> = (
         return (
              <div key={song.id} className="flex items-center p-2 rounded-lg hover:bg-white/10 transition-colors group">
                 <div className="w-10 h-10 rounded-md mr-3 flex-shrink-0 relative">
-                    {imageUrl ? <img src={imageUrl} alt={song.name} className="w-full h-full object-cover rounded-md" /> : <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-md"><MinimalistMusicIcon className="w-6 h-6 text-gray-500" /></div>}
+                    {imageUrl ? <img src={imageUrl} alt={song.name} className="w-full h-full object-cover rounded-md animate-image-appear" loading="lazy" /> : <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-md"><MinimalistMusicIcon className="w-6 h-6 text-gray-500" /></div>}
                     
                     {isPreviewingThisSong && (
                         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 0 3px #ff5f22)' }}>
@@ -129,24 +130,4 @@ export const PlaylistRecommendations: React.FC<PlaylistRecommendationsProps> = (
 
     if (recsLoading) return <div className="mt-8"><Loader /></div>;
 
-    if (recsError) {
-        return (
-            <div className="mt-8 bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-lg text-center">
-                <p className="font-semibold">Could not load recommendations</p>
-                <p className="text-sm mt-1">{recsError}</p>
-            </div>
-        );
-    }
-    
-    if (recommendations.length === 0) return null;
-    
-    return (
-        <div className="mt-8 bg-white/5 p-6 rounded-lg">
-            <h3 className="text-2xl font-bold mb-4">Recommended Songs</h3>
-            <p className="text-gray-400 mb-4 text-sm">Based on the songs in this playlist.</p>
-             <div className="space-y-2 max-h-[40rem] overflow-y-auto custom-scrollbar pr-2">
-                {recommendations.map(renderSongItem)}
-            </div>
-        </div>
-    );
-};
+    if (recsError)

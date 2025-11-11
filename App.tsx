@@ -1,21 +1,26 @@
 
 
-import React, { useState, useContext, useEffect, ReactNode, createContext, useCallback } from 'react';
+import React, { useState, useContext, useEffect, ReactNode, createContext, useCallback, lazy, Suspense } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/layout/Sidebar';
 import { Player } from './components/layout/Player';
-import Home from './components/views/Home';
-import Search from './components/views/Search';
-import Library from './components/views/Library';
-import AlbumView from './components/views/AlbumView';
-import PlaylistView from './components/views/PlaylistView';
-import ArtistView from './components/views/ArtistView';
-import ApiPlaylistView from './components/views/ApiPlaylistView';
 import { PlayerProvider, PlayerContext } from './context/PlayerContext';
 import { UserMusicProvider } from './context/UserMusicContext';
 import { View, Playlist } from './types';
 import { QueueSidebar } from './components/layout/QueueSidebar';
 import { Header } from './components/layout/Header';
+import { Loader } from './components/ui/Loader';
+import { BottomNavBar } from './components/layout/BottomNavBar';
+
+const Home = lazy(() => import('./components/views/Home'));
+const Search = lazy(() => import('./components/views/Search'));
+const Library = lazy(() => import('./components/views/Library'));
+const AlbumView = lazy(() => import('./components/views/AlbumView'));
+const PlaylistView = lazy(() => import('./components/views/PlaylistView'));
+const ArtistView = lazy(() => import('./components/views/ArtistView'));
+const ApiPlaylistView = lazy(() => import('./components/views/ApiPlaylistView'));
+const Settings = lazy(() => import('./components/views/Settings'));
+
 
 interface ModalContextType {
   showModal: (content: { title: string; content: ReactNode; }) => void;
@@ -171,6 +176,8 @@ const MainApp: React.FC = () => {
         return <ApiPlaylistView playlist={currentViewEntry.apiPlaylist!} setActiveView={changeView} navigateToArtist={navigateToArtist} />;
       case 'artist':
         return <ArtistView artistId={currentViewEntry.artistId!} setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Home setActiveView={changeView} navigateToAlbum={navigateToAlbum} navigateToArtist={navigateToArtist} navigateToSearch={navigateToSearch} navigateToApiPlaylist={navigateToApiPlaylist} navigateToPlaylist={navigateToPlaylist} />;
     }
@@ -183,7 +190,7 @@ const MainApp: React.FC = () => {
       <div className="relative h-screen w-screen overflow-hidden text-gray-200 font-sans bg-[#121212]">
         {highQualityImage && (
           <div 
-            className="absolute inset-0 z-0 transition-all duration-1000"
+            className="absolute inset-0 z-0 transition-[background-image] duration-500 ease-in-out"
             style={{
               backgroundImage: `url(${highQualityImage})`,
               backgroundSize: 'cover',
@@ -204,21 +211,24 @@ const MainApp: React.FC = () => {
           />
           <div className="flex flex-1 overflow-hidden">
               <Sidebar activeView={currentViewEntry.view} setActiveView={changeView} navigateToPlaylist={navigateToPlaylist} />
-              <main className="flex-1 overflow-y-auto custom-scrollbar">
-                <div key={currentViewEntry.key} className={animationClass} onAnimationEnd={() => setNavDirection(null)}>
-                  {renderView()}
-                </div>
+              <main className="flex-1 overflow-y-auto custom-scrollbar pb-36 md:pb-0">
+                <Suspense fallback={<div className="flex justify-center items-center h-full"><Loader /></div>}>
+                  <div key={currentViewEntry.key} className={animationClass} onAnimationEnd={() => setNavDirection(null)}>
+                    {renderView()}
+                  </div>
+                </Suspense>
               </main>
               <div className={`flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${isQueueOpen ? 'w-80' : 'w-0'}`}>
                 <QueueSidebar navigateToArtist={navigateToArtist} />
               </div>
           </div>
           
-          <div className={`z-20 shrink-0 transition-[height] duration-300 ease-in-out ${currentSong ? 'h-24' : 'h-0'}`}>
+          <div className={`z-20 shrink-0 transition-[height] duration-300 ease-in-out ${currentSong ? 'h-20 md:h-24' : 'h-0'}`}>
               <div className={`h-full transition-opacity duration-200 ${currentSong ? 'opacity-100' : 'opacity-0'}`}>
                 <Player navigateToArtist={navigateToArtist} />
               </div>
           </div>
+           <BottomNavBar activeView={currentViewEntry.view} setActiveView={changeView} />
         </div>
         <Modal
           isOpen={isModalOpen}

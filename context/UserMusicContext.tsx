@@ -121,20 +121,55 @@ export const UserMusicProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return JSON.stringify(data, null, 2);
   };
   
-  const importData = (jsonString: string) => {
+  const importData = (jsonString: string, mode: 'replace' | 'merge'): { success: boolean, message: string } => {
     try {
       const data = JSON.parse(jsonString);
-      if(data.favoriteSongs) setFavoriteSongs(data.favoriteSongs);
-      if(data.favoriteAlbums) setFavoriteAlbums(data.favoriteAlbums);
-      if(data.playlists) setPlaylists(data.playlists);
-      if(data.history) setHistory(data.history);
-      if(data.playlistHistory) setPlaylistHistory(data.playlistHistory);
-      if(data.favoriteApiPlaylists) setFavoriteApiPlaylists(data.favoriteApiPlaylists);
-      if(data.favoriteArtists) setFavoriteArtists(data.favoriteArtists);
-      return true;
-    } catch(e) {
+      if (typeof data !== 'object' || data === null) {
+        throw new Error("Invalid data format: not an object.");
+      }
+
+      if (mode === 'replace') {
+        setFavoriteSongs(data.favoriteSongs || []);
+        setFavoriteAlbums(data.favoriteAlbums || []);
+        setPlaylists(data.playlists || []);
+        setHistory(data.history || []);
+        setPlaylistHistory(data.playlistHistory || []);
+        setFavoriteApiPlaylists(data.favoriteApiPlaylists || []);
+        setFavoriteArtists(data.favoriteArtists || []);
+        return { success: true, message: "Data replaced successfully." };
+      } else { // Merge logic
+        const mergeUniqueById = (prev: any[], incoming: any[]) => {
+            if (!Array.isArray(incoming)) return prev;
+            const existingIds = new Set(prev.map(item => item.id));
+            const newItems = incoming.filter(item => item.id && !existingIds.has(item.id));
+            return [...prev, ...newItems];
+        };
+        
+        setFavoriteSongs(prev => mergeUniqueById(prev, data.favoriteSongs));
+        setFavoriteAlbums(prev => mergeUniqueById(prev, data.favoriteAlbums));
+        setPlaylists(prev => mergeUniqueById(prev, data.playlists));
+        setFavoriteApiPlaylists(prev => mergeUniqueById(prev, data.favoriteApiPlaylists));
+        setFavoriteArtists(prev => mergeUniqueById(prev, data.favoriteArtists));
+        
+        if (Array.isArray(data.history)) {
+            setHistory(prev => {
+                const combined = [...data.history, ...prev];
+                const unique = combined.filter((song, index, self) => index === self.findIndex(s => s.id === song.id));
+                return unique.slice(0, 50);
+            });
+        }
+        if (Array.isArray(data.playlistHistory)) {
+             setPlaylistHistory(prev => {
+                const combined = [...data.playlistHistory, ...prev];
+                const unique = [...new Set(combined)];
+                return unique.slice(0, 10);
+            });
+        }
+        return { success: true, message: "Data merged successfully." };
+      }
+    } catch(e: any) {
       console.error("Failed to import data", e);
-      return false;
+      return { success: false, message: e.message || "Failed to parse the file." };
     }
   };
 

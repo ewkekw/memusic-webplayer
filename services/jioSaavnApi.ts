@@ -1,15 +1,24 @@
 
+
 import { SearchSongsResponse, SearchAlbumsResponse, SearchArtistsResponse, SearchPlaylistsResponse, SongSuggestionsResponse, GetAlbumDetailsResponse, GetArtistDetailsResponse, GetSongsResponse } from '../types';
 
 const API_BASE_URL = 'https://lowkey-backend.vercel.app';
+const cache = new Map<string, any>();
 
-const apiRequest = async <T,>(endpoint: string): Promise<T> => {
+const apiRequest = async <T,>(endpoint: string, cacheKey?: string): Promise<T> => {
+  if (cacheKey && cache.has(cacheKey)) {
+    return Promise.resolve(cache.get(cacheKey) as T);
+  }
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`);
     if (!response.ok) {
       throw new Error(`API request failed with status ${response.status}`);
     }
-    return response.json() as Promise<T>;
+    const data = await response.json() as T;
+    if (cacheKey) {
+        cache.set(cacheKey, data);
+    }
+    return data;
   } catch (error) {
     console.error('API Error:', error);
     throw error;
@@ -29,11 +38,11 @@ export const searchAlbums = (query: string, page: number = 1, limit: number = 20
 };
 
 export const getAlbumDetails = (albumId: string): Promise<GetAlbumDetailsResponse> => {
-    return apiRequest<GetAlbumDetailsResponse>(`/api/albums?id=${albumId}`);
+    return apiRequest<GetAlbumDetailsResponse>(`/api/albums?id=${albumId}`, `album-${albumId}`);
 };
 
 export const getArtistDetails = (artistId: string): Promise<GetArtistDetailsResponse> => {
-    return apiRequest<GetArtistDetailsResponse>(`/api/artists?id=${artistId}`);
+    return apiRequest<GetArtistDetailsResponse>(`/api/artists?id=${artistId}`, `artist-${artistId}`);
 };
 
 export const searchArtists = (query: string, page: number = 1, limit: number = 20): Promise<SearchArtistsResponse> => {

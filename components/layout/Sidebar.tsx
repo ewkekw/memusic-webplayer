@@ -1,6 +1,6 @@
-import React, { useContext, useMemo, useState, useRef, useEffect } from 'react';
+
+import React, { useContext, useMemo, useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { View, LocalPlaylist } from '../../types';
-import Logo from './Logo';
 import { UserMusicContext } from '../../context/UserMusicContext';
 
 interface SidebarProps {
@@ -25,6 +25,13 @@ const LibraryIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
   </svg>
+);
+
+const SettingsIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995s.145.755.438.995l1.003.827c.424.35.534.954.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.127c-.331.183-.581.495-.644.87l-.213 1.281c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.437-.995s-.145-.755-.437-.995l-1.004-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.076-.124.072-.044.146-.087.22-.127.332-.183.582-.495.644-.87l.213-1.281z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
 );
 
 const MinimalistMusicIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -99,12 +106,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
   const { playlists, playlistHistory } = useContext(UserMusicContext);
 
   const [sliderStyle, setSliderStyle] = useState({ top: 0, height: 0, opacity: 0 });
-  const [isReadyForTransition, setIsReadyForTransition] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   
   const navRef = useRef<HTMLElement>(null);
   const homeRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLButtonElement>(null);
   const libraryRef = useRef<HTMLButtonElement>(null);
+  const settingsRef = useRef<HTMLButtonElement>(null);
 
   const libraryViews: View[] = ['library', 'playlist', 'album', 'artist', 'api_playlist'];
 
@@ -133,9 +141,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
       isActive: libraryViews.includes(activeView),
       onClick: () => setActiveView('library'),
     },
+    {
+      id: 'settings',
+      ref: settingsRef,
+      icon: <SettingsIcon />,
+      label: 'Settings',
+      isActive: activeView === 'settings',
+      onClick: () => setActiveView('settings'),
+    },
   ], [activeView, setActiveView]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const activeItem = navItems.find(item => item.isActive);
     if (activeItem && activeItem.ref.current) {
       setSliderStyle({
@@ -144,12 +160,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
         opacity: 1,
       });
     }
+  }, [activeView, navItems, hasMounted]);
 
-    if (!isReadyForTransition) {
-        const timer = setTimeout(() => setIsReadyForTransition(true), 50);
-        return () => clearTimeout(timer);
-    }
-  }, [activeView, isReadyForTransition, navItems]);
+  useEffect(() => {
+    // Enable transitions only after the initial position has been set.
+    // This prevents the "surge" animation on first load.
+    const timer = setTimeout(() => setHasMounted(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
   
   const recentPlaylists = useMemo(() => {
     return playlistHistory
@@ -158,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
   }, [playlistHistory, playlists]);
   
   return (
-    <aside className="w-64 bg-black/30 backdrop-blur-md p-4 flex flex-col h-full border-r border-white/10">
+    <aside className="w-64 bg-black/30 backdrop-blur-md p-4 flex-col h-full border-r border-white/10 hidden md:flex">
 
       <nav ref={navRef} className="relative flex flex-col space-y-2 pt-1">
         <div
@@ -166,7 +184,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
           className="absolute left-0 w-full bg-white/20 rounded-lg shadow-lg"
           style={{
             ...sliderStyle,
-            transition: isReadyForTransition
+            transition: hasMounted
               ? 'top 0.35s cubic-bezier(0.4, 0, 0.2, 1), height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
               : 'none',
           }}

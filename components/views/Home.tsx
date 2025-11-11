@@ -1,5 +1,6 @@
 
 
+
 import React, { useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Song, View, Playlist, Album, LocalPlaylist } from '../../types';
 import { UserMusicContext } from '../../context/UserMusicContext';
@@ -30,7 +31,7 @@ const QuickAccessCard: React.FC<{
   item: Song | LocalPlaylist;
   onPlay: () => void;
   onClick: () => void;
-}> = ({ item, onPlay, onClick }) => {
+}> = React.memo(({ item, onPlay, onClick }) => {
   const imageUrl = ('songs' in item) 
     ? item.coverUrl || item.songs[0]?.image?.find(img => img.quality === '150x150')?.url || item.songs[0]?.image?.[0]?.url
     : item.image?.find(img => img.quality === '150x150')?.url || item.image?.[0]?.url;
@@ -42,16 +43,16 @@ const QuickAccessCard: React.FC<{
 
   return (
     <div className="group bg-white/5 rounded-md flex items-center pr-4 relative overflow-hidden transition-all duration-300 hover:bg-white/10" onClick={onClick}>
-      <div className="w-20 h-20 flex-shrink-0 bg-black/20">
+      <div className="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 bg-black/20">
         {imageUrl ? (
-          <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" />
+          <img src={imageUrl} alt={item.name} className="w-full h-full object-cover animate-image-appear" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <MinimalistMusicIcon className="w-8 h-8 text-gray-500" />
           </div>
         )}
       </div>
-      <p className="font-bold text-white ml-4 truncate flex-1">{item.name}</p>
+      <p className="font-bold text-white ml-4 truncate flex-1 text-sm md:text-base">{item.name}</p>
       <button
         onClick={handlePlay}
         className="absolute right-4 w-10 h-10 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 opacity-0 group-hover:opacity-100 transform group-hover:scale-100 scale-90 translate-x-4 group-hover:translate-x-0 transition-all duration-300"
@@ -61,13 +62,13 @@ const QuickAccessCard: React.FC<{
       </button>
     </div>
   );
-};
+});
 
 
 interface SongCardProps {
   song: Song;
 }
-const SongCard: React.FC<SongCardProps> = ({ song }) => {
+const SongCard: React.FC<SongCardProps> = React.memo(({ song }) => {
   const { playSong } = useContext(PlayerContext);
   const imageUrl = song.image?.find(img => img.quality === '150x150')?.url || song.image?.[0]?.url;
 
@@ -78,11 +79,11 @@ const SongCard: React.FC<SongCardProps> = ({ song }) => {
   
   return (
     <div 
-      className="group relative bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-colors duration-200 cursor-pointer w-48 flex-shrink-0"
+      className="group relative bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-colors duration-200 cursor-pointer w-40 md:w-48 flex-shrink-0"
       onClick={handlePlay}
     >
        <div className="relative w-full aspect-square mb-3">
-        <img src={imageUrl} alt={song.name} className="w-full h-full object-cover rounded-md shadow-lg" />
+        <img src={imageUrl} alt={song.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" />
         <button
           onClick={handlePlay}
           className="absolute bottom-2 right-2 w-12 h-12 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 opacity-0 group-hover:opacity-100 transform group-hover:scale-100 scale-90 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
@@ -97,7 +98,7 @@ const SongCard: React.FC<SongCardProps> = ({ song }) => {
       </p>
     </div>
   );
-};
+});
 
 const HorizontalScroller: React.FC<{ title: string; children: React.ReactNode; }> = ({ title, children }) => {
     const scrollerRef = useRef<HTMLDivElement>(null);
@@ -133,16 +134,16 @@ const HorizontalScroller: React.FC<{ title: string; children: React.ReactNode; }
 
     return (
         <section>
-            <h2 className="text-3xl font-bold mb-4">{title}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">{title}</h2>
             <div className="relative">
                 <div 
                     ref={scrollerRef}
-                    className="flex space-x-6 overflow-x-auto pb-4 custom-scrollbar-hidden -mx-8 px-8"
+                    className="flex space-x-4 md:space-x-6 overflow-x-auto pb-4 custom-scrollbar-hidden -mx-4 px-4 md:-mx-6 md:px-6"
                 >
                     {children}
                 </div>
-                <div className={`absolute top-0 bottom-4 left-[-2rem] w-8 bg-gradient-to-r from-[#121212] to-transparent pointer-events-none transition-opacity duration-300 ${showLeftFade ? 'opacity-100' : 'opacity-0'}`}></div>
-                <div className={`absolute top-0 bottom-4 right-[-2rem] w-8 bg-gradient-to-l from-[#121212] to-transparent pointer-events-none transition-opacity duration-300 ${showRightFade ? 'opacity-100' : 'opacity-0'}`}></div>
+                <div className={`absolute top-0 bottom-4 left-[-1rem] md:left-[-1.5rem] w-8 bg-gradient-to-r from-[#121212] to-transparent pointer-events-none transition-opacity duration-300 ${showLeftFade ? 'opacity-100' : 'opacity-0'}`}></div>
+                <div className={`absolute top-0 bottom-4 right-[-1rem] md:right-[-1.5rem] w-8 bg-gradient-to-l from-[#121212] to-transparent pointer-events-none transition-opacity duration-300 ${showRightFade ? 'opacity-100' : 'opacity-0'}`}></div>
             </div>
         </section>
     );
@@ -259,14 +260,14 @@ const Home: React.FC<HomeProps> = ({ setActiveView, navigateToAlbum, navigateToA
     const isLoading = loading.releases || loading.recommendations;
 
     return (
-        <div className="p-6 text-white space-y-12">
+        <div className="p-4 md:p-6 text-white space-y-12">
             {isLoading ? (
                 <div className="flex justify-center items-center h-64"><Loader /></div>
             ) : (
                 <>
                     {recentItems.length > 0 && (
                         <section>
-                            <h1 className="text-3xl font-bold mb-4">{getGreeting()}</h1>
+                            <h1 className="text-2xl md:text-3xl font-bold mb-4">{getGreeting()}</h1>
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {recentItems.map(item => {
                                     const isSong = !('songs' in item);
@@ -304,7 +305,7 @@ const Home: React.FC<HomeProps> = ({ setActiveView, navigateToAlbum, navigateToA
                     {newReleases.length > 0 && (
                         <HorizontalScroller title="New Releases From Your Artists">
                             {newReleases.map(album => (
-                                <div key={album.id} className="w-48 flex-shrink-0">
+                                <div key={album.id} className="w-40 md:w-48 flex-shrink-0">
                                     <AlbumCard album={album} onAlbumClick={navigateToAlbum} onArtistClick={navigateToArtist} />
                                 </div>
                             ))}

@@ -35,7 +35,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ activeTab, loading, songs
             ) : <p className="text-gray-400">No songs found for this query.</p>;
         case 'albums':
             return albums.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                     {albums.map(album => (
                         <AlbumCard 
                             key={album.id} 
@@ -48,7 +48,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ activeTab, loading, songs
             ) : <p className="text-gray-400">No albums found for this query.</p>;
         case 'artists':
              return artists.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                     {artists.map(artist => (
                         <ArtistCard 
                             key={artist.id} 
@@ -60,7 +60,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ activeTab, loading, songs
             ) : <p className="text-gray-400">No artists found for this query.</p>;
         case 'playlists':
              return playlists.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                     {playlists.map(playlist => <PlaylistCard key={playlist.id} playlist={playlist} onClick={(p) => onResultClick('playlist', p)} />)}
                 </div>
             ) : <p className="text-gray-400">No playlists found for this query.</p>;
@@ -134,7 +134,7 @@ const Search: React.FC<SearchProps> = ({ navigateToAlbum, navigateToArtist, navi
     }, [query, performSearch]);
 
     return (
-        <div className="p-6 text-white">
+        <div className="p-4 md:p-6 text-white">
             <div className="flex mb-6">
                 <AnimatedTabs
                     tabs={searchTabs}

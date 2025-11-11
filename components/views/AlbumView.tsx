@@ -1,11 +1,13 @@
+
+
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { Album, Song, View } from '../../types';
-import { getAlbumDetails } from '../../services/jioSaavnApi';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { Loader } from '../ui/Loader';
 import { SongList } from '../ui/SongList';
 import { ModalContext } from '../../App';
+import { useAlbum } from '../../hooks/useAlbum';
 
 declare const JSZip: any;
 
@@ -50,31 +52,13 @@ const getTitleClass = (name: string): string => {
 }
 
 const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateToArtist, navigateToPlaylist }) => {
-  const [album, setAlbum] = useState<Album | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { album, loading, error } = useAlbum(albumId);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const { showModal, hideModal } = useContext(ModalContext);
 
   const { playSong, addSongsToEnd, currentSong, isPlaying, togglePlay, selectedQuality } = useContext(PlayerContext);
   const { isFavoriteAlbum, toggleFavoriteAlbum } = useContext(UserMusicContext);
-
-  useEffect(() => {
-    const fetchAlbum = async () => {
-      setLoading(true);
-      try {
-        const response = await getAlbumDetails(albumId);
-        if (response.success) {
-          setAlbum(response.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch album details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAlbum();
-  }, [albumId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -87,7 +71,7 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
   }, []);
 
   if (loading) return <div className="flex items-center justify-center h-full"><Loader /></div>;
-  if (!album) return <div className="p-8 text-center text-gray-400">Album not found or failed to load.</div>;
+  if (error || !album) return <div className="p-8 text-center text-gray-400">{error || 'Album not found or failed to load.'}</div>;
 
   const isAlbumCurrentlyPlaying = album.songs?.some(s => s.id === currentSong?.id);
 
@@ -231,13 +215,13 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
 
   return (
     <div className="text-white">
-      <div className="p-8 flex flex-col sm:flex-row items-center sm:items-end gap-6 relative">
+      <div className="p-4 md:p-8 flex flex-col sm:flex-row items-center sm:items-end gap-6 relative">
           <div className="absolute inset-0 z-0 opacity-30 overflow-hidden">
-             <img src={imageUrl} className="w-full h-full object-cover blur-3xl scale-125" alt=""/>
+             <img src={imageUrl} className="w-full h-full object-cover blur-3xl scale-125" alt="" loading="lazy" />
              <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/80 to-transparent"></div>
           </div>
 
-          <img src={imageUrl} alt={album.name} className="w-40 h-40 sm:w-52 sm:h-52 rounded-lg shadow-2xl z-10 flex-shrink-0 object-cover" />
+          <img src={imageUrl} alt={album.name} className="w-40 h-40 sm:w-52 sm:h-52 rounded-lg shadow-2xl z-10 flex-shrink-0 object-cover animate-image-appear" loading="lazy" />
           <div className="z-10 text-center sm:text-left">
               <p className="text-sm font-bold uppercase tracking-wider">Album</p>
               <h1 className={getTitleClass(album.name)}>{album.name}</h1>
@@ -260,21 +244,21 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
       
       <div className="relative">
         <div className="sticky top-0 z-20 backdrop-blur-md bg-gradient-to-b from-[#121212] via-[#121212]/70 to-transparent">
-            <div className="px-8 py-5">
+            <div className="px-4 md:px-8 py-5">
                 <div className="flex items-center">
-                    <div className="flex items-center gap-5">
-                        <button onClick={handlePlayAlbum} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-                          {isAlbumCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
+                    <div className="flex items-center gap-4 md:gap-5">
+                        <button onClick={handlePlayAlbum} className="w-12 h-12 md:w-14 md:h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
+                          {isAlbumCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8 ml-1"/>}
                         </button>
-                        <button onClick={() => toggleFavoriteAlbum(album)} title={isFavoriteAlbum(album.id) ? "Remove from favorites" : "Add to favorites"} className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                            <HeartIcon className={`w-8 h-8 transition-all ${isFavoriteAlbum(album.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
+                        <button onClick={() => toggleFavoriteAlbum(album)} title={isFavoriteAlbum(album.id) ? "Remove from favorites" : "Add to favorites"} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
+                            <HeartIcon className={`w-7 md:w-8 h-7 md:h-8 transition-all ${isFavoriteAlbum(album.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
                         </button>
-                        <button onClick={handleDownloadAll} title="Download all songs" className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                            <DownloadIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                        <button onClick={handleDownloadAll} title="Download all songs" className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
+                            <DownloadIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white"/>
                         </button>
                         <div className="relative" ref={actionMenuRef}>
-                            <button onClick={() => setIsActionMenuOpen(p => !p)} title="More options" className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                                <MoreIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                            <button onClick={() => setIsActionMenuOpen(p => !p)} title="More options" className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
+                                <MoreIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white"/>
                             </button>
                             {isActionMenuOpen && (
                                 <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">

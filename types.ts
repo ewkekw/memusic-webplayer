@@ -1,5 +1,5 @@
 
-export type View = 'home' | 'search' | 'library' | 'album' | 'playlist' | 'artist' | 'api_playlist';
+export type View = 'home' | 'search' | 'library' | 'album' | 'playlist' | 'artist' | 'api_playlist' | 'settings';
 
 export interface ImageQuality {
   quality: string;
@@ -198,6 +198,6 @@ export interface UserMusicContextType {
   removeSongFromPlaylist: (playlistId: string, songId: string) => void;
   addToHistory: (song: Song) => void;
   addToPlaylistHistory: (playlistId: string) => void;
-  importData: (data: string) => boolean;
+  importData: (data: string, mode: 'replace' | 'merge') => { success: boolean, message: string };
   exportData: () => string;
 }

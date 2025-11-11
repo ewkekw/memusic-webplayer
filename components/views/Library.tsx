@@ -67,7 +67,7 @@ const LocalPlaylistCard: React.FC<{ playlist: LocalPlaylist; onClick: () => void
                     </div>
                 )}
             </div>
-            <div className="relative w-full aspect-square">{imageUrl ? <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-md shadow-lg" /> : <div className="w-full h-full bg-white/5 rounded-md flex items-center justify-center"><MinimalistMusicIcon className="w-1/2 h-1/2 text-gray-500"/></div>}</div>
+            <div className="relative w-full aspect-square">{imageUrl ? <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" /> : <div className="w-full h-full bg-white/5 rounded-md flex items-center justify-center"><MinimalistMusicIcon className="w-1/2 h-1/2 text-gray-500"/></div>}</div>
             <h4 className="font-bold text-white mt-3 truncate">{playlist.name}</h4>
             <p className="text-sm text-gray-400 truncate">{playlist.songs.length} songs</p>
         </div>
@@ -83,10 +83,10 @@ const AllView: React.FC<{ onNavigatePlaylist: NavFunc; onNavigateAlbum: NavFunc;
     }
     return (
         <div className="space-y-12">
-            {playlists.length > 0 && (<section><h2 className="text-2xl font-bold mb-4">Recent Playlists</h2><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">{playlists.slice(0,6).map(p => <LocalPlaylistCard key={p.id} playlist={p} onClick={() => onNavigatePlaylist(p.id)} />)}</div></section>)}
-            {favoriteAlbums.length > 0 && (<section><h2 className="text-2xl font-bold mb-4">Recent Albums</h2><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">{favoriteAlbums.slice(0,6).map(a => <AlbumCard key={a.id} album={a} onAlbumClick={onNavigateAlbum} onArtistClick={onNavigateArtist} />)}</div></section>)}
-            {favoriteArtists.length > 0 && (<section><h2 className="text-2xl font-bold mb-4">Recent Artists</h2><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">{favoriteArtists.slice(0,6).map(a => <ArtistCard key={a.id} artist={a} onArtistClick={onNavigateArtist} />)}</div></section>)}
-            {favoriteSongs.length > 0 && (<section><h2 className="text-2xl font-bold mb-4">Recent Songs</h2><SongList songs={favoriteSongs.slice(0,5)} navigateToArtist={onNavigateArtist} navigateToPlaylist={onNavigatePlaylist} /></section>)}
+            {playlists.length > 0 && (<section><h2 className="text-xl md:text-2xl font-bold mb-4">Recent Playlists</h2><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{playlists.slice(0,6).map(p => <LocalPlaylistCard key={p.id} playlist={p} onClick={() => onNavigatePlaylist(p.id)} />)}</div></section>)}
+            {favoriteAlbums.length > 0 && (<section><h2 className="text-xl md:text-2xl font-bold mb-4">Recent Albums</h2><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{favoriteAlbums.slice(0,6).map(a => <AlbumCard key={a.id} album={a} onAlbumClick={onNavigateAlbum} onArtistClick={onNavigateArtist} />)}</div></section>)}
+            {favoriteArtists.length > 0 && (<section><h2 className="text-xl md:text-2xl font-bold mb-4">Recent Artists</h2><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{favoriteArtists.slice(0,6).map(a => <ArtistCard key={a.id} artist={a} onArtistClick={onNavigateArtist} />)}</div></section>)}
+            {favoriteSongs.length > 0 && (<section><h2 className="text-xl md:text-2xl font-bold mb-4">Recent Songs</h2><SongList songs={favoriteSongs.slice(0,5)} navigateToArtist={onNavigateArtist} navigateToPlaylist={onNavigatePlaylist} /></section>)}
         </div>
     );
 };
@@ -96,16 +96,16 @@ const PlaylistsView: React.FC<{ onCreate: () => void; onNavigate: NavFunc; onApi
     return (
         <div className="space-y-8">
             <section>
-                <h2 className="text-3xl font-bold mb-4">My Playlists</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                <h2 className="text-2xl md:text-3xl font-bold mb-4">My Playlists</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                     <CreatePlaylistCard onClick={onCreate} />
                     {playlists.map(p => <LocalPlaylistCard key={p.id} playlist={p} onClick={() => onNavigate(p.id)} />)}
                 </div>
             </section>
             <section>
-                <h2 className="text-3xl font-bold mb-4">Favorite Playlists</h2>
+                <h2 className="text-2xl md:text-3xl font-bold mb-4">Favorite Playlists</h2>
                  {favoriteApiPlaylists.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">{favoriteApiPlaylists.map(p => <ApiPlaylistCard key={p.id} playlist={p} onClick={() => onApiNavigate(p)} />)}</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{favoriteApiPlaylists.map(p => <ApiPlaylistCard key={p.id} playlist={p} onClick={() => onApiNavigate(p)} />)}</div>
                 ) : <p className="text-gray-400">You haven't favorited any public playlists yet.</p>}
             </section>
         </div>
@@ -157,7 +157,7 @@ const ArtistsView: React.FC<{ onNavigate: NavFunc }> = ({ onNavigate }) => {
     const { favoriteArtists } = useContext(UserMusicContext);
     return (
         <section>
-            {favoriteArtists.length > 0 ? (<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">{favoriteArtists.map(a => <ArtistCard key={a.id} artist={a} onArtistClick={onNavigate} />)}</div>) : <p className="text-gray-400">You haven't followed any artists yet.</p>}
+            {favoriteArtists.length > 0 ? (<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{favoriteArtists.map(a => <ArtistCard key={a.id} artist={a} onArtistClick={onNavigate} />)}</div>) : <p className="text-gray-400">You haven't followed any artists yet.</p>}
         </section>
     );
 };
@@ -166,7 +166,7 @@ const AlbumsView: React.FC<{ onNavigateAlbum: NavFunc; onNavigateArtist: NavFunc
     const { favoriteAlbums } = useContext(UserMusicContext);
     return (
         <section>
-            {favoriteAlbums.length > 0 ? (<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">{favoriteAlbums.map(a => <AlbumCard key={a.id} album={a} onAlbumClick={onNavigateAlbum} onArtistClick={onNavigateArtist} />)}</div>) : <p className="text-gray-400">You haven't favorited any albums yet.</p>}
+            {favoriteAlbums.length > 0 ? (<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{favoriteAlbums.map(a => <AlbumCard key={a.id} album={a} onAlbumClick={onNavigateAlbum} onArtistClick={onNavigateArtist} />)}</div>) : <p className="text-gray-400">You haven't favorited any albums yet.</p>}
         </section>
     );
 };
@@ -211,7 +211,7 @@ const Library: React.FC<LibraryProps> = ({ navigateToAlbum, navigateToPlaylist, 
     };
     
     return (
-        <div className="p-6 text-white space-y-6">
+        <div className="p-4 md:p-6 text-white space-y-6">
             <div className="flex">
                 <AnimatedTabs
                     tabs={libraryFilters}

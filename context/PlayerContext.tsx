@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useRef, useEffect, useCallback, useContext } from 'react';
 import { Song } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -11,6 +12,18 @@ const decodeHtml = (html: string | null) => {
     txt.innerHTML = html;
     return txt.value;
 };
+
+const eqBands = [
+    { f: 60, type: 'lowshelf' as const },
+    { f: 230, type: 'peaking' as const },
+    { f: 910, type: 'peaking' as const },
+    { f: 3600, type: 'peaking' as const },
+    { f: 14000, type: 'highshelf' as const },
+];
+
+export interface EqSetting {
+    gain: number;
+}
 interface PlayerContextType {
   currentSong: Song | null;
   isPlaying: boolean;
@@ -39,9 +52,38 @@ interface PlayerContextType {
   toggleShuffle: () => void;
   cycleRepeatMode: () => void;
   analyser: AnalyserNode | null;
+  is8DEnabled: boolean;
+  toggle8D: () => void;
+  eqSettings: EqSetting[];
+  setEqGain: (bandIndex: number, gain: number) => void;
+  resetEq: () => void;
+  isEqEnabled: boolean;
+  toggleEq: () => void;
+  isReverbEnabled: boolean;
+  toggleReverb: () => void;
+  reverbMix: number;
+  setReverbMix: (mix: number) => void;
 }
 
 export const PlayerContext = createContext<PlayerContextType>({} as PlayerContextType);
+
+const createImpulseResponse = (context: AudioContext): AudioBuffer => {
+    const sampleRate = context.sampleRate;
+    const duration = 2;
+    const decay = 2;
+    const numChannels = 2;
+    const frameCount = sampleRate * duration;
+    const buffer = context.createBuffer(numChannels, frameCount, sampleRate);
+
+    for (let channel = 0; channel < numChannels; channel++) {
+        const channelData = buffer.getChannelData(channel);
+        for (let i = 0; i < frameCount; i++) {
+            const t = i / sampleRate;
+            channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - t / duration, decay);
+        }
+    }
+    return buffer;
+};
 
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { addToPlaylistHistory } = useContext(UserMusicContext);
@@ -57,9 +99,26 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isShuffle, setIsShuffle] = useLocalStorage('metromusic-shuffle', false);
   const [repeatMode, setRepeatMode] = useLocalStorage<'off' | 'all' | 'one'>('metromusic-repeat', 'off');
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  
+  const [eqSettings, setEqSettings] = useLocalStorage<EqSetting[]>('metromusic-eq', eqBands.map(() => ({ gain: 0 })));
+  const [isEqEnabled, setIsEqEnabled] = useLocalStorage('metromusic-eq-enabled', false);
+  const [is8DEnabled, setIs8DEnabled] = useLocalStorage('metromusic-8d-enabled', false);
+  const [isReverbEnabled, setIsReverbEnabled] = useLocalStorage('metromusic-reverb-enabled', false);
+  const [reverbMix, setReverbMix] = useLocalStorage('metromusic-reverb-mix', 0.3);
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const audioContextInitiated = useRef(false);
+  const audioNodesRef = useRef<{
+    context: AudioContext | null;
+    source: MediaElementAudioSourceNode | null;
+    eqNodes: BiquadFilterNode[];
+    panner: PannerNode | null;
+    analyser: AnalyserNode | null;
+    convolver: ConvolverNode | null;
+    reverbWetGain: GainNode | null;
+    reverbDryGain: GainNode | null;
+  }>({ context: null, source: null, eqNodes: [], panner: null, analyser: null, convolver: null, reverbWetGain: null, reverbDryGain: null });
+
+  const pannerAnimationRef = useRef<number | null>(null);
   const seekTimeOnQualityChangeRef = useRef<number | null>(null);
   const prevSongIdRef = useRef<string | null>(null);
 
@@ -68,18 +127,57 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!audio) return;
 
     const initAudioContext = () => {
-      if (audioContextInitiated.current || !audio) return;
-      audioContextInitiated.current = true;
-      const context = new (window.AudioContext || (window as any).webkitAudioContext)();
-      if (context.state === 'suspended') {
-          context.resume();
-      }
-      const source = context.createMediaElementSource(audio);
-      const analyserNode = context.createAnalyser();
-      analyserNode.fftSize = 256;
-      source.connect(analyserNode);
-      analyserNode.connect(context.destination);
-      setAnalyser(analyserNode);
+        if (audioNodesRef.current.context || !audioRef.current) return;
+        
+        const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (context.state === 'suspended') {
+            context.resume();
+        }
+        const source = context.createMediaElementSource(audioRef.current);
+        const panner = context.createPanner();
+        panner.panningModel = 'HRTF';
+        
+        const analyserNode = context.createAnalyser();
+        analyserNode.fftSize = 256;
+        
+        const eqNodes = eqBands.map((band, i) => {
+            const filter = context.createBiquadFilter();
+            filter.type = band.type;
+            filter.frequency.value = band.f;
+            filter.gain.value = isEqEnabled ? eqSettings[i].gain : 0;
+            return filter;
+        });
+    
+        let lastNode: AudioNode = source;
+        eqNodes.forEach(filter => {
+            lastNode.connect(filter);
+            lastNode = filter;
+        });
+
+        // Reverb Nodes
+        const convolver = context.createConvolver();
+        convolver.buffer = createImpulseResponse(context);
+        const reverbWetGain = context.createGain();
+        const reverbDryGain = context.createGain();
+
+        // FIX: Set initial gain values immediately to prevent audio passthrough before useEffect runs
+        reverbWetGain.gain.value = 0;
+        reverbDryGain.gain.value = 1;
+    
+        // Connect EQ output to both dry and wet paths
+        lastNode.connect(reverbDryGain);
+        lastNode.connect(convolver);
+        convolver.connect(reverbWetGain);
+    
+        // Connect both reverb paths to the panner
+        reverbDryGain.connect(panner);
+        reverbWetGain.connect(panner);
+        
+        panner.connect(analyserNode);
+        analyserNode.connect(context.destination);
+    
+        audioNodesRef.current = { context, source, eqNodes, panner, analyser: analyserNode, convolver, reverbWetGain, reverbDryGain };
+        setAnalyser(analyserNode);
     };
 
     document.body.addEventListener('click', initAudioContext, { once: true });
@@ -89,11 +187,79 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       document.body.removeEventListener('click', initAudioContext);
       document.body.removeEventListener('keydown', initAudioContext);
     }
-  }, []);
+  }, [eqSettings, isEqEnabled]);
   
   const currentSong = currentIndex >= 0 && currentIndex < currentQueue.length ? currentQueue[currentIndex] : null;
 
   const toggleShuffle = () => setIsShuffle(prev => !prev);
+  const toggleEq = () => setIsEqEnabled(prev => !prev);
+  const toggle8D = () => setIs8DEnabled(prev => !prev);
+  const toggleReverb = () => setIsReverbEnabled(prev => !prev);
+
+  const setEqGain = (bandIndex: number, gain: number) => {
+    setEqSettings(prev => {
+        const newSettings = [...prev];
+        newSettings[bandIndex].gain = gain;
+        return newSettings;
+    });
+  };
+
+  const resetEq = () => {
+    setEqSettings(eqBands.map(() => ({ gain: 0 })));
+  };
+
+  useEffect(() => {
+    audioNodesRef.current.eqNodes.forEach((node, i) => {
+        if(node && eqSettings[i]){
+            node.gain.value = isEqEnabled ? eqSettings[i].gain : 0;
+        }
+    });
+  }, [eqSettings, isEqEnabled]);
+
+  useEffect(() => {
+    const { reverbWetGain, reverbDryGain, context } = audioNodesRef.current;
+    if (!reverbWetGain || !reverbDryGain || !context) return;
+  
+    const wetValue = isReverbEnabled ? reverbMix : 0;
+    const dryValue = 1 - wetValue * 0.5;
+  
+    const transitionTime = 0.015; // Quick but smooth fade
+    reverbWetGain.gain.setTargetAtTime(wetValue, context.currentTime, transitionTime);
+    reverbDryGain.gain.setTargetAtTime(dryValue, context.currentTime, transitionTime);
+  }, [isReverbEnabled, reverbMix]);
+
+  useEffect(() => {
+    const panner = audioNodesRef.current.panner;
+    const context = audioNodesRef.current.context;
+    if (!panner || !context) return;
+
+    const animatePanner = () => {
+        const time = Date.now() * 0.0005;
+        const radius = 2.5;
+        panner.positionX.setValueAtTime(Math.cos(time) * radius, context.currentTime);
+        panner.positionZ.setValueAtTime(Math.sin(time) * radius, context.currentTime);
+        pannerAnimationRef.current = requestAnimationFrame(animatePanner);
+    };
+
+    if (is8DEnabled && isPlaying) {
+        animatePanner();
+    } else {
+        if (pannerAnimationRef.current) {
+            cancelAnimationFrame(pannerAnimationRef.current);
+            pannerAnimationRef.current = null;
+        }
+        panner.positionX.setValueAtTime(0, context.currentTime);
+        panner.positionY.setValueAtTime(0, context.currentTime);
+        panner.positionZ.setValueAtTime(0, context.currentTime);
+    }
+
+    return () => {
+        if (pannerAnimationRef.current) {
+            cancelAnimationFrame(pannerAnimationRef.current);
+        }
+    };
+  }, [is8DEnabled, isPlaying]);
+
 
   const cycleRepeatMode = () => {
     setRepeatMode(prev => {
@@ -205,7 +371,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Determine if the song ID has changed from the previous render.
     const isDifferentSong = prevSongIdRef.current !== currentSong?.id;
     prevSongIdRef.current = currentSong?.id ?? null;
 
@@ -220,17 +385,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             
             if (audio.src !== httpsUrl) {
                 if (isDifferentSong) {
-                    // It's a new song, so reset playback time.
                     seekTimeOnQualityChangeRef.current = null; 
                     audio.currentTime = 0;
                 } else {
-                    // It's the same song (quality change), so preserve playback time.
                     const timeToSeek = audio.currentTime;
-                    if (timeToSeek > 1) { 
-                        seekTimeOnQualityChangeRef.current = timeToSeek;
-                    } else {
-                        seekTimeOnQualityChangeRef.current = null;
-                    }
+                    seekTimeOnQualityChangeRef.current = timeToSeek > 0 ? timeToSeek : null;
                 }
                 audio.src = httpsUrl;
             }
@@ -437,7 +596,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             seek(Math.min(currentTime + skipTime, duration));
         });
       } else {
-        // Clear metadata and handlers when no song is playing
         navigator.mediaSession.metadata = null;
         navigator.mediaSession.playbackState = 'none';
         navigator.mediaSession.setActionHandler('play', null);
@@ -451,7 +609,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [currentSong, isPlaying, playPrev, playNext, togglePlay, seek, currentTime, duration]);
 
   return (
-    <PlayerContext.Provider value={{ currentSong, isPlaying, duration, currentTime, volume, playSong, togglePlay, seek, setVolume: handleSetVolume, playNext, playPrev, currentQueue, selectedQuality, setSelectedQuality, currentQuality, isQueueOpen, toggleQueue, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue, isShuffle, repeatMode, toggleShuffle, cycleRepeatMode, analyser }}>
+    <PlayerContext.Provider value={{ currentSong, isPlaying, duration, currentTime, volume, playSong, togglePlay, seek, setVolume: handleSetVolume, playNext, playPrev, currentQueue, selectedQuality, setSelectedQuality, currentQuality, isQueueOpen, toggleQueue, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue, isShuffle, repeatMode, toggleShuffle, cycleRepeatMode, analyser, is8DEnabled, toggle8D, eqSettings, setEqGain, resetEq, isEqEnabled, toggleEq, isReverbEnabled, toggleReverb, reverbMix, setReverbMix }}>
       {children}
       <audio ref={audioRef} crossOrigin="anonymous" />
     </PlayerContext.Provider>

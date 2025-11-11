@@ -2,21 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23fc4b08%22></rect><path d=%22M20 75V25 l30 35 L80 25 v50%22 stroke=%22white%22 stroke-width=%2212%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MeMusic - Frutiger Metro Webplayer</title>
     
     <!-- Open Graph / Social Media Meta Tags -->
     <meta property="og:title" content="MeMusic - Webplayer" />
     <meta property="og:description" content="A complete music web player with a Frutiger Metro aesthetic, allowing users to listen to, organize, and explore music directly from the browser without an account. Playlists, favorites, and history are saved locally." />
-    <meta property="og:image" content="og-image.png" />
+    <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%23121212' /%3E%3Ctext x='50%25' y='50%25' font-family='Epilogue, sans-serif' font-size='120' fill='%23fc4b08' text-anchor='middle' dominant-baseline='middle' font-weight='900'%3EMeMusic%3C/text%3E%3C/svg%3E" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cute+Font&family=Epilogue:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.gstatic.com/s/cutefont/v25/Noaw6Uoy3DaADAl5a-w.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="https://fonts.gstatic.com/s/epilogue/v17/O4Z-B4e-Vnpa-0L2whgA-g.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="https://fonts.gstatic.com/s/epilogue/v17/O4Z3B4e-Vnpa-0L2whh-klh-Tw.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="https://fonts.gstatic.com/s/epilogue/v17/O4Z3B4e-Vnpa-0L2whiNl1h-Tw.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Cute+Font&family=Epilogue:wght@400;700;900&display=block" rel="stylesheet">
   <script type="importmap">
 {
   "imports": {
@@ -38,13 +42,14 @@
       font-family: var(--font-sans);
     }
 
-    .volume-slider {
+    .volume-slider, .reverb-slider {
         -webkit-appearance: none;
         appearance: none;
         background: transparent;
         cursor: pointer;
-        width: 96px; /* w-24 */
     }
+    .volume-slider { width: 96px; /* w-24 */ }
+    .reverb-slider { width: 100%; }
 
     /* Track: Chrome, Safari, Opera, Edge */
     .volume-slider::-webkit-slider-runnable-track {
@@ -52,14 +57,20 @@
         height: 0.25rem; /* h-1 */
         border-radius: 0.5rem; /* rounded-lg */
     }
+    .reverb-slider::-webkit-slider-runnable-track {
+        background: linear-gradient(to right, #fc4b08 var(--reverb-progress, 50%), rgba(107, 114, 128, 0.5) var(--reverb-progress, 50%));
+        height: 0.25rem; /* h-1 */
+        border-radius: 0.5rem; /* rounded-lg */
+    }
+
 
     /* Track: Firefox */
-     .volume-slider::-moz-range-track {
+     .volume-slider::-moz-range-track, .reverb-slider::-moz-range-track {
         background: rgba(107, 114, 128, 0.5);
         height: 0.25rem;
         border-radius: 0.5rem;
     }
-    .volume-slider::-moz-range-progress {
+    .volume-slider::-moz-range-progress, .reverb-slider::-moz-range-progress {
         background-color: #fc4b08;
         height: 0.25rem;
         border-radius: 0.5rem;
@@ -81,9 +92,18 @@
     .volume-slider:hover::-webkit-slider-thumb {
         transform: scale(1.1);
     }
+     .reverb-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        margin-top: -6px; /* Center thumb */
+        width: 16px;
+        height: 16px;
+        background: #fc4b08;
+        border-radius: 9999px;
+    }
 
     /* Thumb: Firefox */
-    .volume-slider::-moz-range-thumb {
+    .volume-slider::-moz-range-thumb, .reverb-slider::-moz-range-thumb {
         width: 16px;
         height: 16px;
         background: #fc4b08;
@@ -139,6 +159,11 @@
             opacity: 0;
             transform: translateY(-10px);
         }
+    }
+    
+    @keyframes pulse-8d {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
     }
     
     /* Player Control Animations */
@@ -215,6 +240,70 @@
     }
     .view-enter-backward {
       animation: slide-in-from-left 0.3s ease-out;
+    }
+
+    /* Image Appear Animation */
+    @keyframes image-appear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+        filter: blur(4px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+      }
+    }
+    .animate-image-appear {
+      animation: image-appear 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    /* Custom EQ Slider */
+    .eq-slider-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem; /* w-8 */
+        height: 10rem; /* h-40 */
+    }
+    .eq-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        cursor: pointer;
+        width: 9rem; /* Slightly less than container height */
+        transform: rotate(-90deg);
+    }
+    .eq-slider::-webkit-slider-runnable-track {
+        background: rgba(107, 114, 128, 0.5);
+        height: 0.25rem; /* h-1 */
+        border-radius: 0.5rem; /* rounded-lg */
+    }
+    .eq-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        margin-top: -6px; /* Center thumb */
+        width: 16px;
+        height: 16px;
+        background: #fc4b08;
+        border: 2px solid #121212;
+        border-radius: 9999px; /* rounded-full */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    .eq-slider::-moz-range-track {
+        background: rgba(107, 114, 128, 0.5);
+        height: 0.25rem;
+        border-radius: 0.5rem;
+    }
+    .eq-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: #fc4b08;
+        border: 2px solid #121212;
+        border-radius: 9999px; /* rounded-full */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        border: none;
     }
 </style>
 <link rel="stylesheet" href="/index.css">

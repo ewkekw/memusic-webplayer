@@ -1,3 +1,5 @@
+
+
 import React, { useContext } from 'react';
 import { Album } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
@@ -22,7 +24,7 @@ const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-export const AlbumCard: React.FC<AlbumCardProps> = ({ album, onAlbumClick, onArtistClick }) => {
+export const AlbumCard: React.FC<AlbumCardProps> = React.memo(({ album, onAlbumClick, onArtistClick }) => {
   const imageUrl = album.image?.find(img => img.quality === '500x500')?.url || album.image?.find(img => img.quality === '150x150')?.url || album.image?.[0]?.url;
   const { playSong } = useContext(PlayerContext);
   const { isFavoriteAlbum, toggleFavoriteAlbum } = useContext(UserMusicContext);
@@ -63,7 +65,7 @@ export const AlbumCard: React.FC<AlbumCardProps> = ({ album, onAlbumClick, onArt
           <HeartIcon className={`w-5 h-5 transition-all ${isFav ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-300'}`} />
         </button>
       <div className="relative w-full aspect-square mb-3">
-        <img src={imageUrl} alt={album.name} className="w-full h-full object-cover rounded-md shadow-lg" />
+        <img src={imageUrl} alt={album.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" />
         <button
           onClick={handlePlayClick}
           className="absolute bottom-2 right-2 w-12 h-12 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 opacity-0 group-hover:opacity-100 transform group-hover:scale-100 scale-90 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
@@ -85,4 +87,4 @@ export const AlbumCard: React.FC<AlbumCardProps> = ({ album, onAlbumClick, onArt
       </div>
     </div>
   );
-};
+});

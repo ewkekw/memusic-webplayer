@@ -108,7 +108,7 @@ const ApiPlaylistTrackItem: React.FC<{
                     ))}
                 </p>
             </div>
-            <span className="text-sm text-gray-400 opacity-70 group-hover:opacity-100 transition-opacity">{formatDuration(song.duration)}</span>
+            <span className="text-sm text-gray-400 opacity-70 group-hover:opacity-100 transition-opacity hidden sm:block">{formatDuration(song.duration)}</span>
             <div className="relative" ref={menuRef}>
                 <button onClick={(e) => { e.stopPropagation(); setIsMenuOpen(p => !p); }} className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
                     <MoreIcon className="w-5 h-5"/>
@@ -257,13 +257,13 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
 
     return (
         <div className="text-white">
-            <div className="p-8 flex flex-col sm:flex-row items-center sm:items-end gap-6 relative">
+            <div className="p-4 md:p-8 flex flex-col sm:flex-row items-center sm:items-end gap-6 relative">
                 <div className="absolute inset-0 z-0 opacity-30 overflow-hidden">
                     {imageUrl && <img src={imageUrl} className="w-full h-full object-cover blur-3xl scale-125" alt=""/>}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/80 to-transparent"></div>
                 </div>
                 <div className="w-40 h-40 sm:w-52 sm:h-52 rounded-lg shadow-2xl z-10 flex-shrink-0 bg-white/5 flex items-center justify-center">
-                    {imageUrl ? <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-lg" /> : <MusicNoteIcon className="w-1/2 h-1/2 text-gray-400"/>}
+                    {imageUrl ? <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-lg animate-image-appear" loading="lazy"/> : <MusicNoteIcon className="w-1/2 h-1/2 text-gray-400"/>}
                 </div>
                 <div className="z-10 text-center sm:text-left">
                     <p className="text-sm font-bold uppercase tracking-wider">Public Playlist</p>
@@ -275,27 +275,25 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
             </div>
             
             <div className="sticky top-0 z-20 backdrop-blur-md bg-gradient-to-b from-[#121212] via-[#121212]/70 to-transparent">
-                <div className="px-8 py-5 flex items-center justify-between">
-                    <div className="flex items-center gap-5">
-                        <button onClick={handlePlayPlaylist} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-                          {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
+                <div className="px-4 md:px-8 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4 md:gap-5">
+                        <button onClick={handlePlayPlaylist} className="w-12 h-12 md:w-14 md:h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
+                          {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8 ml-1"/>}
                         </button>
-                        <button onClick={handleSavePlaylist} disabled={isPlaylistSaved} title={isPlaylistSaved ? "Already in your library" : "Save to your library"} className="p-3 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
-                            {isPlaylistSaved ? <CheckIcon className="w-8 h-8 text-green-400" /> : <PlusIcon className="w-8 h-8 text-gray-400 hover:text-white" />}
+                        <button onClick={handleSavePlaylist} disabled={isPlaylistSaved} title={isPlaylistSaved ? "Already in your library" : "Save to your library"} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                            {isPlaylistSaved ? <CheckIcon className="w-7 md:w-8 h-7 md:h-8 text-green-400" /> : <PlusIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white" />}
                         </button>
-                        <button onClick={() => toggleFavoriteApiPlaylist(playlist)} title="Favorite" className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                            <HeartIcon className={`w-8 h-8 ${isFavoriteApiPlaylist(playlist.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
-                        </button>
-                        <button onClick={handleDownloadAll} title="Download all" className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                            <DownloadIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                        <button onClick={() => toggleFavoriteApiPlaylist(playlist)} title="Favorite" className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
+                            <HeartIcon className={`w-7 md:w-8 h-7 md:h-8 ${isFavoriteApiPlaylist(playlist.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
                         </button>
                         <div className="relative" ref={actionMenuRef}>
-                            <button onClick={() => setIsActionMenuOpen(p => !p)} title="More..." className="p-3 rounded-full hover:bg-white/10 transition-colors">
-                                <MoreIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
+                            <button onClick={() => setIsActionMenuOpen(p => !p)} title="More..." className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
+                                <MoreIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white"/>
                             </button>
                              {isActionMenuOpen && (
                                 <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
                                     <button onClick={() => {addSongsToEnd(songs); setIsActionMenuOpen(false);}} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to queue</button>
+                                    <button onClick={() => {handleDownloadAll(); setIsActionMenuOpen(false);}} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Download .zip</button>
                                 </div>
                             )}
                         </div>
@@ -309,7 +307,7 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
                     <div className="flex justify-between items-center text-gray-400 border-b border-white/10 pb-2 mb-2 px-4 text-sm uppercase font-semibold">
                         <div className="flex items-center gap-x-4"><span className="text-center w-5">#</span><span>Title</span></div>
                         <div className="flex items-center gap-x-4">
-                        <div className="relative" ref={sortMenuRef}>
+                        <div className="relative hidden sm:block" ref={sortMenuRef}>
                             <button onClick={() => setIsSortMenuOpen(p => !p)} className="flex items-center gap-2 text-xs hover:text-white"><span >SORT BY</span><ChevronDownIcon className="w-4 h-4"/></button>
                             {isSortMenuOpen && (
                                 <div className="absolute top-full right-0 mt-2 w-40 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
@@ -319,7 +317,7 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
                                 </div>
                             )}
                         </div>
-                        <span title="Duration"><ClockIcon className="w-5 h-5" /></span><div className="w-5"></div>
+                        <span title="Duration" className="hidden sm:block"><ClockIcon className="w-5 h-5" /></span><div className="w-5"></div>
                         </div>
                     </div>
                     {sortedSongs.map((song, index) => <ApiPlaylistTrackItem key={song.id+index} song={song} index={index} playlistSongs={sortedSongs} navigateToArtist={navigateToArtist} />)}

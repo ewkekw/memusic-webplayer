@@ -1,3 +1,5 @@
+
+
 import React, { useContext } from 'react';
 import { Playlist } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
@@ -22,7 +24,7 @@ interface PlaylistCardProps {
   onClick: (playlist: Playlist) => void;
 }
 
-export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onClick }) => {
+export const PlaylistCard: React.FC<PlaylistCardProps> = React.memo(({ playlist, onClick }) => {
   const imageUrl = playlist.image?.find(img => img.quality === '150x150')?.url || playlist.image?.[0]?.url;
   const { playSong } = useContext(PlayerContext);
   const { isFavoriteApiPlaylist, toggleFavoriteApiPlaylist } = useContext(UserMusicContext);
@@ -60,7 +62,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onClick })
           <HeartIcon className={`w-5 h-5 transition-all ${isFav ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-300'}`} />
         </button>
        <div className="relative w-full aspect-square mb-3">
-        <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-md shadow-lg" />
+        <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" />
          <button
           onClick={handlePlayClick}
           className="absolute bottom-2 right-2 w-12 h-12 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 opacity-0 group-hover:opacity-100 transform group-hover:scale-100 scale-90 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
@@ -73,4 +75,4 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, onClick })
       <p className="text-sm text-gray-400 truncate">{playlist.songCount} songs</p>
     </div>
   );
-};
+});

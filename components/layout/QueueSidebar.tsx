@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { PlayerContext } from '../../context/PlayerContext';
 import { Song } from '../../types';
@@ -30,7 +27,7 @@ interface QueueItemProps {
     navigateToArtist: (artistId: string) => void;
 }
 
-const QueueItem: React.FC<QueueItemProps> = ({ song, isPlaying, onPlay, navigateToArtist }) => {
+const QueueItem: React.FC<QueueItemProps> = React.memo(({ song, isPlaying, onPlay, navigateToArtist }) => {
     const { removeSongFromQueue, moveSongInQueue } = useContext(PlayerContext);
     const imageUrl = song.image?.find(img => img.quality === '50x50')?.url || song.image?.[0]?.url;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -56,7 +53,7 @@ const QueueItem: React.FC<QueueItemProps> = ({ song, isPlaying, onPlay, navigate
             onClick={onPlay}
             className={`flex items-center p-2 rounded-lg cursor-pointer ${isPlaying ? 'bg-white/10' : 'hover:bg-white/10'}`}
         >
-            <img src={imageUrl} alt={song.name} className="w-10 h-10 rounded-md mr-3 flex-shrink-0" />
+            <img src={imageUrl} alt={song.name} className="w-10 h-10 rounded-md mr-3 flex-shrink-0 animate-image-appear" loading="lazy" />
             <div className="flex-1 min-w-0">
                 <p className={`font-semibold truncate ${isPlaying ? 'text-[#fc4b08]' : 'text-white'}`}>{song.name}</p>
                 <p className="text-sm text-gray-400 truncate">
@@ -84,7 +81,47 @@ const QueueItem: React.FC<QueueItemProps> = ({ song, isPlaying, onPlay, navigate
             </div>
         </div>
     );
-};
+});
+
+interface DraggableQueueItemProps {
+    song: Song;
+    index: number;
+    isNowPlaying?: boolean;
+    draggedIndex: number | null;
+    dropTargetIndex: number | null;
+    onDragStart: (e: React.DragEvent, index: number) => void;
+    onDragOver: (e: React.DragEvent, index: number) => void;
+    onDrop: (e: React.DragEvent, index: number) => void;
+    onDragEnd: () => void;
+    onDragLeave: () => void;
+    playSong: (song: Song, queue?: Song[], playlistId?: string) => void;
+    navigateToArtist: (artistId: string) => void;
+    currentQueue: Song[];
+}
+
+const DraggableQueueItem: React.FC<DraggableQueueItemProps> = React.memo(({ song, index, isNowPlaying = false, draggedIndex, dropTargetIndex, onDragStart, onDragOver, onDrop, onDragEnd, onDragLeave, playSong, navigateToArtist, currentQueue }) => {
+    const isDropTarget = dropTargetIndex === index && draggedIndex !== index;
+    const isBeingDragged = draggedIndex === index;
+
+    return (
+        <div
+            draggable={!isNowPlaying}
+            onDragStart={(e) => !isNowPlaying && onDragStart(e, index)}
+            onDragOver={(e) => !isNowPlaying && onDragOver(e, index)}
+            onDrop={(e) => !isNowPlaying && onDrop(e, index)}
+            onDragEnd={onDragEnd}
+            onDragLeave={onDragLeave}
+            className={`transition-all duration-200 ease-out ${isDropTarget ? 'pt-14' : 'pt-0'} ${isBeingDragged ? 'opacity-30' : 'opacity-100'}`}
+        >
+            <QueueItem
+                song={song}
+                isPlaying={isNowPlaying}
+                onPlay={() => isNowPlaying ? {} : playSong(song, currentQueue)}
+                navigateToArtist={navigateToArtist}
+            />
+        </div>
+    );
+});
 
 
 export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => void }> = ({ navigateToArtist }) => {
@@ -126,40 +163,28 @@ export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => vo
         setDropTargetIndex(null);
     };
 
-    const DraggableQueueItem: React.FC<{ song: Song, index: number, isNowPlaying?: boolean }> = ({ song, index, isNowPlaying = false }) => {
-        const isDropTarget = dropTargetIndex === index && draggedIndex !== index;
-        const isBeingDragged = draggedIndex === index;
-
-        return (
-            <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDrop={(e) => handleDrop(e, index)}
-                onDragEnd={handleDragEnd}
-                onDragLeave={() => setDropTargetIndex(null)}
-                className={`transition-all duration-200 ease-out ${isDropTarget ? 'pt-14' : 'pt-0'} ${isBeingDragged ? 'opacity-30' : 'opacity-100'}`}
-            >
-                <QueueItem
-                    song={song}
-                    isPlaying={isNowPlaying}
-                    onPlay={() => isNowPlaying ? {} : playSong(song, currentQueue)}
-                    navigateToArtist={navigateToArtist}
-                />
-            </div>
-        )
+    const commonDragProps = {
+        draggedIndex,
+        dropTargetIndex,
+        onDragStart: handleDragStart,
+        onDragOver: handleDragOver,
+        onDrop: handleDrop,
+        onDragEnd: handleDragEnd,
+        onDragLeave: () => setDropTargetIndex(null),
+        playSong,
+        navigateToArtist,
+        currentQueue,
     };
 
-
     return (
-        <aside className="w-80 bg-black/30 backdrop-blur-md p-4 flex flex-col space-y-4 h-full border-l border-white/10">
+        <aside className="w-80 bg-black/30 backdrop-blur-md p-4 flex-col space-y-4 h-full border-l border-white/10 hidden md:flex">
             <h2 className="text-2xl font-bold text-white">Queue</h2>
             
             <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-1">
                  {currentSong && currentSongIndex !== -1 && (
                     <div className="mb-4">
                         <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">Now Playing</p>
-                        <DraggableQueueItem song={currentSong} index={currentSongIndex} isNowPlaying={true} />
+                        <DraggableQueueItem {...commonDragProps} song={currentSong} index={currentSongIndex} isNowPlaying={true} />
                     </div>
                 )}
 
@@ -168,7 +193,7 @@ export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => vo
                         <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">Up Next</p>
                         {upNextSongs.map((song, i) => {
                             const originalIndex = currentSongIndex + 1 + i;
-                            return <DraggableQueueItem key={song.id + i} song={song} index={originalIndex} />;
+                            return <DraggableQueueItem key={song.id + originalIndex} {...commonDragProps} song={song} index={originalIndex} />;
                         })}
                     </div>
                  )}
@@ -177,7 +202,7 @@ export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => vo
                      <div className="pt-4 border-t border-white/10">
                         <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">Previously Played</p>
                         {previouslyPlayedSongs.map((song, i) => (
-                           <DraggableQueueItem key={song.id + i} song={song} index={i} />
+                           <DraggableQueueItem key={song.id + i} {...commonDragProps} song={song} index={i} />
                         ))}
                     </div>
                  )}
