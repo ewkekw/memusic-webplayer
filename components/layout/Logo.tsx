@@ -250,13 +250,15 @@ const Logo: React.FC<LogoProps> = ({ size = 'large' }) => {
     };
 
     const resizeObserver = new ResizeObserver(entries => {
-      if (!entries || entries.length === 0) return;
-      const { width, height } = entries[0].contentRect;
-      if (canvasRef.current) {
-        canvasRef.current.width = width;
-        canvasRef.current.height = height;
-        initStars(width, height);
-      }
+      window.requestAnimationFrame(() => {
+        if (!entries || entries.length === 0) return;
+        const { width, height } = entries[0].contentRect;
+        if (canvasRef.current) {
+          canvasRef.current.width = width;
+          canvasRef.current.height = height;
+          initStars(width, height);
+        }
+      });
     });
 
     resizeObserver.observe(meElement);

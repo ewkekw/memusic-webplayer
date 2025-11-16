@@ -4,6 +4,7 @@ import React, { useContext, useRef, useState, useEffect } from 'react';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { ModalContext } from '../../App';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 
 const Section: React.FC<{title: string, description: string, children: React.ReactNode}> = ({ title, description, children }) => (
     <section>
@@ -16,6 +17,48 @@ const Section: React.FC<{title: string, description: string, children: React.Rea
         </div>
     </section>
 );
+
+const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.72,56.62.64,80.21a105.72,105.72,0,0,0,22.08,12.25,72.34,72.34,0,0,0,6.44-5.94,83.2,83.2,0,0,1-10.2-4.94,87.21,87.21,0,0,0-3.37-1.85,96.68,96.68,0,0,1,2.24-2.58,12.7,12.7,0,0,0,1.43-1.42,88.29,88.29,0,0,0,5.8-5.05A79.44,79.44,0,0,0,33,70.1a83,83,0,0,0,12.18,5.4,72.6,72.6,0,0,0,21.57,0,83.53,83.53,0,0,0,12.18-5.4,79.8,79.8,0,0,0,6.58-6.15,88.58,88.58,0,0,0,5.78,5.06,12.23,12.23,0,0,0,1.44,1.41,96.2,96.2,0,0,1,2.24,2.58,87.31,87.31,0,0,0-3.37,1.85,83.3,83.3,0,0,1-10.19,4.94,72.13,72.13,0,0,0,6.43,5.94,105.22,105.22,0,0,0,22.09-12.25C128.87,56.61,124.32,32.65,107.7,8.07ZM42.45,65.69C36.65,65.69,32,60,32,53s4.65-12.7,10.45-12.7S52.9,46,52.89,53,48.24,65.69,42.45,65.69Zm42.24,0C78.89,65.69,74.24,60,74.24,53S78.89,40.3,84.69,40.3,95.14,46,95.14,53,90.49,65.69,84.69,65.69Z"/></svg>
+);
+
+const DiscordPresenceSection: React.FC = () => {
+    const [enabled, setEnabled] = useLocalStorage('memusic-discord-presence', false);
+    const { showModal, hideModal } = useContext(ModalContext);
+
+    const handleToggle = () => {
+        const newState = !enabled;
+        setEnabled(newState);
+        if (newState) {
+            showModal({
+                title: "Discord Rich Presence",
+                content: (
+                    <div className="space-y-4 text-gray-300">
+                        <p>To show what you're listening to on Discord, you need a browser extension that can connect to your Discord client.</p>
+                        <p>We recommend <a href="https://premid.app/" target="_blank" rel="noopener noreferrer" className="text-[#fc4b08] font-bold hover:underline">PreMiD</a>. Once installed, MeMusic will automatically update your status.</p>
+                        <p className="text-xs text-gray-500">We only share song, artist, and album information. No personal data is ever shared.</p>
+                        <div className="flex justify-end pt-4">
+                            <button onClick={hideModal} className="px-5 py-2.5 rounded-md bg-[#fc4b08] text-black font-bold">Got It</button>
+                        </div>
+                    </div>
+                ),
+            });
+        }
+    };
+    
+    return (
+        <Section title="Integrations" description="Connect MeMusic to other services.">
+            <div className="flex items-center gap-4">
+                <div className="w-10 h-10 text-[#5865F2]">
+                    <DiscordIcon />
+                </div>
+                <div className="flex-1">
+                    <ToggleSwitch label="Discord Rich Presence" enabled={enabled} onChange={handleToggle} />
+                </div>
+            </div>
+        </Section>
+    );
+};
 
 const ImportExportSection: React.FC = () => {
     const { importData, exportData } = useContext(UserMusicContext);
@@ -380,6 +423,7 @@ const Settings: React.FC = () => {
     <div className="p-4 md:p-8 text-white space-y-12 max-w-5xl mx-auto">
         <h1 className="text-4xl font-black tracking-tight text-white">Settings</h1>
       <AudioEffectsSection />
+      <DiscordPresenceSection />
       <ImportExportSection />
       <AboutSection />
     </div>

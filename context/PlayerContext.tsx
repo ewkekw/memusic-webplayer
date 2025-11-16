@@ -606,6 +606,33 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     }
   }, [currentSong, isPlaying, playPrev, playNext, togglePlay, seek, currentTime, duration]);
+  
+  // Discord Rich Presence Integration
+  const [discordPresenceEnabled] = useLocalStorage('memusic-discord-presence', false);
+  const DEFAULT_TITLE = 'MeMusic - Frutiger Metro Webplayer';
+
+  useEffect(() => {
+    if (!discordPresenceEnabled) {
+      if (document.title !== DEFAULT_TITLE) {
+        document.title = DEFAULT_TITLE;
+      }
+      return;
+    }
+
+    if (currentSong) {
+      const artistName = currentSong.artists.primary.map(a => decodeHtml(a.name)).join(', ');
+      const songName = decodeHtml(currentSong.name);
+      const newTitle = isPlaying ? `${songName} - ${artistName}` : `Paused: ${songName} - ${artistName}`;
+      if (document.title !== newTitle) {
+        document.title = newTitle;
+      }
+    } else {
+      if (document.title !== DEFAULT_TITLE) {
+        document.title = DEFAULT_TITLE;
+      }
+    }
+  }, [currentSong, isPlaying, discordPresenceEnabled]);
+
 
   return (
     <PlayerContext.Provider value={{ currentSong, isPlaying, duration, currentTime, volume, playSong, togglePlay, seek, setVolume: handleSetVolume, playNext, playPrev, currentQueue, selectedQuality, setSelectedQuality, currentQuality, isQueueOpen, toggleQueue, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue, isShuffle, repeatMode, toggleShuffle, cycleRepeatMode, analyser, is8DEnabled, toggle8D, eqSettings, setEqGain, resetEq, isEqEnabled, toggleEq, isReverbEnabled, toggleReverb, reverbMix, setReverbMix, audioContext }}>

@@ -103,17 +103,21 @@ const SongCard: React.FC<SongCardProps> = React.memo(({ song }) => {
 const HorizontalScroller: React.FC<{ title: string; children: React.ReactNode; }> = ({ title, children }) => {
     const scrollerRef = useRef<HTMLDivElement>(null);
     const [showLeftFade, setShowLeftFade] = useState(false);
-    const [showRightFade, setShowRightFade] = useState(true);
+    const [showRightFade, setShowRightFade] = useState(false);
 
     const handleScroll = useCallback(() => {
-        const el = scrollerRef.current;
-        if (!el) return;
-        const scrollLeft = el.scrollLeft;
-        const scrollWidth = el.scrollWidth;
-        const clientWidth = el.clientWidth;
-        
-        setShowLeftFade(scrollLeft > 1);
-        setShowRightFade(scrollLeft < scrollWidth - clientWidth - 1);
+        // Using requestAnimationFrame to avoid ResizeObserver loop errors.
+        window.requestAnimationFrame(() => {
+            const el = scrollerRef.current;
+            if (!el) return;
+            const { scrollLeft, scrollWidth, clientWidth } = el;
+            
+            const hasScroll = scrollWidth > clientWidth;
+            const scrollEndReached = scrollLeft >= scrollWidth - clientWidth - 1;
+            
+            setShowLeftFade(scrollLeft > 1);
+            setShowRightFade(hasScroll && !scrollEndReached);
+        });
     }, []);
 
     useEffect(() => {
