@@ -1,16 +1,14 @@
 
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { PlayerContext } from '../../context/PlayerContext';
-import { Song } from '../../types';
+import { PartyContext } from '../../context/PartyContext';
+import { PartyParticipant, Song, PartyQueueSong } from '../../types';
+import { PartyParticipantList } from '../party/PartyParticipantList';
+import { useTranslation } from '../../context/LanguageContext';
 
 const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-    </svg>
-);
-const SpeakerIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
     </svg>
 );
 
@@ -20,15 +18,26 @@ const QueueIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+const SignalIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12z" />
+  </svg>
+);
+
+
 interface QueueItemProps {
-    song: Song;
+    song: Song | PartyQueueSong;
     isPlaying: boolean;
     onPlay: () => void;
     navigateToArtist: (artistId: string) => void;
+    addedBy?: PartyParticipant | null;
+    isGhost?: boolean;
 }
 
-const QueueItem: React.FC<QueueItemProps> = React.memo(({ song, isPlaying, onPlay, navigateToArtist }) => {
+const QueueItem: React.FC<QueueItemProps> = React.memo(({ song, isPlaying, onPlay, navigateToArtist, addedBy, isGhost = false }) => {
     const { removeSongFromQueue, moveSongInQueue } = useContext(PlayerContext);
+    const { partyState, myId, isHost, removeSongFromPartyQueue } = useContext(PartyContext);
+    const { t } = useTranslation();
     const imageUrl = song.image?.find(img => img.quality === '50x50')?.url || song.image?.[0]?.url;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -47,13 +56,24 @@ const QueueItem: React.FC<QueueItemProps> = React.memo(({ song, isPlaying, onPla
         action();
         setIsMenuOpen(false);
     }
+    
+    const canRemove = isHost || (partyState?.mode === 'collaborative' && (song as PartyQueueSong).addedBy === myId);
 
     return (
         <div 
             onClick={onPlay}
-            className={`flex items-center p-2 rounded-lg cursor-pointer ${isPlaying ? 'bg-white/10' : 'hover:bg-white/10'}`}
+            className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors duration-200 ${isGhost ? 'bg-white/5 shadow-lg' : ''} ${isPlaying ? 'bg-white/10' : 'hover:bg-white/10'}`}
         >
-            <img src={imageUrl} alt={song.name} className="w-10 h-10 rounded-md mr-3 flex-shrink-0 animate-image-appear" loading="lazy" />
+            <div className="relative flex-shrink-0 w-10 h-10 mr-3">
+                <img src={imageUrl} alt={song.name} className="w-full h-full rounded-md object-cover animate-image-appear" loading="lazy" />
+                {addedBy && (
+                    <img
+                        src={addedBy.imageUrl}
+                        title={`Added by ${addedBy.name}`}
+                        className="w-5 h-5 rounded-full absolute -bottom-1 -right-1 border-2 border-[#1e1e1e] shadow-md"
+                    />
+                )}
+            </div>
             <div className="flex-1 min-w-0">
                 <p className={`font-semibold truncate ${isPlaying ? 'text-[#fc4b08]' : 'text-white'}`}>{song.name}</p>
                 <p className="text-sm text-gray-400 truncate">
@@ -67,154 +87,236 @@ const QueueItem: React.FC<QueueItemProps> = React.memo(({ song, isPlaying, onPla
                     ))}
                 </p>
             </div>
-            <div className="relative" ref={menuRef}>
-                <button onClick={(e) => { e.stopPropagation(); setIsMenuOpen(p => !p);}} className="p-2 rounded-full hover:bg-white/20 text-gray-400 hover:text-white">
-                    <MoreIcon className="w-5 h-5" />
-                </button>
-                {isMenuOpen && (
-                    <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-50">
-                        <button onClick={() => handleMenuAction(() => moveSongInQueue(song.id, 'top'))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Move to Top</button>
-                        <button onClick={() => handleMenuAction(() => moveSongInQueue(song.id, 'bottom'))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Move to Bottom</button>
-                        <button onClick={() => handleMenuAction(() => removeSongFromQueue(song.id))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10 text-red-400 hover:text-red-300">Remove from Queue</button>
-                    </div>
-                )}
-            </div>
+            {!isGhost && (!partyState || canRemove) && (
+                <div className="relative" ref={menuRef}>
+                    <button onClick={(e) => { e.stopPropagation(); setIsMenuOpen(p => !p);}} className="p-2 rounded-full hover:bg-white/20 text-gray-400 hover:text-white">
+                        <MoreIcon className="w-5 h-5" />
+                    </button>
+                    {isMenuOpen && (
+                        <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-50">
+                            {!partyState && <button onClick={() => handleMenuAction(() => moveSongInQueue(song.id, 'top'))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('queue.moveToTop')}</button>}
+                            {!partyState && <button onClick={() => handleMenuAction(() => moveSongInQueue(song.id, 'bottom'))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('queue.moveToBottom')}</button>}
+                            <button onClick={() => handleMenuAction(() => partyState ? removeSongFromPartyQueue(song.id) : removeSongFromQueue(song.id))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10 text-red-400 hover:text-red-300">{t('queue.removeFromQueue')}</button>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 });
 
 interface DraggableQueueItemProps {
-    song: Song;
+    song: Song | PartyQueueSong;
     index: number;
     isNowPlaying?: boolean;
     draggedIndex: number | null;
     dropTargetIndex: number | null;
-    onDragStart: (e: React.DragEvent, index: number) => void;
-    onDragOver: (e: React.DragEvent, index: number) => void;
-    onDrop: (e: React.DragEvent, index: number) => void;
+    onDragStart: (index: number) => void;
+    onDragEnter: (index: number) => void;
     onDragEnd: () => void;
-    onDragLeave: () => void;
-    playSong: (song: Song, queue?: Song[], playlistId?: string) => void;
+    onDrop: (index: number) => void;
+    onPlay: () => void;
     navigateToArtist: (artistId: string) => void;
-    currentQueue: Song[];
+    addedBy?: PartyParticipant | null;
 }
 
-const DraggableQueueItem: React.FC<DraggableQueueItemProps> = React.memo(({ song, index, isNowPlaying = false, draggedIndex, dropTargetIndex, onDragStart, onDragOver, onDrop, onDragEnd, onDragLeave, playSong, navigateToArtist, currentQueue }) => {
-    const isDropTarget = dropTargetIndex === index && draggedIndex !== index;
+const DraggableQueueItem: React.FC<DraggableQueueItemProps> = React.memo(({ song, index, isNowPlaying = false, draggedIndex, dropTargetIndex, onDragStart, onDragEnter, onDragEnd, onDrop, onPlay, navigateToArtist, addedBy }) => {
     const isBeingDragged = draggedIndex === index;
+    const isDropTarget = dropTargetIndex === index && draggedIndex !== index;
+    const { partyState, isHost } = useContext(PartyContext);
+    const canDrag = !isNowPlaying && (!partyState || isHost || partyState.mode === 'collaborative');
+
+    const handleDragStart = (e: React.DragEvent) => {
+        if(!canDrag) {
+             e.preventDefault();
+             return;
+        }
+        e.dataTransfer.effectAllowed = 'move';
+        const img = new Image();
+        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        e.dataTransfer.setDragImage(img, 0, 0);
+        setTimeout(() => onDragStart(index), 0);
+    };
 
     return (
         <div
-            draggable={!isNowPlaying}
-            onDragStart={(e) => !isNowPlaying && onDragStart(e, index)}
-            onDragOver={(e) => !isNowPlaying && onDragOver(e, index)}
-            onDrop={(e) => !isNowPlaying && onDrop(e, index)}
+            draggable={canDrag}
+            onDragStart={handleDragStart}
+            onDragEnter={(e) => {
+                if (isBeingDragged) return;
+                canDrag && onDragEnter(index)
+            }}
             onDragEnd={onDragEnd}
-            onDragLeave={onDragLeave}
-            className={`transition-all duration-200 ease-out ${isDropTarget ? 'pt-14' : 'pt-0'} ${isBeingDragged ? 'opacity-30' : 'opacity-100'}`}
+            onDrop={(e) => { e.preventDefault(); canDrag && onDrop(index); }}
+            onDragOver={(e) => e.preventDefault()}
+            className="touch-none"
         >
-            <QueueItem
-                song={song}
-                isPlaying={isNowPlaying}
-                onPlay={() => isNowPlaying ? {} : playSong(song, currentQueue)}
-                navigateToArtist={navigateToArtist}
+            <div
+                className={`w-full transition-all duration-200 ease-out`}
+                style={{
+                    height: isDropTarget ? '2px' : '0px',
+                    opacity: isDropTarget ? 1 : 0,
+                    margin: isDropTarget ? '2px 0' : '0',
+                    backgroundColor: '#fc4b08'
+                }}
             />
+            <div className={`transition-opacity duration-200 ${isBeingDragged ? 'opacity-40' : 'opacity-100'}`}>
+                <QueueItem song={song} isPlaying={isNowPlaying} onPlay={onPlay} navigateToArtist={navigateToArtist} addedBy={addedBy} />
+            </div>
         </div>
     );
 });
 
-
-export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => void }> = ({ navigateToArtist }) => {
-    const { currentQueue, currentSong, playSong, reorderQueue } = useContext(PlayerContext);
+const QueueView: React.FC<{ navigateToArtist: (artistId: string) => void }> = ({ navigateToArtist }) => {
+    const { currentQueue, currentSong, playSong, reorderQueue, contextId, contextType, autoplayStartIndex, repeatMode } = useContext(PlayerContext);
+    const { partyState, isHost, reorderPartyQueue } = useContext(PartyContext);
+    const { t } = useTranslation();
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
-    const currentSongIndex = currentSong ? currentQueue.findIndex(song => song.id === currentSong.id) : -1;
-    
-    const upNextSongs = currentSongIndex !== -1 ? currentQueue.slice(currentSongIndex + 1) : [];
-    const previouslyPlayedSongs = currentSongIndex !== -1 ? currentQueue.slice(0, currentSongIndex) : [];
-    
-    if(currentSongIndex === -1 && currentQueue.length > 0) {
-        upNextSongs.push(...currentQueue);
-    }
-    
-    const handleDragStart = (e: React.DragEvent, index: number) => {
-        setDraggedIndex(index);
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', ''); // For Firefox compatibility
-    };
+    const queue = partyState ? (partyState.currentQueue || []) : currentQueue;
+    const song = partyState ? partyState.currentSong : currentSong;
+    const playContext = partyState ? { type: 'party' as const, id: partyState.partyId } : { type: contextType || 'queue', id: contextId || song?.id || '' };
 
-    const handleDragOver = (e: React.DragEvent, index: number) => {
-        e.preventDefault();
-        if (index !== dropTargetIndex) {
-            setDropTargetIndex(index);
-        }
-    };
+    const currentSongIndex = song ? queue.findIndex(s => s.id === song.id) : -1;
+    
+    const upNextSongs = currentSongIndex !== -1 ? queue.slice(currentSongIndex + 1) : queue;
+    const previouslyPlayedSongs = currentSongIndex !== -1 ? queue.slice(0, currentSongIndex) : [];
 
-    const handleDrop = (e: React.DragEvent, index: number) => {
-        e.preventDefault();
-        if(draggedIndex === null || draggedIndex === index) return;
-        reorderQueue(draggedIndex, index);
+    // Check if we should show the autoplay banner
+    const isAutoplayEnabled = !partyState && repeatMode === 'off';
+    
+    // If Up Next is empty, show the banner as a placeholder/indicator that more will come
+    const willAutoplaySoon = isAutoplayEnabled && upNextSongs.length === 0;
+
+    const handleDragStart = (index: number) => setDraggedIndex(index);
+    const handleDragEnter = (index: number) => { if (draggedIndex !== null && draggedIndex !== index) setDropTargetIndex(index); };
+    const handleDrop = (index: number) => {
+        if (draggedIndex === null) return;
+        partyState ? reorderPartyQueue(draggedIndex, index) : reorderQueue(draggedIndex, index);
         handleDragEnd();
     };
+    const handleDragEnd = () => { setDraggedIndex(null); setDropTargetIndex(null); };
 
-    const handleDragEnd = () => {
-        setDraggedIndex(null);
-        setDropTargetIndex(null);
+    const handlePlaySongFromQueue = (songToPlay: Song) => {
+        if (songToPlay.id === song?.id || (partyState && !isHost)) return;
+        playSong(songToPlay, queue as Song[], playContext as any);
     };
-
+    
     const commonDragProps = {
-        draggedIndex,
-        dropTargetIndex,
-        onDragStart: handleDragStart,
-        onDragOver: handleDragOver,
-        onDrop: handleDrop,
-        onDragEnd: handleDragEnd,
-        onDragLeave: () => setDropTargetIndex(null),
-        playSong,
-        navigateToArtist,
-        currentQueue,
+        draggedIndex, dropTargetIndex, onDragStart: handleDragStart, onDragEnter: handleDragEnter, onDrop: handleDrop, onDragEnd: handleDragEnd, navigateToArtist,
+    };
+    
+    const renderDraggableItem = (songItem: PartyQueueSong | Song, index: number, isNowPlaying = false) => {
+        const addedBy = (partyState && 'addedBy' in songItem)
+            ? partyState.participants.find(p => p.id === (songItem as PartyQueueSong).addedBy)
+            : undefined;
+        return <DraggableQueueItem {...commonDragProps} onPlay={() => handlePlaySongFromQueue(songItem)} song={songItem} index={index} isNowPlaying={isNowPlaying} addedBy={addedBy} />;
+    }
+    
+    const AutoplayBanner = () => (
+         <div className="my-3 p-3 bg-white/5 border border-white/10 rounded-lg flex items-center space-x-3 animate-in fade-in">
+            <div className="p-2 bg-[#fc4b08]/20 rounded-full flex-shrink-0">
+                <SignalIcon className="w-5 h-5 text-[#fc4b08]" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="font-bold text-white text-sm">{t('queue.autoplay')}</p>
+                <p className="text-[10px] md:text-xs text-gray-400 leading-tight">{t('queue.autoplaySubtitle')}</p>
+            </div>
+        </div>
+    );
+
+    return (
+         <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-1">
+             {song && currentSongIndex !== -1 && (
+                <div className="mb-4">
+                    <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">{t('queue.nowPlaying')}</p>
+                    {renderDraggableItem(song, currentSongIndex, true)}
+                </div>
+            )}
+            
+             {upNextSongs.length > 0 && (
+                <div className="mb-4">
+                    <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">{t('queue.upNext')}</p>
+                    {upNextSongs.map((s, i) => {
+                        const originalIndex = currentSongIndex + 1 + i;
+                        const isFirstAutoplaySong = !partyState && autoplayStartIndex !== null && originalIndex === autoplayStartIndex;
+                        return (
+                            <React.Fragment key={s.id + originalIndex}>
+                                {isFirstAutoplaySong && <AutoplayBanner />}
+                                {renderDraggableItem(s, originalIndex)}
+                            </React.Fragment>
+                        );
+                    })}
+                </div>
+             )}
+             
+             {willAutoplaySoon && <AutoplayBanner />}
+
+             {previouslyPlayedSongs.length > 0 && (
+                 <div className="pt-4 border-t border-white/10 mt-4">
+                    <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">{t('queue.previouslyPlayed')}</p>
+                    {previouslyPlayedSongs.map((s, i) => (
+                       <React.Fragment key={s.id + i}>
+                        {renderDraggableItem(s, i)}
+                       </React.Fragment>
+                    ))}
+                </div>
+             )}
+             
+            {queue.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                    <QueueIcon className="w-12 h-12 text-gray-600 mb-4" />
+                    <h3 className="font-bold text-gray-400">{t('queue.empty')}</h3>
+                    <p className="text-sm text-gray-500">{t('queue.emptySubtitle')}</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => void }> = ({ navigateToArtist }) => {
+    const { partyState } = useContext(PartyContext);
+    const { t } = useTranslation();
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        if (!partyState?.partyId) return;
+        navigator.clipboard.writeText(partyState.partyId).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
     };
 
     return (
-        <aside className="w-80 bg-black/30 backdrop-blur-md p-4 flex-col space-y-4 h-full border-l border-white/10 hidden md:flex">
-            <h2 className="text-2xl font-bold text-white">Queue</h2>
-            
-            <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-1">
-                 {currentSong && currentSongIndex !== -1 && (
-                    <div className="mb-4">
-                        <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">Now Playing</p>
-                        <DraggableQueueItem {...commonDragProps} song={currentSong} index={currentSongIndex} isNowPlaying={true} />
+        <aside className="w-80 bg-black/30 backdrop-blur-md p-4 flex flex-col h-full border-l border-white/10 hidden md:flex">
+            {partyState ? (
+                <>
+                    <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                        <h2 className="text-2xl font-bold text-white">{t('queue.party')}</h2>
+                        <button
+                            onClick={handleCopy}
+                            title={t('queue.copyCode')}
+                            className="relative text-xs font-bold uppercase bg-white/10 px-3 py-1.5 rounded-md hover:bg-white/20 transition-all duration-200"
+                            style={{ minWidth: '70px' }}
+                        >
+                           <span className={`transition-opacity duration-300 ${copied ? 'opacity-0' : 'opacity-100'}`}>{partyState.partyId}</span>
+                           <span className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${copied ? 'opacity-100' : 'opacity-0'}`}>{t('queue.copied')}</span>
+                        </button>
                     </div>
-                )}
-
-                 {upNextSongs.length > 0 && (
-                    <div className="mb-4">
-                        <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">Up Next</p>
-                        {upNextSongs.map((song, i) => {
-                            const originalIndex = currentSongIndex + 1 + i;
-                            return <DraggableQueueItem key={song.id + originalIndex} {...commonDragProps} song={song} index={originalIndex} />;
-                        })}
+                    <div className="flex-shrink-0 mb-4">
+                        <PartyParticipantList />
                     </div>
-                 )}
-
-                 {previouslyPlayedSongs.length > 0 && (
-                     <div className="pt-4 border-t border-white/10">
-                        <p className="text-sm font-bold uppercase text-gray-400 mb-2 px-2">Previously Played</p>
-                        {previouslyPlayedSongs.map((song, i) => (
-                           <DraggableQueueItem key={song.id + i} {...commonDragProps} song={song} index={i} />
-                        ))}
-                    </div>
-                 )}
-
-                {currentQueue.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                        <QueueIcon className="w-12 h-12 text-gray-600 mb-4" />
-                        <h3 className="font-bold text-gray-400">Your Queue is Empty</h3>
-                        <p className="text-sm text-gray-500">Add some songs to get started!</p>
-                    </div>
-                )}
-            </div>
+                    <hr className="border-white/10 mb-4"/>
+                    <QueueView navigateToArtist={navigateToArtist} />
+                </>
+            ) : (
+                <>
+                    <h2 className="text-2xl font-bold text-white mb-4 flex-shrink-0">{t('queue.queue')}</h2>
+                    <QueueView navigateToArtist={navigateToArtist} />
+                </>
+            )}
         </aside>
     );
 };

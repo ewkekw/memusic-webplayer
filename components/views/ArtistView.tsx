@@ -9,16 +9,13 @@ import { SongList } from '../ui/SongList';
 import { AlbumCard } from '../ui/AlbumCard';
 import { ArtistCard } from '../ui/ArtistCard';
 import { useArtist } from '../../hooks/useArtist';
+import { useTranslation } from '../../context/LanguageContext';
 
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
-  </svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5L19 12L7 19.5V4.5Z" /></svg>
 );
 const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75.75v12a.75.75 0 01-1.5 0V6a.75.75 0 01.75-.75zm9 0a.75.75 0 01.75.75v12a.75.75 0 01-1.5 0V6a.75.75 0 01.75-.75z" clipRule="evenodd" />
-  </svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5.25 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM15 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM6 18.375a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" /></svg>
 );
 
 
@@ -31,22 +28,23 @@ interface ArtistViewProps {
 
 const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, navigateToAlbum, navigateToArtist }) => {
   const { artist, loading, error } = useArtist(artistId);
-  const { playSong, currentSong, isPlaying, togglePlay } = useContext(PlayerContext);
+  const { playSong, isPlaying, togglePlay, contextId } = useContext(PlayerContext);
   const { isFavoriteArtist, toggleFavoriteArtist } = useContext(UserMusicContext);
+  const { t } = useTranslation();
   const [showFullBio, setShowFullBio] = useState(false);
 
   if (loading) return <div className="flex items-center justify-center h-full"><Loader /></div>;
   if (error || !artist) return <div className="p-8 text-center text-gray-400">{error || 'Artist not found or failed to load.'}</div>;
 
   const topSongs = artist.topSongs?.slice(0, 5) ?? [];
-  const isArtistCurrentlyPlaying = topSongs.some(s => s.id === currentSong?.id);
+  const isArtistCurrentlyPlaying = contextId === artist.id;
   const imageUrl = artist.image?.find(img => img.quality === '500x500')?.url || artist.image?.[0]?.url;
 
   const handlePlay = () => {
-    if (isArtistCurrentlyPlaying && isPlaying) {
+    if (isArtistCurrentlyPlaying) {
       togglePlay();
     } else if (topSongs.length > 0) {
-      playSong(topSongs[0], topSongs);
+      playSong(topSongs[0], topSongs, { type: 'artist', id: artist.id });
     }
   };
 
@@ -65,22 +63,22 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
         
         {imageUrl && <img src={imageUrl} alt={artist.name} className="w-40 h-40 sm:w-52 sm:h-52 rounded-full shadow-2xl z-10 flex-shrink-0 animate-image-appear" loading="lazy" />}
         <div className="z-10 text-center sm:text-left">
-          {artist.isVerified && <p className="text-sm font-bold uppercase tracking-wider text-blue-400">Verified Artist</p>}
+          {artist.isVerified && <p className="text-sm font-bold uppercase tracking-wider text-blue-400">{t('artistView.verified')}</p>}
           <h1 className="font-extrabold tracking-tighter leading-tight text-4xl sm:text-6xl">{artist.name}</h1>
-          <p className="text-gray-300 mt-2 text-sm">{artist.fanCount} followers</p>
+          <p className="text-gray-300 mt-2 text-sm">{t('artistView.followers', { count: artist.fanCount || 0 })}</p>
         </div>
       </div>
 
       <div className="px-4 md:px-8 py-5">
         <div className="flex items-center gap-4 md:gap-5">
           <button onClick={handlePlay} className="w-12 h-12 md:w-14 md:h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-            {isArtistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8 ml-1"/>}
+            {isArtistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8"/>}
           </button>
            <button 
             onClick={() => toggleFavoriteArtist(artist)}
             className={`px-6 py-2 md:py-3 border-2 font-bold rounded-full transition-colors ${isFavoriteArtist(artist.id) ? 'bg-white/10 border-gray-500 text-gray-300' : 'border-gray-500 text-gray-300 hover:border-white hover:text-white'}`}
           >
-            {isFavoriteArtist(artist.id) ? 'Following' : 'Follow'}
+            {isFavoriteArtist(artist.id) ? t('artistView.following') : t('artistView.follow')}
           </button>
         </div>
       </div>
@@ -88,14 +86,18 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
       <div className="px-4 md:px-8 pb-8 space-y-12">
         {topSongs.length > 0 && (
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Popular</h2>
-            <SongList songs={topSongs} navigateToArtist={navigateToArtist} />
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.popular')}</h2>
+            <SongList
+                songs={topSongs}
+                navigateToArtist={navigateToArtist}
+                context={{ type: 'artist', id: artist.id }}
+            />
           </section>
         )}
 
         {latestRelease && (
             <section>
-                <h2 className="text-2xl md:text-3xl font-bold mb-4">Latest Release</h2>
+                <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.latestRelease')}</h2>
                 <div className="max-w-md">
                     <AlbumCard album={latestRelease} onAlbumClick={navigateToAlbum} onArtistClick={navigateToArtist} />
                 </div>
@@ -104,7 +106,7 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
 
         {artist.topAlbums && artist.topAlbums.length > 0 && (
             <section>
-                <h2 className="text-2xl md:text-3xl font-bold mb-4">Albums</h2>
+                <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.albums')}</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                     {artist.topAlbums.map(album => (
                         <AlbumCard key={album.id} album={album} onAlbumClick={navigateToAlbum} onArtistClick={navigateToArtist} />
@@ -115,12 +117,12 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
         
         {bioText && (
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">About</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.about')}</h2>
             <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
               {showFullBio ? bioText : shortBio}
               {bioText.length > shortBio.length && (
                 <button onClick={() => setShowFullBio(!showFullBio)} className="text-[#fc4b08] font-bold ml-2">
-                  {showFullBio ? 'Show Less' : 'Read More'}
+                  {showFullBio ? t('artistView.showLess') : t('artistView.readMore')}
                 </button>
               )}
             </p>
@@ -129,7 +131,7 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
 
         {artist.similarArtists && artist.similarArtists.length > 0 && (
           <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Fans Also Like</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.fansLike')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
               {artist.similarArtists.map(simArtist => (
                 <ArtistCard key={simArtist.id} artist={simArtist} onArtistClick={navigateToArtist} />

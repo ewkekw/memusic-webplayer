@@ -1,21 +1,60 @@
 
-
 import { SearchSongsResponse, SearchAlbumsResponse, SearchArtistsResponse, SearchPlaylistsResponse, SongSuggestionsResponse, GetAlbumDetailsResponse, GetArtistDetailsResponse, GetSongsResponse } from '../types';
 
 const API_BASE_URL = 'https://lowkey-backend.vercel.app';
+
+// Implement a simple LRU (Least Recently Used) Cache to prevent memory bloat
+const CACHE_LIMIT = 100;
 const cache = new Map<string, any>();
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const fetchWithRetry = async (url: string, retries = 3, delay = 1000): Promise<Response> => {
+    try {
+        const response = await fetch(url);
+        
+        // If server error (5xx) or rate limited (429), retry.
+        // We don't retry on 404 (Not Found) or 400 (Bad Request).
+        if (!response.ok && (response.status >= 500 || response.status === 429)) {
+             throw new Error(`Server/Network Error: ${response.status}`);
+        }
+        return response;
+    } catch (error) {
+        if (retries === 0) throw error;
+        
+        // Wait for the delay time (exponential backoff could be applied here: delay * 2)
+        await wait(delay);
+        
+        // Retry with decremented retry count and doubled delay (Exponential Backoff)
+        console.warn(`Retrying request to ${url}. Attempts left: ${retries}`);
+        return fetchWithRetry(url, retries - 1, delay * 2);
+    }
+};
 
 const apiRequest = async <T,>(endpoint: string, cacheKey?: string): Promise<T> => {
   if (cacheKey && cache.has(cacheKey)) {
-    return Promise.resolve(cache.get(cacheKey) as T);
+    // Refresh item position (LRU logic: move accessed item to the end)
+    const cachedData = cache.get(cacheKey);
+    cache.delete(cacheKey);
+    cache.set(cacheKey, cachedData);
+    return Promise.resolve(cachedData as T);
   }
+
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`);
+    const response = await fetchWithRetry(`${API_BASE_URL}${endpoint}`);
+    
     if (!response.ok) {
       throw new Error(`API request failed with status ${response.status}`);
     }
+    
     const data = await response.json() as T;
+    
     if (cacheKey) {
+        if (cache.size >= CACHE_LIMIT) {
+            // Remove the first item (oldest accessed)
+            const firstKey = cache.keys().next().value;
+            if (firstKey) cache.delete(firstKey);
+        }
         cache.set(cacheKey, data);
     }
     return data;

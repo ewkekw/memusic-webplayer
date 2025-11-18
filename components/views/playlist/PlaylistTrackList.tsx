@@ -1,13 +1,11 @@
 
+
 import React, { useState, useRef, useEffect, useContext, useMemo } from 'react';
 import { Song, LocalPlaylist } from '../../../types';
 import { PlayerContext } from '../../../context/PlayerContext';
 import { UserMusicContext } from '../../../context/UserMusicContext';
+import { SongList } from '../../ui/SongList';
 
-// Icons
-const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
-);
 const ClockIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 );
@@ -15,68 +13,6 @@ const ChevronDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
 );
 
-const formatDuration = (seconds: number | null) => {
-    if (seconds === null) return '-:--';
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-};
-
-interface PlaylistTrackItemProps {
-    song: Song;
-    index: number;
-    playlistSongs: Song[];
-    playlistId: string;
-    navigateToArtist: (artistId: string) => void;
-}
-
-const PlaylistTrackItem: React.FC<PlaylistTrackItemProps> = ({ song, index, playlistSongs, playlistId, navigateToArtist }) => {
-    const { playSong, currentSong, addSongNext, addSongsToEnd } = useContext(PlayerContext);
-    const { removeSongFromPlaylist } = useContext(UserMusicContext);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    const isCurrent = song.id === currentSong?.id;
-
-     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-          if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const handleMenuAction = (e: React.MouseEvent, action: () => void) => {
-        e.stopPropagation();
-        action();
-        setIsMenuOpen(false);
-    }
-
-    return (
-        <div onClick={() => playSong(song, playlistSongs, playlistId)} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-4 p-2 px-4 rounded-md hover:bg-white/10 cursor-pointer group">
-            <span className={`text-center w-5 ${isCurrent ? 'text-[#fc4b08]' : 'text-gray-400'}`}>{index + 1}</span>
-            <div>
-                <p className={`font-medium truncate ${isCurrent ? 'text-[#fc4b08]' : 'text-white'}`}>{song.name}</p>
-                <p className="text-sm text-gray-400 truncate">
-                    {song.artists.primary.map((artist, index) => (<React.Fragment key={artist.id}><span onClick={(e) => { e.stopPropagation(); navigateToArtist(artist.id); }} className="hover:underline cursor-pointer">{artist.name}</span>{index < song.artists.primary.length - 1 && ', '}</React.Fragment>))}
-                </p>
-            </div>
-            <span className="text-sm text-gray-400 opacity-70 group-hover:opacity-100 transition-opacity">{formatDuration(song.duration)}</span>
-            <div className="relative" ref={menuRef}>
-                <button onClick={(e) => { e.stopPropagation(); setIsMenuOpen(p => !p); }} className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreIcon className="w-5 h-5"/>
-                </button>
-                {isMenuOpen && (
-                    <div className="absolute bottom-full right-0 mb-1 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                        <button onClick={(e) => handleMenuAction(e, () => addSongNext(song))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Play Next</button>
-                        <button onClick={(e) => handleMenuAction(e, () => addSongsToEnd([song]))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to Queue</button>
-                        <button onClick={(e) => handleMenuAction(e, () => removeSongFromPlaylist(playlistId, song.id))} className="w-full text-left px-3 py-2 text-sm rounded-md text-red-400 hover:bg-white/10 hover:text-red-300">Remove from Playlist</button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
 
 interface PlaylistTrackListProps {
     playlist: LocalPlaylist;
@@ -126,7 +62,12 @@ export const PlaylistTrackList: React.FC<PlaylistTrackListProps> = ({ playlist, 
                     <span title="Duration"><ClockIcon className="w-5 h-5" /></span><div className="w-5"></div>
                     </div>
                 </div>
-                {sortedSongs.map((song, index) => <PlaylistTrackItem key={song.id+index} song={song} index={index} playlistSongs={sortedSongs} playlistId={playlist.id} navigateToArtist={navigateToArtist} />)}
+                <SongList
+                    songs={sortedSongs}
+                    playlistId={playlist.id}
+                    navigateToArtist={navigateToArtist}
+                    context={{ type: 'playlist', id: playlist.id }}
+                />
                 </>
             ) : (
                 <div className="text-center py-10"><p className="text-gray-400">This playlist is empty.</p></div>

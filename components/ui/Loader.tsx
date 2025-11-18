@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, Dispatch, SetStateAction } from 'react';
 
 export const Loader: React.FC = () => {
@@ -61,7 +62,6 @@ export const AnimatedTabs = <T extends string>({ tabs, activeTab, onTabClick }: 
       {tabs.map((tab, index) => (
         <button
           key={tab.id}
-          // FIX: The ref callback should not return a value. Wrapped in curly braces to ensure void return.
           ref={el => { tabsRef.current[index] = el; }}
           onClick={() => onTabClick(tab.id)}
           className={`relative z-10 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 focus:outline-none ${

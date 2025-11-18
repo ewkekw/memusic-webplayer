@@ -58,6 +58,11 @@ const Logo: React.FC<LogoProps> = ({ size = 'large' }) => {
     const animate = () => {
       animationFrameId.current = requestAnimationFrame(animate);
 
+      // Guard against zero-sized canvas to prevent division by zero errors.
+      if (canvas.width === 0 || canvas.height === 0) {
+        return;
+      }
+      
       analyser.getByteFrequencyData(dataArray);
       
       const centerX = canvas.width / 2;
@@ -93,7 +98,7 @@ const Logo: React.FC<LogoProps> = ({ size = 'large' }) => {
               const alpha = (1 - star.z / canvas.width) * (0.3 + (smoothedTreble.current / 255) * 0.7);
               ctx.fillStyle = `rgba(252, 75, 8, ${alpha})`;
               ctx.beginPath();
-              ctx.arc(px, py, size, 0, Math.PI * 2);
+              ctx.arc(px, py, Math.max(0, size), 0, Math.PI * 2);
               ctx.fill();
           }
       });
@@ -204,7 +209,7 @@ const Logo: React.FC<LogoProps> = ({ size = 'large' }) => {
           
           ctx.fillStyle = '#fc4b08';
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, Math.max(0, p.radius), 0, Math.PI * 2);
           ctx.fill();
       });
     };

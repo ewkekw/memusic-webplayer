@@ -1,6 +1,5 @@
 
 
-
 import React, { useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Song, View, Playlist, Album, LocalPlaylist } from '../../types';
 import { UserMusicContext } from '../../context/UserMusicContext';
@@ -8,7 +7,8 @@ import { getArtistDetails, getSongSuggestions } from '../../services/jioSaavnApi
 import { Loader } from '../ui/Loader';
 import { PlayerContext } from '../../context/PlayerContext';
 import { AlbumCard } from '../ui/AlbumCard';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+// Fix: Removed unused import causing an error.
+import { useTranslation } from '../../context/LanguageContext';
 
 // Icons
 const XCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -74,7 +74,7 @@ const SongCard: React.FC<SongCardProps> = React.memo(({ song }) => {
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    playSong(song, [song]);
+    playSong(song, [song], { type: 'song', id: song.id });
   };
   
   return (
@@ -165,6 +165,7 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({ setActiveView, navigateToAlbum, navigateToArtist, navigateToSearch, navigateToApiPlaylist, navigateToPlaylist }) => {
     const { history, favoriteArtists, playlists, playlistHistory } = useContext(UserMusicContext);
     const { playSong } = useContext(PlayerContext);
+    const { t } = useTranslation();
     
     const [newReleases, setNewReleases] = useState<Album[]>([]);
     const [recommendations, setRecommendations] = useState<Song[]>([]);
@@ -256,9 +257,9 @@ const Home: React.FC<HomeProps> = ({ setActiveView, navigateToAlbum, navigateToA
 
     const getGreeting = () => {
         const hour = new Date().getHours();
-        if (hour < 12) return "Good morning";
-        if (hour < 18) return "Good afternoon";
-        return "Good evening";
+        if (hour < 12) return t('home.goodMorning');
+        if (hour < 18) return t('home.goodAfternoon');
+        return t('home.goodEvening');
     };
 
     const isLoading = loading.releases || loading.recommendations;
@@ -280,15 +281,15 @@ const Home: React.FC<HomeProps> = ({ setActiveView, navigateToAlbum, navigateToA
                                             key={item.id}
                                             item={item}
                                             onClick={() => {
-                                                if (isSong) playSong(item as Song, [item as Song]);
+                                                if (isSong) playSong(item as Song, [item as Song], { type: 'song', id: item.id });
                                                 else navigateToPlaylist((item as LocalPlaylist).id);
                                             }}
                                             onPlay={() => {
                                                 if (isSong) {
-                                                    playSong(item as Song, [item as Song]);
+                                                    playSong(item as Song, [item as Song], { type: 'song', id: item.id });
                                                 } else {
                                                     const pl = item as LocalPlaylist;
-                                                    if (pl.songs.length > 0) playSong(pl.songs[0], pl.songs, pl.id);
+                                                    if (pl.songs.length > 0) playSong(pl.songs[0], pl.songs, { type: 'playlist', id: pl.id });
                                                 }
                                             }}
                                         />
@@ -299,7 +300,7 @@ const Home: React.FC<HomeProps> = ({ setActiveView, navigateToAlbum, navigateToA
                     )}
                     
                     {recommendations.length > 0 && (
-                        <HorizontalScroller title="Recommended For You">
+                        <HorizontalScroller title={t('home.recommended')}>
                             {recommendations.map(song => (
                                 <SongCard key={song.id} song={song} />
                             ))}
@@ -307,7 +308,7 @@ const Home: React.FC<HomeProps> = ({ setActiveView, navigateToAlbum, navigateToA
                     )}
                     
                     {newReleases.length > 0 && (
-                        <HorizontalScroller title="New Releases From Your Artists">
+                        <HorizontalScroller title={t('home.newReleases')}>
                             {newReleases.map(album => (
                                 <div key={album.id} className="w-40 md:w-48 flex-shrink-0">
                                     <AlbumCard album={album} onAlbumClick={navigateToAlbum} onArtistClick={navigateToArtist} />

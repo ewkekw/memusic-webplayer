@@ -1,4 +1,5 @@
 
+
 import React, { useContext } from 'react';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { SongList } from '../ui/SongList';
@@ -22,7 +23,7 @@ const Favorites: React.FC<FavoritesProps> = ({ navigateToAlbum, navigateToArtist
             <section>
                 <h2 className="text-3xl font-bold mb-4">Favorite Songs</h2>
                 {favoriteSongs.length > 0 ? (
-                    <SongList songs={favoriteSongs} navigateToArtist={navigateToArtist} />
+                    <SongList songs={favoriteSongs} navigateToArtist={navigateToArtist} context={{ type: 'library-songs', id: 'favorites' }} />
                 ) : (
                     <p className="text-gray-400">You haven't favorited any songs yet.</p>
                 )}

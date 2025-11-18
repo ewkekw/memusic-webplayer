@@ -1,3 +1,7 @@
+
+
+
+
 import React, { useContext, useState, useRef, useEffect, useMemo } from 'react';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { SongList } from '../ui/SongList';
@@ -86,7 +90,7 @@ const AllView: React.FC<{ onNavigatePlaylist: NavFunc; onNavigateAlbum: NavFunc;
             {playlists.length > 0 && (<section><h2 className="text-xl md:text-2xl font-bold mb-4">Recent Playlists</h2><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{playlists.slice(0,6).map(p => <LocalPlaylistCard key={p.id} playlist={p} onClick={() => onNavigatePlaylist(p.id)} />)}</div></section>)}
             {favoriteAlbums.length > 0 && (<section><h2 className="text-xl md:text-2xl font-bold mb-4">Recent Albums</h2><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{favoriteAlbums.slice(0,6).map(a => <AlbumCard key={a.id} album={a} onAlbumClick={onNavigateAlbum} onArtistClick={onNavigateArtist} />)}</div></section>)}
             {favoriteArtists.length > 0 && (<section><h2 className="text-xl md:text-2xl font-bold mb-4">Recent Artists</h2><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{favoriteArtists.slice(0,6).map(a => <ArtistCard key={a.id} artist={a} onArtistClick={onNavigateArtist} />)}</div></section>)}
-            {favoriteSongs.length > 0 && (<section><h2 className="text-xl md:text-2xl font-bold mb-4">Recent Songs</h2><SongList songs={favoriteSongs.slice(0,5)} navigateToArtist={onNavigateArtist} navigateToPlaylist={onNavigatePlaylist} /></section>)}
+            {favoriteSongs.length > 0 && (<section><h2 className="text-xl md:text-2xl font-bold mb-4">Recent Songs</h2><SongList songs={favoriteSongs.slice(0,5)} navigateToArtist={onNavigateArtist} navigateToPlaylist={onNavigatePlaylist} context={{ type: 'library-songs', id: 'favorites' }} /></section>)}
         </div>
     );
 };
@@ -142,13 +146,12 @@ const SongsView: React.FC<{ onNavigateArtist: NavFunc; onNavigatePlaylist: NavFu
                     <button onClick={() => setIsSortMenuOpen(p => !p)} className="flex items-center space-x-1 px-3 py-2 text-sm rounded-md transition-all bg-white/10 hover:bg-white/20 text-gray-300"><span>Sort by: {currentSortLabel}</span><ChevronDownIcon className="w-4 h-4 flex-shrink-0"/></button>
                     {isSortMenuOpen && (
                         <div className="absolute top-full right-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                            {/* Fix: Use opt.key directly as it's now correctly typed due to 'as const' on sortOptions */}
                             {sortOptions.map(opt => <button key={opt.key} onClick={() => { setSortKey(opt.key); setIsSortMenuOpen(false); }} className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${sortKey === opt.key ? 'bg-[#fc4b08] text-white font-bold' : 'text-gray-300 hover:bg-white/10'}`}>{opt.label}</button>)}
                         </div>
                     )}
                 </div>
             </div>
-            {sortedSongs.length > 0 ? <SongList songs={sortedSongs} navigateToArtist={onNavigateArtist} navigateToPlaylist={onNavigatePlaylist} /> : <p className="text-gray-400">You haven't favorited any songs yet.</p>}
+            {sortedSongs.length > 0 ? <SongList songs={sortedSongs} navigateToArtist={onNavigateArtist} navigateToPlaylist={onNavigatePlaylist} context={{ type: 'library-songs', id: 'favorites' }} /> : <p className="text-gray-400">You haven't favorited any songs yet.</p>}
         </section>
     );
 };
@@ -195,7 +198,7 @@ const Library: React.FC<LibraryProps> = ({ navigateToAlbum, navigateToPlaylist, 
     
     const handleCreatePlaylist = () => {
         showModal({
-            title: "Create New Playlist",
+            title: "Criar Nova Playlist",
             content: <CreatePlaylistForm onCancel={hideModal} onConfirm={(name, desc) => { const newP = createPlaylist(name, desc); hideModal(); navigateToPlaylist(newP.id); }} />
         });
     };

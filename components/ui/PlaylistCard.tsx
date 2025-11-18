@@ -5,6 +5,7 @@ import { Playlist } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { searchSongs } from '../../services/jioSaavnApi';
+import { useTranslation } from '../../context/LanguageContext';
 
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -26,16 +27,23 @@ interface PlaylistCardProps {
 
 export const PlaylistCard: React.FC<PlaylistCardProps> = React.memo(({ playlist, onClick }) => {
   const imageUrl = playlist.image?.find(img => img.quality === '150x150')?.url || playlist.image?.[0]?.url;
-  const { playSong } = useContext(PlayerContext);
+  const { playSong, contextId, togglePlay } = useContext(PlayerContext);
   const { isFavoriteApiPlaylist, toggleFavoriteApiPlaylist } = useContext(UserMusicContext);
+  const { t } = useTranslation();
+  
   const isFav = isFavoriteApiPlaylist(playlist.id);
+  const isPlaylistCurrentlyPlaying = contextId === playlist.id;
 
   const handlePlayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isPlaylistCurrentlyPlaying) {
+        togglePlay();
+        return;
+    }
     try {
         const response = await searchSongs(playlist.name, 1, 50);
         if (response.success && response.data.results.length > 0) {
-            playSong(response.data.results[0], response.data.results);
+            playSong(response.data.results[0], response.data.results, { type: 'api_playlist', id: playlist.id });
         } else {
             alert(`Could not find any songs matching "${playlist.name}"`);
         }
@@ -57,7 +65,8 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = React.memo(({ playlist,
         <button
           onClick={handleFavoriteClick}
           className="absolute top-2 right-2 p-2 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/70 z-10"
-          aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+          aria-label={isFav ? t('albumView.removeFromFav') : t('albumView.addToFav')}
+          title={isFav ? t('albumView.removeFromFav') : t('albumView.addToFav')}
         >
           <HeartIcon className={`w-5 h-5 transition-all ${isFav ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-300'}`} />
         </button>

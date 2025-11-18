@@ -1,3 +1,5 @@
+
+
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { LocalPlaylist, View } from '../../../types';
 import { PlayerContext } from '../../../context/PlayerContext';
@@ -8,13 +10,13 @@ declare const JSZip: any;
 
 // Icons
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5L19 12L7 19.5V4.5Z" /></svg>
 );
 const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75.75v12a.75.75 0 01-1.5 0V6a.75.75 0 01.75-.75zm9 0a.75.75 0 01.75.75v12a.75.75 0 01-1.5 0V6a.75.75 0 01.75-.75z" clipRule="evenodd" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5.25 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM15 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM6 18.375a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" /></svg>
 );
 const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
 );
 const TrashIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.067-2.09.921-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
@@ -32,7 +34,7 @@ const CameraIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
 );
 const PlusIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
 );
 
 const getTitleClass = (name: string): string => {
@@ -54,7 +56,7 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showModal, hideModal } = useContext(ModalContext);
 
-    const { playSong, addSongsToEnd, currentSong, isPlaying, togglePlay, selectedQuality } = useContext(PlayerContext);
+    const { playSong, addSongsToEnd, isPlaying, togglePlay, selectedQuality, contextId } = useContext(PlayerContext);
     const { deletePlaylist, updatePlaylist } = useContext(UserMusicContext);
     
     useEffect(() => {
@@ -65,11 +67,11 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
     
-    const isPlaylistCurrentlyPlaying = playlist.songs?.some(s => s.id === currentSong?.id);
+    const isPlaylistCurrentlyPlaying = contextId === playlist.id;
 
     const handlePlayPlaylist = () => {
         if (isPlaylistCurrentlyPlaying) togglePlay();
-        else if (playlist.songs && playlist.songs.length > 0) playSong(playlist.songs[0], playlist.songs, playlist.id);
+        else if (playlist.songs && playlist.songs.length > 0) playSong(playlist.songs[0], playlist.songs, { type: 'playlist', id: playlist.id });
     }
 
     const handleDelete = () => {
@@ -132,7 +134,7 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
               const j = Math.floor(Math.random() * (i + 1));
               [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
           }
-          playSong(shuffled[0], shuffled, playlist.id);
+          playSong(shuffled[0], shuffled, { type: 'playlist', id: playlist.id });
       }
       setIsActionMenuOpen(false);
     };
@@ -151,16 +153,16 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
               const blob = await response.blob();
               zip.file(`${song.artists.primary.map(a => a.name).join(', ')} - ${song.name}.mp3`, blob);
               filesAdded++;
-               showModal({ title: "Preparing Download", content: <div className="space-y-2"><p>Fetching {filesAdded}/{totalFiles}...</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${(filesAdded / totalFiles) * 100}%` }}></div></div></div> });
+               showModal({ title: "Preparing Download", content: <div className="space-y-2"><p>Fetching song {filesAdded} of {totalFiles}...</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${(filesAdded / totalFiles) * 100}%` }}></div></div></div> });
           } catch (error) { console.error(`Download failed for ${song.name}:`, error); }
       }
       if (filesAdded === 0) {
           showModal({ title: "Download Failed", content: <p>Could not download any songs.</p> });
           return;
       }
-      showModal({ title: "Zipping Files", content: <p>Creating .zip file...</p> });
+      showModal({ title: "Compressing Files", content: <p>Creating .zip file...</p> });
       zip.generateAsync({ type: "blob" }, (metadata) => {
-          showModal({ title: "Zipping Files", content: <div className="space-y-2"><p>Compressing... {metadata.percent.toFixed(0)}%</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${metadata.percent}%` }}></div></div></div> });
+          showModal({ title: "Compressing Files", content: <div className="space-y-2"><p>Compressing... {metadata.percent.toFixed(0)}%</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${metadata.percent}%` }}></div></div></div> });
       }).then((content) => {
           const zipUrl = URL.createObjectURL(content);
           const a = document.createElement('a');
@@ -239,7 +241,7 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
                     <div className="flex items-center">
                         <div className="flex items-center gap-5">
                             <button onClick={handlePlayPlaylist} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-                            {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8 ml-1"/>}
+                            {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8"/>}
                             </button>
                             <button onClick={handleDownloadAll} title="Download all songs" className="p-3 rounded-full hover:bg-white/10 transition-colors">
                                 <DownloadIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
@@ -250,8 +252,8 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
                                 </button>
                                 {isActionMenuOpen && (
                                     <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                                        <button onClick={handleAddToQueue} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to queue</button>
-                                        <button onClick={handlePlayShuffle} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Play with shuffle</button>
+                                        <button onClick={handleAddToQueue} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to Queue</button>
+                                        <button onClick={handlePlayShuffle} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Play Shuffle</button>
                                         <hr className="border-t border-white/10 my-1"/>
                                         <button onClick={() => {handleEditDetails(); setIsActionMenuOpen(false);}} className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md hover:bg-white/10"><PencilIcon className="w-4 h-4"/>Edit details</button>
                                         <button onClick={() => {handleDownloadAll(); setIsActionMenuOpen(false);}} className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md hover:bg-white/10"><DownloadIcon className="w-4 h-4"/>Download .zip</button>

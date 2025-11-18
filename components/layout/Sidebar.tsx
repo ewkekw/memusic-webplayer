@@ -2,6 +2,7 @@
 import React, { useContext, useMemo, useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { View, LocalPlaylist } from '../../types';
 import { UserMusicContext } from '../../context/UserMusicContext';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface SidebarProps {
   activeView: View;
@@ -78,6 +79,7 @@ interface PlaylistSidebarItemProps {
 
 const PlaylistSidebarItem: React.FC<PlaylistSidebarItemProps> = ({ playlist, onClick, style, className }) => {
   const imageUrl = playlist.coverUrl || playlist.songs[0]?.image?.find(img => img.quality === '50x50')?.url || playlist.songs[0]?.image?.[0]?.url;
+  const { t } = useTranslation();
 
   return (
     <button
@@ -95,7 +97,7 @@ const PlaylistSidebarItem: React.FC<PlaylistSidebarItemProps> = ({ playlist, onC
       )}
       <div className="ml-3 min-w-0">
         <p className="font-semibold text-white truncate">{playlist.name}</p>
-        <p className="text-sm text-gray-400 truncate">Playlist</p>
+        <p className="text-sm text-gray-400 truncate">{t('sidebar.playlist')}</p>
       </div>
     </button>
   );
@@ -104,6 +106,7 @@ const PlaylistSidebarItem: React.FC<PlaylistSidebarItemProps> = ({ playlist, onC
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, navigateToPlaylist }) => {
   const { playlists, playlistHistory } = useContext(UserMusicContext);
+  const { t } = useTranslation();
 
   const [sliderStyle, setSliderStyle] = useState({ top: 0, height: 0, opacity: 0 });
   const [hasMounted, setHasMounted] = useState(false);
@@ -121,7 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
       id: 'home',
       ref: homeRef,
       icon: <HomeIcon />,
-      label: 'Home',
+      label: t('sidebar.home'),
       isActive: activeView === 'home',
       onClick: () => setActiveView('home'),
     },
@@ -129,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
       id: 'search',
       ref: searchRef,
       icon: <SearchIcon />,
-      label: 'Search',
+      label: t('sidebar.search'),
       isActive: activeView === 'search',
       onClick: () => setActiveView('search'),
     },
@@ -137,7 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
       id: 'library',
       ref: libraryRef,
       icon: <LibraryIcon />,
-      label: 'Library',
+      label: t('sidebar.library'),
       isActive: libraryViews.includes(activeView),
       onClick: () => setActiveView('library'),
     },
@@ -145,11 +148,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
       id: 'settings',
       ref: settingsRef,
       icon: <SettingsIcon />,
-      label: 'Settings',
+      label: t('sidebar.settings'),
       isActive: activeView === 'settings',
       onClick: () => setActiveView('settings'),
     },
-  ], [activeView, setActiveView]);
+  ], [activeView, setActiveView, t]);
 
   useLayoutEffect(() => {
     const activeItem = navItems.find(item => item.isActive);

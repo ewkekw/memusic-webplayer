@@ -8,33 +8,24 @@ import { Loader } from '../ui/Loader';
 import { SongList } from '../ui/SongList';
 import { ModalContext } from '../../App';
 import { useAlbum } from '../../hooks/useAlbum';
+import { useTranslation } from '../../context/LanguageContext';
 
 declare const JSZip: any;
 
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
-  </svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5L19 12L7 19.5V4.5Z" /></svg>
 );
 const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75.75v12a.75.75 0 01-1.5 0V6a.75.75 0 01.75-.75zm9 0a.75.75 0 01.75.75v12a.75.75 0 01-1.5 0V6a.75.75 0 01.75-.75z" clipRule="evenodd" />
-  </svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5.25 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM15 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM6 18.375a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" /></svg>
 );
 const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-    </svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
 );
 const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-    </svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
 );
 const DownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-    </svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
 );
 
 interface AlbumViewProps {
@@ -53,11 +44,12 @@ const getTitleClass = (name: string): string => {
 
 const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateToArtist, navigateToPlaylist }) => {
   const { album, loading, error } = useAlbum(albumId);
+  const { t } = useTranslation();
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const { showModal, hideModal } = useContext(ModalContext);
 
-  const { playSong, addSongsToEnd, currentSong, isPlaying, togglePlay, selectedQuality } = useContext(PlayerContext);
+  const { playSong, addSongsToEnd, isPlaying, togglePlay, selectedQuality, contextId } = useContext(PlayerContext);
   const { isFavoriteAlbum, toggleFavoriteAlbum } = useContext(UserMusicContext);
 
   useEffect(() => {
@@ -73,13 +65,13 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
   if (loading) return <div className="flex items-center justify-center h-full"><Loader /></div>;
   if (error || !album) return <div className="p-8 text-center text-gray-400">{error || 'Album not found or failed to load.'}</div>;
 
-  const isAlbumCurrentlyPlaying = album.songs?.some(s => s.id === currentSong?.id);
+  const isAlbumCurrentlyPlaying = contextId === album.id;
 
   const handlePlayAlbum = () => {
       if (isAlbumCurrentlyPlaying) {
           togglePlay();
       } else if (album.songs && album.songs.length > 0) {
-          playSong(album.songs[0], album.songs);
+          playSong(album.songs[0], album.songs, { type: 'album', id: album.id });
       }
   }
 
@@ -97,7 +89,7 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
             const j = Math.floor(Math.random() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        playSong(shuffled[0], shuffled);
+        playSong(shuffled[0], shuffled, { type: 'album', id: album.id });
     }
     setIsActionMenuOpen(false);
   };
@@ -108,8 +100,8 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
     let filesAdded = 0;
     const totalFiles = album.songs.length;
     showModal({
-        title: "Preparing Download",
-        content: <p>Fetching songs... (0/${totalFiles})</p>,
+        title: t('albumView.downloadPreparing'),
+        content: <p>{t('albumView.downloadFetching', {current: 0, total: totalFiles})}</p>,
     });
     for (const song of album.songs) {
         const url = song.downloadUrl.find(q => q.quality === '320kbps')?.url || song.downloadUrl[0]?.url;
@@ -124,10 +116,10 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
             zip.file(fileName, blob);
             filesAdded++;
              showModal({
-                title: "Preparing Download",
+                title: t('albumView.downloadPreparing'),
                 content: (
                   <div className="space-y-2">
-                    <p>Fetching song {filesAdded} of {totalFiles}...</p>
+                    <p>{t('albumView.downloadFetching_plural', {current: filesAdded, total: totalFiles})}</p>
                     <div className="w-full bg-gray-600 rounded-full h-2.5">
                       <div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${(filesAdded / totalFiles) * 100}%` }}></div>
                     </div>
@@ -140,28 +132,28 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
     }
     if (filesAdded === 0) {
         showModal({
-            title: "Download Failed",
-            content: <><p className="text-gray-300 mb-6">Could not download any songs for this album.</p><div className="flex justify-end"><button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20">Close</button></div></>,
+            title: t('albumView.downloadFailed'),
+            content: <><p className="text-gray-300 mb-6">{t('albumView.downloadFailedMsg')}</p><div className="flex justify-end"><button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20">{t('albumView.close')}</button></div></>,
         });
         return;
     }
     showModal({
-        title: "Zipping Files",
-        content: <p>Creating your .zip file. This might take a moment...</p>,
+        title: t('albumView.downloadCompressing'),
+        content: <p>{t('albumView.downloadCompressingMsg')}</p>,
     });
-    zip.generateAsync({ type: "blob" }, (metadata) => {
+    zip.generateAsync({ type: "blob" }, (metadata: { percent: number }) => {
         showModal({
-            title: "Zipping Files",
+            title: t('albumView.downloadCompressing'),
             content: (
               <div className="space-y-2">
-                <p>Compressing... {metadata.percent.toFixed(0)}%</p>
+                <p>{t('albumView.downloadCompressingProgress', { percent: metadata.percent.toFixed(0) })}</p>
                  <div className="w-full bg-gray-600 rounded-full h-2.5">
                     <div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${metadata.percent}%` }}></div>
                 </div>
               </div>
             ),
         });
-    }).then((content) => {
+    }).then((content: any) => {
         const zipUrl = URL.createObjectURL(content);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -172,11 +164,11 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
         URL.revokeObjectURL(zipUrl);
         a.remove();
         hideModal();
-    }).catch(err => {
-        console.error("Failed to generate zip file", err);
+    }).catch((err: any) => {
+        console.error("Failed to generate zip", err);
          showModal({
-            title: "Error",
-            content: <><p className="text-gray-300 mb-6">Failed to create the .zip file.</p><div className="flex justify-end"><button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20">Close</button></div></>,
+            title: t('albumView.error'),
+            content: <><p className="text-gray-300 mb-6">{t('albumView.errorZip')}</p><div className="flex justify-end"><button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20">{t('albumView.close')}</button></div></>,
         });
     });
   };
@@ -209,7 +201,7 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
   const totalDuration = album.songs?.reduce((acc, song) => acc + (song.duration || 0), 0) || 0;
   const formatTotalDuration = (seconds: number) => {
       const minutes = Math.floor(seconds / 60);
-      return `${minutes} min`;
+      return t('albumView.duration', { duration: minutes });
   };
   const imageUrl = album.image?.find(img => img.quality === '500x500')?.url || album.image?.[0]?.url;
 
@@ -223,7 +215,7 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
 
           <img src={imageUrl} alt={album.name} className="w-40 h-40 sm:w-52 sm:h-52 rounded-lg shadow-2xl z-10 flex-shrink-0 object-cover animate-image-appear" loading="lazy" />
           <div className="z-10 text-center sm:text-left">
-              <p className="text-sm font-bold uppercase tracking-wider">Album</p>
+              <p className="text-sm font-bold uppercase tracking-wider">{t('albumView.album')}</p>
               <h1 className={getTitleClass(album.name)}>{album.name}</h1>
               <div className="flex items-center justify-center sm:justify-start text-gray-300 mt-2 text-sm flex-wrap">
                   <span>
@@ -237,7 +229,7 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
                   <span className="mx-2 hidden sm:inline">&bull;</span>
                   <span className="hidden sm:inline">{album.year}</span>
                   <span className="mx-2 hidden sm:inline">&bull;</span>
-                  <span>{album.songCount} songs, {formatTotalDuration(totalDuration)}</span>
+                  <span>{t('albumView.songs', { count: album.songCount || 0 })}, {formatTotalDuration(totalDuration)}</span>
               </div>
           </div>
       </div>
@@ -248,23 +240,23 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
                 <div className="flex items-center">
                     <div className="flex items-center gap-4 md:gap-5">
                         <button onClick={handlePlayAlbum} className="w-12 h-12 md:w-14 md:h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-                          {isAlbumCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8 ml-1"/>}
+                          {isAlbumCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8"/>}
                         </button>
-                        <button onClick={() => toggleFavoriteAlbum(album)} title={isFavoriteAlbum(album.id) ? "Remove from favorites" : "Add to favorites"} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
+                        <button onClick={() => toggleFavoriteAlbum(album)} title={isFavoriteAlbum(album.id) ? t('albumView.removeFromFav') : t('albumView.addToFav')} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
                             <HeartIcon className={`w-7 md:w-8 h-7 md:h-8 transition-all ${isFavoriteAlbum(album.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
                         </button>
-                        <button onClick={handleDownloadAll} title="Download all songs" className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
+                        <button onClick={handleDownloadAll} title={t('albumView.downloadAll')} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
                             <DownloadIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white"/>
                         </button>
                         <div className="relative" ref={actionMenuRef}>
-                            <button onClick={() => setIsActionMenuOpen(p => !p)} title="More options" className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
+                            <button onClick={() => setIsActionMenuOpen(p => !p)} title={t('albumView.moreOptions')} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
                                 <MoreIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white"/>
                             </button>
                             {isActionMenuOpen && (
                                 <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                                    <button onClick={handleAddToQueue} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to queue</button>
-                                    <button onClick={handlePlayShuffle} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Play with shuffle</button>
-                                    <button onClick={handleDownloadM3U} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Download .m3u playlist</button>
+                                    <button onClick={handleAddToQueue} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('albumView.addToQueue')}</button>
+                                    <button onClick={handlePlayShuffle} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('albumView.playShuffle')}</button>
+                                    <button onClick={handleDownloadM3U} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('albumView.downloadM3U')}</button>
                                 </div>
                             )}
                         </div>
@@ -274,7 +266,12 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
         </div>
 
         <div className="px-4 sm:px-8 pb-8">
-            <SongList songs={album.songs || []} navigateToArtist={navigateToArtist} navigateToPlaylist={navigateToPlaylist}/>
+            <SongList
+                songs={album.songs || []}
+                navigateToArtist={navigateToArtist}
+                navigateToPlaylist={navigateToPlaylist}
+                context={{ type: 'album', id: album.id }}
+            />
         </div>
       </div>
     </div>

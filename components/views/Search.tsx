@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { searchSongs, searchAlbums, searchArtists, searchPlaylists } from '../../services/jioSaavnApi';
 import { Song, Album, Artist, Playlist } from '../../types';
@@ -6,12 +8,14 @@ import { AlbumCard } from '../ui/AlbumCard';
 import { ArtistCard } from '../ui/ArtistCard';
 import { PlaylistCard } from '../ui/PlaylistCard';
 import { Loader, AnimatedTabs, TabItem } from '../ui/Loader';
+import { useTranslation } from '../../context/LanguageContext';
 
 type SearchTab = 'songs' | 'albums' | 'artists' | 'playlists';
 
 interface SearchResultsProps {
     activeTab: SearchTab;
     loading: boolean;
+    query: string;
     songs: Song[];
     albums: Album[];
     artists: Artist[];
@@ -19,10 +23,11 @@ interface SearchResultsProps {
     onResultClick: (type: 'album' | 'artist' | 'playlist' | 'song', id: string | Playlist) => void;
 }
 
-const SearchResults: React.FC<SearchResultsProps> = ({ activeTab, loading, songs, albums, artists, playlists, onResultClick }) => {
+const SearchResults: React.FC<SearchResultsProps> = ({ activeTab, loading, query, songs, albums, artists, playlists, onResultClick }) => {
+    const { t } = useTranslation();
     if (loading) return <div className="flex justify-center mt-8"><Loader /></div>;
     if (!songs.length && !albums.length && !artists.length && !playlists.length) {
-        return <p className="text-center text-gray-400 mt-8">No results found.</p>;
+        return <p className="text-center text-gray-400 mt-8">{t('search.noResults')}</p>;
     }
 
     switch (activeTab) {
@@ -31,8 +36,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({ activeTab, loading, songs
                 <SongList
                     songs={songs}
                     navigateToArtist={(artistId) => onResultClick('artist', artistId)}
+                    context={{ type: 'search', id: query }}
                 />
-            ) : <p className="text-gray-400">No songs found for this query.</p>;
+            ) : <p className="text-gray-400">{t('search.noSongs')}</p>;
         case 'albums':
             return albums.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
@@ -45,7 +51,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ activeTab, loading, songs
                         />
                     ))}
                 </div>
-            ) : <p className="text-gray-400">No albums found for this query.</p>;
+            ) : <p className="text-gray-400">{t('search.noAlbums')}</p>;
         case 'artists':
              return artists.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
@@ -57,13 +63,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({ activeTab, loading, songs
                         />
                     ))}
                 </div>
-            ) : <p className="text-gray-400">No artists found for this query.</p>;
+            ) : <p className="text-gray-400">{t('search.noArtists')}</p>;
         case 'playlists':
              return playlists.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                     {playlists.map(playlist => <PlaylistCard key={playlist.id} playlist={playlist} onClick={(p) => onResultClick('playlist', p)} />)}
                 </div>
-            ) : <p className="text-gray-400">No playlists found for this query.</p>;
+            ) : <p className="text-gray-400">{t('search.noPlaylists')}</p>;
         default:
             return null;
     }
@@ -82,14 +88,10 @@ const XCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const searchTabs: TabItem<SearchTab>[] = [
-    { id: 'songs', label: 'Songs' },
-    { id: 'albums', label: 'Albums' },
-    { id: 'artists', label: 'Artists' },
-    { id: 'playlists', label: 'Playlists' },
-];
+
 
 const Search: React.FC<SearchProps> = ({ navigateToAlbum, navigateToArtist, navigateToApiPlaylist, initialQuery }) => {
+    const { t } = useTranslation();
     const [query, setQuery] = useState(initialQuery || '');
     const [activeTab, setActiveTab] = useState<SearchTab>('songs');
     const [songs, setSongs] = useState<Song[]>([]);
@@ -97,6 +99,13 @@ const Search: React.FC<SearchProps> = ({ navigateToAlbum, navigateToArtist, navi
     const [artists, setArtists] = useState<Artist[]>([]);
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [loading, setLoading] = useState(false);
+
+    const searchTabs: TabItem<SearchTab>[] = [
+        { id: 'songs', label: t('library.songs') },
+        { id: 'albums', label: t('library.albums') },
+        { id: 'artists', label: t('library.artists') },
+        { id: 'playlists', label: t('library.playlists') },
+    ];
     
     useEffect(() => {
         setQuery(initialQuery || '');
@@ -147,7 +156,8 @@ const Search: React.FC<SearchProps> = ({ navigateToAlbum, navigateToArtist, navi
                 {query.trim() ? (
                     <SearchResults 
                         activeTab={activeTab} 
-                        loading={loading} 
+                        loading={loading}
+                        query={query}
                         songs={songs} 
                         albums={albums} 
                         artists={artists} 
@@ -156,8 +166,8 @@ const Search: React.FC<SearchProps> = ({ navigateToAlbum, navigateToArtist, navi
                     />
                 ) : (
                     <div className="text-center text-gray-500 pt-16">
-                        <p className="text-lg">Search for your favorite music.</p>
-                        <p>Results will appear here.</p>
+                        <p className="text-lg">{t('search.prompt')}</p>
+                        <p>{t('search.promptSubtitle')}</p>
                     </div>
                 )}
             </div>

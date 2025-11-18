@@ -2,16 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/public/icon.png">
+    <link rel="icon" href="/icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MeMusic - Frutiger Metro Webplayer</title>
     
     <!-- Open Graph / Social Media Meta Tags -->
     <meta property="og:title" content="MeMusic - Webplayer" />
     <meta property="og:description" content="A complete music web player with a Frutiger Metro aesthetic, allowing users to listen to, organize, and explore music directly from the browser without an account. Playlists, favorites, and history are saved locally." />
-    <meta property="og:image" content="/public/og-image.png" />
+    <meta property="og:image" content="/og-image.png" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="/og-image.png" />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,6 +41,19 @@
     }
     body {
       font-family: var(--font-sans);
+    }
+    
+    /* Background Noise Texture */
+    .bg-noise {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     }
 
     .volume-slider, .reverb-slider {
@@ -116,21 +130,20 @@
         transform: scale(1.1);
     }
 
-    /* Custom Scrollbar */
+    /* Custom Scrollbar - Modern Slim */
     .custom-scrollbar::-webkit-scrollbar {
-      width: 10px;
+      width: 6px;
+      height: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
       background: transparent;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background-color: rgba(107, 114, 128, 0.4);
-      border-radius: 5px;
-      border: 2px solid transparent;
-      background-clip: padding-box;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background-color: #fc4b08;
+      background-color: rgba(252, 75, 8, 0.6);
     }
     
     .custom-scrollbar-hidden::-webkit-scrollbar {
@@ -151,19 +164,38 @@
         100% { transform: scale(1); }
     }
 
+    /* Staggered List Animation */
     .playlist-item-enter {
-        animation: slide-in-down 0.4s ease-out backwards;
+        animation: slide-in-stagger 0.4s ease-out backwards;
     }
-    @keyframes slide-in-down {
+    @keyframes slide-in-stagger {
         from {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
     
     @keyframes pulse-8d {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.2); }
+    }
+
+    @keyframes glowing-pulse {
+      0%, 100% { 
+        box-shadow: 0 0 4px rgba(252, 75, 8, 0.3);
+        background-color: rgba(252, 75, 8, 0.1);
+      }
+      50% { 
+        box-shadow: 0 0 10px rgba(252, 75, 8, 0.5);
+        background-color: rgba(252, 75, 8, 0.15);
+      }
+    }
+    .animate-glowing-pulse {
+      animation: glowing-pulse 2.5s infinite ease-in-out;
     }
     
     /* Player Control Animations */
@@ -198,23 +230,23 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.2s ease-in-out, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .play-pause-container .play-icon {
       opacity: 1;
-      transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      transform: translate(-50%, -50%) scale(1);
     }
     .play-pause-container .pause-icon {
       opacity: 0;
-      transform: translate(-50%, -50%) scale(0.7) rotate(-90deg);
+      transform: translate(-50%, -50%) scale(0.7);
     }
     .play-pause-container.is-playing .play-icon {
       opacity: 0;
-      transform: translate(-50%, -50%) scale(0.7) rotate(90deg);
+      transform: translate(-50%, -50%) scale(0.7);
     }
     .play-pause-container.is-playing .pause-icon {
       opacity: 1;
-      transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      transform: translate(-50%, -50%) scale(1);
     }
 
     .progress-bar-fill, .progress-bar-thumb {
