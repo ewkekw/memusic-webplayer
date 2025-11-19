@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, ReactNode, createContext, useCallback, lazy, Suspense, ErrorInfo, Component } from 'react';
+import React, { Component, useState, useContext, useEffect, ReactNode, createContext, useCallback, lazy, Suspense, ErrorInfo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/layout/Sidebar';
 import { Player } from './components/layout/Player';

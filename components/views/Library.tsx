@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useContext, useState, useRef, useEffect, useMemo } from 'react';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { SongList } from '../ui/SongList';
@@ -26,6 +23,12 @@ const CreatePlaylistCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
     </div>
 );
 
+const PlaylistPlaceholderIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+    </svg>
+);
+
 // Sub-component: LocalPlaylistCard
 const LocalPlaylistCard: React.FC<{ playlist: LocalPlaylist; onClick: () => void; }> = ({ playlist, onClick }) => {
     const { deletePlaylist } = useContext(UserMusicContext);
@@ -36,7 +39,6 @@ const LocalPlaylistCard: React.FC<{ playlist: LocalPlaylist; onClick: () => void
 
     const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>);
     const TrashIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.067-2.09.921-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>);
-    const MinimalistMusicIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9l6-2m0 0l-6 2m6-2v6a2 2 0 01-2 2h-2a2 2 0 01-2-2V9a2 2 0 012-2h2a2 2 0 012 2zm-6 2v6a2 2 0 002 2h2a2 2 0 002-2v-6" /></svg>);
     
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false); };
@@ -71,7 +73,15 @@ const LocalPlaylistCard: React.FC<{ playlist: LocalPlaylist; onClick: () => void
                     </div>
                 )}
             </div>
-            <div className="relative w-full aspect-square">{imageUrl ? <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" /> : <div className="w-full h-full bg-white/5 rounded-md flex items-center justify-center"><MinimalistMusicIcon className="w-1/2 h-1/2 text-gray-500"/></div>}</div>
+            <div className="relative w-full aspect-square">
+                {imageUrl ? (
+                    <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" />
+                ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[#1e1e1e] to-[#121212] flex items-center justify-center rounded-md border border-white/5">
+                        <PlaylistPlaceholderIcon className="w-1/2 h-1/2 text-white/10" />
+                    </div>
+                )}
+            </div>
             <h4 className="font-bold text-white mt-3 truncate">{playlist.name}</h4>
             <p className="text-sm text-gray-400 truncate">{playlist.songs.length} songs</p>
         </div>

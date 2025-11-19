@@ -1,3 +1,4 @@
+
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { PartyContext } from '../../context/PartyContext';
 import { PartyMode } from '../../types';
@@ -12,7 +13,6 @@ interface JoinViewProps {
     onClose: () => void;
     initialCode: string;
 }
-
 
 const JoinView: React.FC<JoinViewProps> = ({ setView, onClose, initialCode }) => {
     const { joinParty } = useContext(PartyContext);
@@ -68,7 +68,6 @@ const JoinView: React.FC<JoinViewProps> = ({ setView, onClose, initialCode }) =>
         }
     };
     
-    // Auto-join if code is pre-filled from URL
     useEffect(() => {
         if (initialCode && initialCode.length === 5 && !didAttemptJoin.current) {
             handleJoin();
@@ -77,10 +76,11 @@ const JoinView: React.FC<JoinViewProps> = ({ setView, onClose, initialCode }) =>
     }, [initialCode]);
 
     return (
-        <div className="animate-in fade-in duration-300">
-            <h2 className="text-2xl font-bold mb-2 text-center">{t('partyModal.joinTitle')}</h2>
-            <p className="mb-6 text-center text-gray-400">{t('partyModal.joinSubtitle')}</p>
-            <div className="flex justify-center gap-2 mb-4" onPaste={handlePaste}>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out">
+            <h2 className="text-3xl font-black mb-3 text-center tracking-tight text-white">{t('partyModal.joinTitle')}</h2>
+            <p className="mb-8 text-center text-gray-400 text-sm">{t('partyModal.joinSubtitle')}</p>
+            
+            <div className="flex justify-center gap-3 mb-8" onPaste={handlePaste}>
                 {Array.from({ length: 5 }).map((_, index) => (
                     <input
                         key={index}
@@ -90,24 +90,30 @@ const JoinView: React.FC<JoinViewProps> = ({ setView, onClose, initialCode }) =>
                         onChange={(e) => handleInputChange(index, e.target.value)}
                         onKeyDown={(e) => handleKeyDown(index, e)}
                         maxLength={1}
-                        className="w-11 h-14 sm:w-12 sm:h-16 bg-white/5 rounded-md text-center text-2xl sm:text-3xl font-bold uppercase focus:outline-none focus:ring-2 focus:ring-[#fc4b08] transition-all"
+                        className={`w-12 h-16 sm:w-14 sm:h-20 bg-black/20 border-2 rounded-lg text-center text-3xl font-bold uppercase transition-all duration-200 caret-transparent focus:outline-none
+                            ${code[index] ? 'border-[#fc4b08] text-[#fc4b08] bg-[#fc4b08]/5' : 'border-white/10 text-white focus:border-white/30 focus:bg-white/5'}`}
                         aria-label={`Character ${index + 1} of party code`}
                     />
                 ))}
             </div>
 
-            {error && <p className="text-red-400 text-center mt-4">{error}</p>}
-            <div className="flex flex-col-reverse sm:flex-row gap-4 justify-between items-center mt-8">
+            {error && (
+                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
+                    {error}
+                </div>
+            )}
+            
+            <div className="flex flex-col-reverse sm:flex-row gap-3 justify-between items-center">
                 <button
                     onClick={() => setView('landing')}
-                    className="w-full sm:w-auto px-5 py-3 rounded-full bg-white/10 font-semibold hover:bg-white/20 transition-colors text-center"
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-medium transition-colors text-sm border border-white/5"
                 >
                     {t('partyModal.back')}
                 </button>
                 <button
                     onClick={handleJoin}
                     disabled={loading || !isCodeFull}
-                    className="w-full sm:w-auto px-8 py-3 rounded-full bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
+                    className="w-full sm:w-auto px-10 py-3 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#fc4b08]/20 hover:shadow-[#fc4b08]/40 text-sm transform active:scale-95 duration-100"
                 >
                     {loading ? t('partyModal.joining') : t('partyModal.joinButton')}
                 </button>
@@ -125,15 +131,11 @@ const UsersIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const TurntableIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16 8V7a1 1 0 00-1-1h-1" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14 10l5-1" />
+const MixerIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 13.5V3.75m0 9.75a1.5 1.5 0 010 3m0-3a1.5 1.5 0 000 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 010 3m0-3a1.5 1.5 0 000 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 010 3m0-3a1.5 1.5 0 000 3m0 9.75V10.5" />
     </svg>
 );
-
 
 const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPartyId: (id: string) => void }> = ({ setView, setPartyId }) => {
     const { startParty } = useContext(PartyContext);
@@ -155,25 +157,35 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
     }> = ({ title, description, icon, isSelected, onClick }) => (
         <button
              onClick={onClick}
-             className={`flex-1 text-center p-6 rounded-xl border-2 transition-all duration-300 transform focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#282828] focus-visible:ring-[#fc4b08]
+             className={`group relative flex flex-col items-center text-center p-6 rounded-xl border-2 transition-all duration-200 ease-out focus:outline-none w-full h-full
              ${isSelected
-                 ? 'border-[#fc4b08] bg-[#fc4b08]/10 shadow-[0_0_20px_rgba(252,75,8,0.3)] scale-105'
-                 : 'border-white/20 bg-white/5 hover:border-white/40 hover:scale-[1.03]'
+                 ? 'border-[#fc4b08] bg-[#fc4b08]/10 shadow-[0_0_20px_rgba(252,75,8,0.1)]'
+                 : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
              }`}
          >
-            <div className={`mx-auto w-12 h-12 mb-4 transition-colors ${isSelected ? 'text-[#fc4b08]' : 'text-gray-400'}`}>
-                {icon}
+            <div className={`absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 ${isSelected ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}>
+                 <div className="w-full h-full bg-[#fc4b08] rounded-full flex items-center justify-center shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-black">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                 </div>
             </div>
-            <h4 className="font-bold text-white text-lg">{title}</h4>
-            <p className="text-sm text-gray-400 mt-1">{description}</p>
+
+            <div className={`w-16 h-16 mb-5 flex items-center justify-center rounded-2xl transition-colors duration-200 ${isSelected ? 'bg-[#fc4b08] text-black' : 'bg-white/10 text-gray-400 group-hover:text-white'}`}>
+                {React.cloneElement(icon as React.ReactElement, { className: 'w-8 h-8' })}
+            </div>
+            
+            <h4 className={`font-bold text-lg mb-2 transition-colors duration-200 ${isSelected ? 'text-white' : 'text-gray-200 group-hover:text-white'}`}>{title}</h4>
+            <p className="text-sm text-gray-400 leading-relaxed">{description}</p>
         </button>
     );
 
     return (
-        <div className="animate-in fade-in duration-300">
-            <h2 className="text-2xl font-bold mb-4 text-center">{t('partyModal.createTitle')}</h2>
-            <p className="mb-6 text-center text-gray-400">{t('partyModal.createSubtitle')}</p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out">
+            <h2 className="text-3xl font-black mb-3 text-center tracking-tight text-white">{t('partyModal.createTitle')}</h2>
+            <p className="mb-8 text-center text-gray-400 text-sm">{t('partyModal.createSubtitle')}</p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <OptionCard
                     title={t('partyModal.collaborative')}
                     description={t('partyModal.collaborativeDesc')}
@@ -184,21 +196,22 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
                 <OptionCard
                     title={t('partyModal.djHost')}
                     description={t('partyModal.djHostDesc')}
-                    icon={<TurntableIcon />}
+                    icon={<MixerIcon />}
                     isSelected={mode === 'dj'}
                     onClick={() => setMode('dj')}
                 />
             </div>
-            <div className="flex flex-col-reverse sm:flex-row gap-4 justify-between items-center mt-6">
+
+            <div className="flex flex-col-reverse sm:flex-row gap-3 justify-between items-center">
                  <button
                     onClick={() => setView('landing')}
-                    className="w-full sm:w-auto px-5 py-3 rounded-full bg-white/10 font-semibold hover:bg-white/20 transition-colors text-center"
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-medium transition-colors text-sm border border-white/5"
                 >
                     {t('partyModal.back')}
                 </button>
                 <button
                     onClick={handleCreate}
-                    className="w-full sm:w-auto px-8 py-3 rounded-full bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] transition-colors"
+                    className="w-full sm:w-auto px-10 py-3 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] shadow-lg shadow-[#fc4b08]/20 hover:shadow-[#fc4b08]/40 transition-all text-sm transform active:scale-95 duration-100"
                 >
                     {t('partyModal.startButton')}
                 </button>
@@ -208,15 +221,14 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
 };
 
 const LinkIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
 );
 const ShareIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.186 2.25 2.25 0 00-3.933 2.186z" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.186 2.25 2.25 0 00-3.933 2.186z" /></svg>
 );
 const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
 );
-
 
 const ShareView: React.FC<{ partyId: string, onClose: () => void }> = ({ partyId, onClose }) => {
     const { t } = useTranslation();
@@ -231,39 +243,43 @@ const ShareView: React.FC<{ partyId: string, onClose: () => void }> = ({ partyId
     };
 
     return (
-        <div className="animate-in fade-in duration-300 text-center">
-            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-[#fc4b08]/20 flex items-center justify-center border-2 border-[#fc4b08]/50">
-                <ShareIcon className="w-8 h-8 text-[#fc4b08]" />
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out text-center">
+            <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-[#fc4b08]/10 flex items-center justify-center border border-[#fc4b08]/20 animate-bounce-small">
+                <ShareIcon className="w-10 h-10 text-[#fc4b08]" />
             </div>
-            <h2 className="text-3xl font-bold mb-2">{t('partyModal.shareTitle')}</h2>
-            <p className="text-gray-400 mb-8">{t('partyModal.shareSubtitle')}</p>
+            <h2 className="text-3xl font-black mb-2 tracking-tight text-white">{t('partyModal.shareTitle')}</h2>
+            <p className="text-gray-400 mb-8 text-sm max-w-xs mx-auto leading-relaxed">{t('partyModal.shareSubtitle')}</p>
 
-            <div className="mb-6">
-                <label className="text-sm font-bold text-gray-400 uppercase tracking-widest">{t('partyModal.partyCode')}</label>
+            <div className="mb-8">
+                <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{t('partyModal.partyCode')}</div>
                 <div 
                     onClick={() => handleCopy(partyId, 'code')}
-                    className="group relative mt-2 bg-[#181818] p-4 rounded-lg cursor-pointer border border-white/10 hover:border-[#fc4b08]/50 transition-all duration-300"
+                    className="group relative inline-block bg-[#1a1a1a] px-10 py-5 rounded-2xl cursor-pointer border border-white/10 hover:border-[#fc4b08]/50 transition-all duration-200 active:scale-95 shadow-inner"
                 >
-                    <p className="font-mono text-5xl font-bold tracking-[0.3em] text-white ml-2">{partyId}</p>
-                    <div className={`absolute inset-0 bg-[#fc4b08] rounded-md flex items-center justify-center text-black font-bold text-lg transition-all duration-300 ${copied === 'code' ? 'opacity-100' : 'opacity-0'}`}>
+                    <p className="font-mono text-5xl sm:text-6xl font-bold tracking-widest text-white drop-shadow-md">{partyId}</p>
+                    
+                    <div className={`absolute inset-0 bg-[#fc4b08] rounded-2xl flex items-center justify-center text-black font-bold text-lg transition-opacity duration-200 ${copied === 'code' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                         <CheckIcon className="w-6 h-6 mr-2" />
                         {t('queue.copied')}
                     </div>
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex justify-center mb-8">
                 <button
                     onClick={() => handleCopy(partyLink, 'link')}
-                    className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white/10 font-semibold hover:bg-white/20 transition-colors"
+                    className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-200 border text-sm w-full sm:w-auto transform active:scale-95
+                    ${copied === 'link' 
+                        ? 'bg-green-500/10 border-green-500/50 text-green-400' 
+                        : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white'}`}
                 >
-                    <LinkIcon className="w-5 h-5" />
+                    {copied === 'link' ? <CheckIcon className="w-5 h-5" /> : <LinkIcon className="w-5 h-5 text-gray-400" />}
                     {copied === 'link' ? t('partyModal.linkCopied') : t('partyModal.copyInvite')}
                 </button>
             </div>
             
-            <div className="mt-8">
-                <button onClick={onClose} className="px-8 py-2 rounded-full text-gray-300 font-semibold hover:text-white hover:bg-white/10 transition-colors">
+            <div className="pt-6 border-t border-white/5">
+                <button onClick={onClose} className="text-gray-500 hover:text-white font-medium text-sm transition-colors px-6 py-2">
                     {t('partyModal.done')}
                 </button>
             </div>
@@ -274,23 +290,27 @@ const ShareView: React.FC<{ partyId: string, onClose: () => void }> = ({ partyId
 const LandingView: React.FC<{ setView: (view: 'create' | 'join') => void }> = ({ setView }) => {
     const { t } = useTranslation();
     const BroadcastIcon = (props: React.SVGProps<SVGSVGElement>) => (
-        <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 013-3h.008a3 3 0 013 3v.75" /></svg>
+        <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 013-3h.008a3 3 0 013 3v.75" /></svg>
     );
 
     return (
-        <div className="animate-in fade-in duration-300">
-            <h2 className="text-3xl font-bold mb-4 text-center">{t('partyModal.landingTitle')}</h2>
-            <p className="text-gray-300 mb-8 text-center">{t('partyModal.landingSubtitle')}</p>
-            <div className="flex flex-col sm:flex-row gap-6">
-                <button onClick={() => setView('create')} className="flex-1 p-6 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-center border border-white/10 hover:border-white/20">
-                    <BroadcastIcon className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-                    <h3 className="font-bold text-lg text-white">{t('partyModal.createCardTitle')}</h3>
-                    <p className="text-sm text-gray-400">{t('partyModal.createCardDesc')}</p>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out">
+            <h2 className="text-4xl font-black mb-4 text-center tracking-tighter text-white">{t('partyModal.landingTitle')}</h2>
+            <p className="text-gray-400 mb-10 text-center max-w-xs mx-auto leading-relaxed text-sm">{t('partyModal.landingSubtitle')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button onClick={() => setView('create')} className="flex flex-col items-center p-8 rounded-3xl bg-[#282828] border border-white/5 hover:border-[#fc4b08]/50 hover:bg-[#2f2f2f] transition-all duration-300 group text-center transform active:scale-[0.98] shadow-lg hover:shadow-xl">
+                    <div className="w-16 h-16 rounded-2xl bg-black/40 flex items-center justify-center mb-5 border border-white/5 group-hover:border-[#fc4b08]/30 transition-colors duration-300">
+                        <BroadcastIcon className="w-8 h-8 text-[#fc4b08]" />
+                    </div>
+                    <h3 className="font-bold text-xl text-white mb-2">{t('partyModal.createCardTitle')}</h3>
+                    <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">{t('partyModal.createCardDesc')}</p>
                 </button>
-                 <button onClick={() => setView('join')} className="flex-1 p-6 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-center border border-white/10 hover:border-white/20">
-                    <LinkIcon className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-                    <h3 className="font-bold text-lg text-white">{t('partyModal.joinCardTitle')}</h3>
-                    <p className="text-sm text-gray-400">{t('partyModal.joinCardDesc')}</p>
+                 <button onClick={() => setView('join')} className="flex flex-col items-center p-8 rounded-3xl bg-[#282828] border border-white/5 hover:border-white/30 hover:bg-[#2f2f2f] transition-all duration-300 group text-center transform active:scale-[0.98] shadow-lg hover:shadow-xl">
+                    <div className="w-16 h-16 rounded-2xl bg-black/40 flex items-center justify-center mb-5 border border-white/5 group-hover:border-white/20 transition-colors duration-300">
+                        <LinkIcon className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="font-bold text-xl text-white mb-2">{t('partyModal.joinCardTitle')}</h3>
+                    <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">{t('partyModal.joinCardDesc')}</p>
                 </button>
             </div>
         </div>
@@ -303,15 +323,12 @@ export const PartyModal: React.FC<PartyModalProps> = ({ onClose }) => {
     const [partyId, setPartyId] = useState('');
     const [initialPartyCode, setInitialPartyCode] = useState('');
     
-    // Auto-prepare join view if party ID is in URL on component mount.
-    // This is the safe way to handle this side-effect, preventing hook rule violations.
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const pid = params.get('party');
         if (pid && pid.trim().length === 5) {
             setView('join');
             setInitialPartyCode(pid.toUpperCase());
-            // Clean URL after reading param to prevent re-joining on reload.
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     }, []);
@@ -331,7 +348,7 @@ export const PartyModal: React.FC<PartyModalProps> = ({ onClose }) => {
     }
 
     return (
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-xl p-2">
             {renderView()}
         </div>
     );

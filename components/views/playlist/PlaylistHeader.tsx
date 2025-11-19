@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { LocalPlaylist, View } from '../../../types';
 import { PlayerContext } from '../../../context/PlayerContext';
@@ -10,10 +9,15 @@ declare const JSZip: any;
 
 // Icons
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5L19 12L7 19.5V4.5Z" /></svg>
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+  </svg>
 );
 const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5.25 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM15 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM6 18.375a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" /></svg>
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <rect x="6" y="5" width="3" height="14" rx="1" />
+    <rect x="15" y="5" width="3" height="14" rx="1" />
+  </svg>
 );
 const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
@@ -21,8 +25,10 @@ const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const TrashIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.067-2.09.921-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
 );
-const MinimalistMusicIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9l6-2m0 0l-6 2m6-2v6a2 2 0 01-2 2h-2a2 2 0 01-2-2V9a2 2 0 012-2h2a2 2 0 012 2zm-6 2v6a2 2 0 002 2h2a2 2 0 002-2v-6" /></svg>
+const PlaylistPlaceholderIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+    </svg>
 );
 const DownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
@@ -220,7 +226,13 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
                 </div>
                 <div className="w-40 h-40 sm:w-52 sm:h-52 rounded-lg shadow-2xl z-10 flex-shrink-0 bg-white/5 flex items-center justify-center group relative overflow-hidden" onClick={() => fileInputRef.current?.click()}>
                     <input type="file" ref={fileInputRef} onChange={handleCoverChange} accept="image/*" className="hidden"/>
-                    {imageUrl ? <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover animate-image-appear" loading="lazy" /> : <MinimalistMusicIcon className="w-1/2 h-1/2 text-gray-400"/>}
+                    {imageUrl ? (
+                        <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover animate-image-appear" loading="lazy" />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#1e1e1e] to-[#121212] flex items-center justify-center border border-white/5">
+                             <PlaylistPlaceholderIcon className="w-1/2 h-1/2 text-white/10" />
+                        </div>
+                    )}
                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                         <CameraIcon className="w-10 h-10"/>
                         <span className="text-sm font-bold mt-1">Choose Photo</span>
@@ -238,10 +250,13 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
             
             <div className="sticky top-0 z-20 backdrop-blur-md bg-gradient-to-b from-[#121212] via-[#121212]/70 to-transparent">
                 <div className="px-8 py-5">
-                    <div className="flex items-center">
+                    <div className="flex items-center justify-between">
                         <div className="flex items-center gap-5">
-                            <button onClick={handlePlayPlaylist} className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-                            {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8"/>}
+                            <button 
+                                onClick={handlePlayPlaylist} 
+                                className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transition-all duration-200 active:scale-95"
+                            >
+                                {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8"/>}
                             </button>
                             <button onClick={handleDownloadAll} title="Download all songs" className="p-3 rounded-full hover:bg-white/10 transition-colors">
                                 <DownloadIcon className="w-8 h-8 text-gray-400 hover:text-white"/>
@@ -263,10 +278,10 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
                                     </div>
                                 )}
                             </div>
-                            <button onClick={onOpenQuickAdd} title="Add songs" className="p-2 rounded-full hover:bg-white/10 transition-colors">
-                                <PlusIcon className="w-7 h-7 text-gray-300 hover:text-white"/>
-                            </button>
                         </div>
+                        <button onClick={onOpenQuickAdd} title="Add songs" className="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                            <PlusIcon className="w-7 h-7 text-gray-200 hover:text-white"/>
+                        </button>
                     </div>
                 </div>
             </div>

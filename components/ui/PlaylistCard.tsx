@@ -1,5 +1,4 @@
 
-
 import React, { useContext } from 'react';
 import { Playlist } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
@@ -16,6 +15,12 @@ const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+    </svg>
+);
+
+const PlaylistPlaceholderIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
     </svg>
 );
 
@@ -71,7 +76,13 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = React.memo(({ playlist,
           <HeartIcon className={`w-5 h-5 transition-all ${isFav ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-300'}`} />
         </button>
        <div className="relative w-full aspect-square mb-3">
-        <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" />
+        {imageUrl ? (
+            <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" />
+        ) : (
+             <div className="w-full h-full bg-gradient-to-br from-[#1e1e1e] to-[#121212] flex items-center justify-center rounded-md border border-white/5">
+                <PlaylistPlaceholderIcon className="w-1/2 h-1/2 text-white/10" />
+            </div>
+        )}
          <button
           onClick={handlePlayClick}
           className="absolute bottom-2 right-2 w-12 h-12 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 opacity-0 group-hover:opacity-100 transform group-hover:scale-100 scale-90 translate-y-2 group-hover:translate-y-0 transition-all duration-300"

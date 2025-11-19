@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { Album, Song, View } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
@@ -13,10 +12,15 @@ import { useTranslation } from '../../context/LanguageContext';
 declare const JSZip: any;
 
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5L19 12L7 19.5V4.5Z" /></svg>
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+  </svg>
 );
 const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5.25 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM15 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM6 18.375a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" /></svg>
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <rect x="6" y="5" width="3" height="14" rx="1" />
+    <rect x="15" y="5" width="3" height="14" rx="1" />
+  </svg>
 );
 const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
@@ -239,7 +243,10 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
             <div className="px-4 md:px-8 py-5">
                 <div className="flex items-center">
                     <div className="flex items-center gap-4 md:gap-5">
-                        <button onClick={handlePlayAlbum} className="w-12 h-12 md:w-14 md:h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
+                        <button 
+                            onClick={handlePlayAlbum} 
+                            className="w-12 h-12 md:w-14 md:h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transition-all duration-200 active:scale-95"
+                        >
                           {isAlbumCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8"/>}
                         </button>
                         <button onClick={() => toggleFavoriteAlbum(album)} title={isFavoriteAlbum(album.id) ? t('albumView.removeFromFav') : t('albumView.addToFav')} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
@@ -263,9 +270,8 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div className="px-4 sm:px-8 pb-8">
+            <div className="px-4 sm:px-8 pb-8">
             <SongList
                 songs={album.songs || []}
                 navigateToArtist={navigateToArtist}

@@ -59,7 +59,8 @@ const apiRequest = async <T,>(endpoint: string, cacheKey?: string): Promise<T> =
     }
     return data;
   } catch (error) {
-    console.error('API Error:', error);
+    // Don't console.error here; let the caller decide how to log or handle it.
+    // This reduces noise for expected network fluctuations handled by fallback layers.
     throw error;
   }
 };
