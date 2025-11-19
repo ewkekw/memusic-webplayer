@@ -8,43 +8,29 @@ import { PartyState, PartyMode, PartyParticipant, PartyQueueSong } from '../type
 const Peer = Peerjs.default || Peerjs.Peer || Peerjs;
 
 const PEER_ID_PREFIX = 'memusic-party-';
-const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-];
 
-const getPeerConfig = (strategy: 'default' | 'robust' | 'legacy') => {
-    const base = { debug: 0, pingInterval: 5000 };
-    const cloudConfig = {
-        host: '0.peerjs.com',
-        port: 443,
-        secure: true,
-        config: { iceServers: ICE_SERVERS }
-    };
-
-    switch (strategy) {
-        case 'default':
-            return { ...base, ...cloudConfig };
-        case 'robust':
-            return { 
-                ...base, 
-                ...cloudConfig, 
-                config: { ...cloudConfig.config, sdpSemantics: 'unified-plan' } 
-            };
-        case 'legacy':
-        default:
-            return base;
-    }
+// Single, robust configuration for both Host and Guest
+const PEER_CONFIG = {
+    host: '0.peerjs.com',
+    port: 443,
+    secure: true,
+    config: {
+        iceServers: [
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+        ],
+        sdpSemantics: 'unified-plan'
+    },
+    pingInterval: 5000,
+    debug: 1 // 0: None, 1: Errors, 2: Warnings, 3: All
 };
 
 const generatePartyCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     return Array.from({ length: 5 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
 };
-
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export class PartyHost {
     private peer: any = null;
@@ -64,56 +50,33 @@ export class PartyHost {
         this.destroy();
         this.isDestroyed = false;
         
-        const strategies: ('default' | 'robust' | 'legacy')[] = ['default', 'robust', 'legacy'];
+        if (onStatusUpdate) onStatusUpdate("Connecting to server...");
 
-        for (const strategy of strategies) {
-             if (this.isDestroyed) break;
-             try {
-                 if (onStatusUpdate) onStatusUpdate(strategy === 'default' ? "Initializing..." : "Retrying connection...");
-                 // Small delay between attempts to clear previous sockets
-                 await wait(500); 
-                 return await this.attemptConnection(strategy, mode, initialName, initialImage, playerState);
-             } catch (e: any) {
-                 console.warn(`[PartyHost] Strategy '${strategy}' failed:`, e);
-             }
-        }
-        throw new Error("CONNECTION_FAILED");
-    }
-
-    private attemptConnection(strategy: 'default' | 'robust' | 'legacy', mode: PartyMode, initialName: string, initialImage: string, playerState: any): Promise<string> {
         return new Promise((resolve, reject) => {
-            // Generate a new code for each attempt to avoid ID collisions/caching issues
             this.partyCode = generatePartyCode();
             const hostId = `${PEER_ID_PREFIX}${this.partyCode}`;
-            
-            if (this.peer) { 
-                try { this.peer.destroy(); } catch(e) {}
-                this.peer = null; 
-            }
 
             try {
                 // @ts-ignore
-                const peer = new Peer(hostId, getPeerConfig(strategy));
+                const peer = new Peer(hostId, PEER_CONFIG);
                 this.peer = peer;
-                let isResolved = false;
 
                 const timeout = setTimeout(() => {
-                    if (!isResolved) {
-                        isResolved = true;
-                        console.warn(`[PartyHost] Connection timeout for strategy ${strategy}`);
-                        try { peer.destroy(); } catch(e) {}
-                        reject(new Error("Timeout"));
+                    if (!this.isDestroyed) {
+                        console.warn('[PartyHost] Connection to signaling server timed out.');
+                        reject(new Error("Connection timed out. Please try again."));
+                        this.destroy();
                     }
-                }, 15000); // Increased timeout for slower networks
+                }, 15000);
 
                 peer.on('open', (id: string) => {
-                    if (isResolved) return;
-                    isResolved = true;
                     clearTimeout(timeout);
-                    
+                    if (this.isDestroyed) return;
+
+                    if (onStatusUpdate) onStatusUpdate("Party created!");
                     this.startHeartbeat();
                     this.setupPeerListeners();
-                    
+
                     const initialState: PartyState = {
                         partyId: this.partyCode,
                         hostId: this.myId,
@@ -128,28 +91,33 @@ export class PartyHost {
                         hostPing: Date.now(),
                         reactions: []
                     };
-                    
+
                     this.callbacks.onStateChange(initialState);
                     resolve(this.partyCode);
                 });
 
                 peer.on('error', (err: any) => {
-                    if (!isResolved) {
-                        isResolved = true;
-                        clearTimeout(timeout);
-                        // Don't destroy here, let the caller handle cleanup or retry
-                        reject(err);
-                    }
-                });
-                
-                peer.on('disconnected', () => {
-                    if (!peer.destroyed && !this.isDestroyed) {
-                        try { peer.reconnect(); } catch(e) {}
+                    clearTimeout(timeout);
+                    console.error('[PartyHost] Peer error:', err);
+                    if (!this.isDestroyed) {
+                         if (err.type === 'unavailable-id') {
+                             // Highly unlikely with random 5 chars, but possible. Recursion handled by caller usually, but we just fail here.
+                             reject(new Error("Party code collision. Please try again."));
+                         } else {
+                             reject(new Error("Failed to create party. Check connection."));
+                         }
+                         this.destroy();
                     }
                 });
 
-            } catch (e) { 
-                reject(e); 
+                peer.on('disconnected', () => {
+                    if (!peer.destroyed && !this.isDestroyed) {
+                        try { peer.reconnect(); } catch (e) { }
+                    }
+                });
+
+            } catch (e) {
+                reject(e);
             }
         });
     }
@@ -166,13 +134,22 @@ export class PartyHost {
 
         this.peer.on('connection', (conn: any) => {
             this.connections.push(conn);
+            
             conn.on('open', () => {
                 const currentState = this.callbacks.getCurrentState();
                 if (currentState) conn.send({ type: 'STATE_UPDATE', payload: currentState });
             });
+            
             conn.on('data', (data: any) => this.handleData(conn, data));
-            conn.on('close', () => { this.connections = this.connections.filter(c => c !== conn); });
-            conn.on('error', () => { this.connections = this.connections.filter(c => c !== conn); });
+            
+            conn.on('close', () => { 
+                this.connections = this.connections.filter(c => c !== conn); 
+            });
+            
+            conn.on('error', (err: any) => {
+                console.error('[PartyHost] Connection error:', err);
+                this.connections = this.connections.filter(c => c !== conn);
+            });
         });
     }
 
@@ -243,14 +220,17 @@ export class PartyHost {
     public destroy() {
         this.isDestroyed = true;
         if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-        // Try to notify clients before closing, but don't wait
-        try { this.broadcast(null); } catch(e) {}
-        
-        this.connections.forEach(c => { try { c.close(); } catch(e){} });
+        try { this.broadcast(null); } catch (e) { }
+
+        this.connections.forEach(c => { try { c.close(); } catch (e) { } });
         this.connections = [];
-        if (this.peer) { 
-            try { this.peer.destroy(); } catch(e){} 
-            this.peer = null; 
+        
+        if (this.peer) {
+            try { 
+                this.peer.disconnect(); 
+                this.peer.destroy(); 
+            } catch (e) { }
+            this.peer = null;
         }
     }
 }
@@ -268,39 +248,22 @@ export class PartyGuest {
         this.callbacks = callbacks;
     }
 
-    public async join(partyCode: string, name: string, image: string): Promise<{success: boolean, messageKey: string, errorMessage?: string}> {
+    public async join(partyCode: string, name: string, image: string): Promise<{ success: boolean, messageKey: string, errorMessage?: string }> {
         this.destroy();
         this.isDestroyed = false;
-        
         const targetId = `${PEER_ID_PREFIX}${partyCode.toUpperCase()}`;
-        const strategies: ('default' | 'robust' | 'legacy')[] = ['default', 'robust', 'legacy'];
 
-        for (const strategy of strategies) {
-             if (this.isDestroyed) break;
-             try {
-                 await wait(500);
-                 return await this.attemptJoin(targetId, strategy, name, image);
-             } catch (e: any) {
-                 console.warn(`[PartyGuest] Join strategy '${strategy}' failed:`, e);
-             }
-        }
-        return { success: false, messageKey: 'party.inactive', errorMessage: "Could not find party." };
-    }
-
-    private attemptJoin(targetId: string, strategy: 'default' | 'robust' | 'legacy', name: string, image: string): Promise<{success: boolean, messageKey: string}> {
         return new Promise((resolve, reject) => {
-             if (this.peer) { try { this.peer.destroy(); } catch(e){} }
-             
-             try {
+            try {
                 // @ts-ignore
-                const peer = new Peer(getPeerConfig(strategy));
+                const peer = new Peer(PEER_CONFIG);
                 this.peer = peer;
                 let connectionMade = false;
 
                 const timeout = setTimeout(() => {
                     if (!connectionMade) {
-                        try { peer.destroy(); } catch(e){}
-                        reject(new Error("Handshake Timeout"));
+                        try { peer.destroy(); } catch (e) { }
+                        reject(new Error("Connection timed out. Party might be inactive."));
                     }
                 }, 10000);
 
@@ -309,25 +272,50 @@ export class PartyGuest {
                         peer.destroy();
                         return;
                     }
-                    const conn = peer.connect(targetId, { reliable: true, serialization: 'json' });
-                    
+
+                    // Explicitly check if the peer is available by handling the error on the peer instance
+                    // Note: PeerJS 1.5+ emits 'error' with 'peer-unavailable' if connect fails for that reason
+                    const conn = peer.connect(targetId, { reliable: true });
+
                     conn.on('open', () => {
                         clearTimeout(timeout);
                         connectionMade = true;
                         this.conn = conn;
                         this.setupConnectionListeners();
-                        
+
                         this.send('PING', Date.now());
                         this.send('JOIN', { id: this.myId, name, imageUrl: image });
                         resolve({ success: true, messageKey: 'party.joined' });
                     });
 
-                    conn.on('error', (err: any) => { if(!connectionMade) reject(err); });
-                    conn.on('close', () => { if(connectionMade && !this.isDestroyed) this.callbacks.onConnectionLost(); });
+                    conn.on('error', (err: any) => {
+                        console.error('[PartyGuest] Connection error:', err);
+                        if (!connectionMade) {
+                            clearTimeout(timeout);
+                            reject(new Error("Failed to connect to party host."));
+                        }
+                    });
+                    
+                    conn.on('close', () => {
+                         if (connectionMade && !this.isDestroyed) this.callbacks.onConnectionLost();
+                    });
                 });
 
-                peer.on('error', (err: any) => { if (!connectionMade) reject(err); });
-            } catch (e) { reject(e); }
+                peer.on('error', (err: any) => {
+                    console.error('[PartyGuest] Peer error:', err);
+                    if (!connectionMade) {
+                        clearTimeout(timeout);
+                        if (err.type === 'peer-unavailable') {
+                             resolve({ success: false, messageKey: 'party.notFound', errorMessage: "Party not found. Check the code." });
+                        } else {
+                             reject(new Error(`Connection failed: ${err.type}`));
+                        }
+                    }
+                });
+
+            } catch (e) {
+                reject(e);
+            }
         });
     }
 
@@ -347,19 +335,22 @@ export class PartyGuest {
 
     public send(type: string, payload: any) {
         if (this.conn && this.conn.open) {
-            try { this.conn.send({ type, payload, senderId: this.myId }); } catch(e) {}
+            try { this.conn.send({ type, payload, senderId: this.myId }); } catch (e) { }
         }
     }
 
     public destroy() {
         this.isDestroyed = true;
-        if (this.conn) { 
-            try { this.send('LEAVE', null); this.conn.close(); } catch(e){}
-            this.conn = null; 
+        if (this.conn) {
+            try { this.send('LEAVE', null); this.conn.close(); } catch (e) { }
+            this.conn = null;
         }
-        if (this.peer) { 
-            try { this.peer.destroy(); } catch(e){}
-            this.peer = null; 
+        if (this.peer) {
+            try { 
+                this.peer.disconnect();
+                this.peer.destroy(); 
+            } catch (e) { }
+            this.peer = null;
         }
         this.timeOffset = null;
     }
