@@ -1,4 +1,5 @@
 
+
 import React, { useState, useContext, useEffect, ReactNode, createContext, useCallback, lazy, Suspense, ErrorInfo, Component } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/layout/Sidebar';
@@ -174,11 +175,24 @@ const MainApp: React.FC<MainAppProps> = ({ searchHistory, setAppState }) => {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [navDirection, setNavDirection] = useState<'forward' | 'backward' | null>(null);
   
-  const { currentSong, isQueueOpen } = useContext(PlayerContext);
+  const { currentSong, isQueueOpen, toggleQueue } = useContext(PlayerContext);
   const { partyState, partyEndedMessage, clearPartyEndedMessage } = useContext(PartyContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<{ title?: string; content: ReactNode; size?: 'md' | 'lg' | 'xl'; } | null>(null);
   const { t } = useTranslation();
+  
+  // Track party state to auto-open queue sidebar
+  const [wasInParty, setWasInParty] = useState(false);
+
+  useEffect(() => {
+    if (partyState && !wasInParty) {
+        setWasInParty(true);
+        // Force open queue when joining a party
+        toggleQueue(true); 
+    } else if (!partyState && wasInParty) {
+        setWasInParty(false);
+    }
+  }, [partyState, wasInParty, toggleQueue]);
 
   const showModal = (content: { title?: string; content: ReactNode; size?: 'md' | 'lg' | 'xl' }) => {
     setModalContent(content);

@@ -222,7 +222,7 @@ export interface PlayerContextType {
   playRadio: (song: Song) => void;
   currentQueue: Song[];
   isQueueOpen: boolean;
-  toggleQueue: () => void;
+  toggleQueue: (force?: boolean) => void;
   addSongNext: (song: Song) => void;
   addSongsToEnd: (songs: Song[]) => void;
   reorderQueue: (oldIndex: number, newIndex: number) => void;
@@ -314,7 +314,7 @@ export interface PartyContextType {
     partyState: PartyState | null;
     isHost: boolean;
     myId: string;
-    startParty: (mode: PartyMode) => string;
+    startParty: (mode: PartyMode) => Promise<string>;
     joinParty: (partyId: string) => Promise<{success: boolean, messageKey: string}>;
     leaveParty: () => void;
     endParty: () => void;

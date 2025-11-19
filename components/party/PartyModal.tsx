@@ -1,4 +1,5 @@
 
+
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { PartyContext } from '../../context/PartyContext';
 import { PartyMode } from '../../types';
@@ -141,11 +142,22 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
     const { startParty } = useContext(PartyContext);
     const { t } = useTranslation();
     const [mode, setMode] = useState<PartyMode>('collaborative');
+    const [error, setError] = useState<string | null>(null);
+    const [creating, setCreating] = useState(false);
 
-    const handleCreate = () => {
-        const newPartyId = startParty(mode);
-        setPartyId(newPartyId);
-        setView('share');
+    const handleCreate = async () => {
+        setCreating(true);
+        setError(null);
+        try {
+            const newPartyId = await startParty(mode);
+            setPartyId(newPartyId);
+            setView('share');
+        } catch (e) {
+            console.error("Failed to create party", e);
+            setError("Failed to create party. Please try again.");
+        } finally {
+            setCreating(false);
+        }
     };
 
     const OptionCard: React.FC<{
@@ -185,6 +197,12 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
             <h2 className="text-3xl font-black mb-3 text-center tracking-tight text-white">{t('partyModal.createTitle')}</h2>
             <p className="mb-8 text-center text-gray-400 text-sm">{t('partyModal.createSubtitle')}</p>
             
+             {error && (
+                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
+                    {error}
+                </div>
+            )}
+            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <OptionCard
                     title={t('partyModal.collaborative')}
@@ -211,9 +229,10 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
                 </button>
                 <button
                     onClick={handleCreate}
-                    className="w-full sm:w-auto px-10 py-3 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] shadow-lg shadow-[#fc4b08]/20 hover:shadow-[#fc4b08]/40 transition-all text-sm transform active:scale-95 duration-100"
+                    disabled={creating}
+                    className="w-full sm:w-auto px-10 py-3 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] shadow-lg shadow-[#fc4b08]/20 hover:shadow-[#fc4b08]/40 transition-all text-sm transform active:scale-95 duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {t('partyModal.startButton')}
+                    {creating ? "Starting..." : t('partyModal.startButton')}
                 </button>
             </div>
         </div>

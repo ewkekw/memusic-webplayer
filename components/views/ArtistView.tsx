@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useContext } from 'react';
 import { FullArtist, View, Album, Song, Artist } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
@@ -12,10 +11,15 @@ import { useArtist } from '../../hooks/useArtist';
 import { useTranslation } from '../../context/LanguageContext';
 
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5L19 12L7 19.5V4.5Z" /></svg>
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+  </svg>
 );
 const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5.25 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM15 6.375a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM6 18.375a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" /></svg>
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <rect x="6" y="5" width="3" height="14" rx="1" />
+    <rect x="15" y="5" width="3" height="14" rx="1" />
+  </svg>
 );
 
 
@@ -71,8 +75,11 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
 
       <div className="px-4 md:px-8 py-5">
         <div className="flex items-center gap-4 md:gap-5">
-          <button onClick={handlePlay} className="w-12 h-12 md:w-14 md:h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transform hover:scale-105 transition-all">
-            {isArtistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8"/>}
+          <button 
+            onClick={handlePlay} 
+            className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transition-all duration-200 active:scale-95"
+          >
+            {isArtistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8"/>}
           </button>
            <button 
             onClick={() => toggleFavoriteArtist(artist)}

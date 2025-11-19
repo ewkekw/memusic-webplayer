@@ -542,7 +542,7 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children, player
     addToHistory(song);
   }, [playSong, isShuffle, updatePlayerQueue, addToHistory, fetchRecommendations]);
 
-  const toggleQueue = useCallback(() => setIsQueueOpen(prev => !prev), []);
+  const toggleQueue = useCallback((force?: boolean) => setIsQueueOpen(prev => force !== undefined ? force : !prev), []);
 
   const seek = useCallback((time: number) => { if (audioRef.current) { audioRef.current.currentTime = time; setCurrentTime(time); } }, []);
   const setVolume = (v: number) => updatePlayerSettings(d => { d.volume = Math.max(0, Math.min(1, v)); });
