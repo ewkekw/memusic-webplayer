@@ -1,10 +1,10 @@
-
 import React, { createContext, useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { PartyState, PartyMode, PartyParticipant, PartyContextType, Song, PartyQueueSong, PartyReaction } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ProfileContext } from './ProfileContext';
 import { PlayerContext } from './PlayerContext';
+// @ts-ignore
 import { Peer, DataConnection, PeerOptions } from 'peerjs';
 
 export const PartyContext = createContext<PartyContextType>({} as PartyContextType);
@@ -17,7 +17,7 @@ const PEER_ID_PREFIX = 'memusic-party-';
 
 // Robust ICE configuration for cross-network connectivity
 // Using a comprehensive list of public STUN servers to maximize connection success chances
-const getPeerConfig = (): PeerOptions => ({
+const getPeerConfig = (): any => ({
     host: '0.peerjs.com',
     port: 443,
     secure: true,
@@ -62,9 +62,9 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [partyEndedMessage, setPartyEndedMessage] = useState<{ key: string; replacements?: { [key: string]: string | number } } | null>(null);
     
     // PeerJS Refs
-    const peerRef = useRef<Peer | null>(null);
-    const connectionsRef = useRef<DataConnection[]>([]); // For Host: list of connected guests
-    const hostConnectionRef = useRef<DataConnection | null>(null); // For Guest: connection to host
+    const peerRef = useRef<any>(null);
+    const connectionsRef = useRef<any[]>([]); // For Host: list of connected guests
+    const hostConnectionRef = useRef<any | null>(null); // For Guest: connection to host
 
     // Synchronization Refs
     // timeOffset = GuestTime - HostTime. 
@@ -144,74 +144,82 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const hostPeerId = `${PEER_ID_PREFIX}${code}`; // Deterministic ID based on code!
 
         return new Promise((resolve, reject) => {
-            const peer = new Peer(hostPeerId, getPeerConfig());
-            
-            peer.on('open', (id: string) => {
-                console.log('Host Peer Open:', id);
-                peerRef.current = peer;
+            try {
+                const peer = new Peer(hostPeerId, getPeerConfig());
                 
-                // Initialize State
-                const initialState: PartyState = {
-                    partyId: code,
-                    hostId: myId,
-                    mode,
-                    participants: [{ id: myId, name: nameRef.current, imageUrl: imageRef.current, isHost: true }],
-                    isPlaying: playerContextRef.current.isPlaying,
-                    currentSong: playerContextRef.current.currentSong,
-                    currentQueue: playerContextRef.current.currentQueue.map(s => ({ ...s, addedBy: myId })),
-                    currentTime: playerContextRef.current.currentTime,
-                    lastSeekTime: Date.now(),
-                    lastStateUpdate: Date.now(),
-                    hostPing: Date.now(),
-                    reactions: []
-                };
-                setPartyState(initialState);
-                resolve(code);
-            });
+                const timeout = setTimeout(() => {
+                    if (peer) peer.destroy();
+                    reject(new Error("Connection timed out. Please try again."));
+                }, 15000); // 15s timeout for PeerJS server connection
 
-            peer.on('connection', (conn: DataConnection) => {
-                console.log('Host: New connection from', conn.peer);
-                connectionsRef.current.push(conn);
-                
-                conn.on('open', () => {
-                    // IMMEDIATE SYNC: Send state right away on connection open
-                    if (partyStateRef.current) {
-                        conn.send({ type: 'STATE_UPDATE', payload: partyStateRef.current });
-                    }
+                peer.on('open', (id: string) => {
+                    clearTimeout(timeout);
+                    console.log('Host Peer Open:', id);
+                    peerRef.current = peer;
+                    
+                    // Initialize State
+                    const initialState: PartyState = {
+                        partyId: code,
+                        hostId: myId,
+                        mode,
+                        participants: [{ id: myId, name: nameRef.current, imageUrl: imageRef.current, isHost: true }],
+                        isPlaying: playerContextRef.current.isPlaying,
+                        currentSong: playerContextRef.current.currentSong,
+                        currentQueue: playerContextRef.current.currentQueue.map(s => ({ ...s, addedBy: myId })),
+                        currentTime: playerContextRef.current.currentTime,
+                        lastSeekTime: Date.now(),
+                        lastStateUpdate: Date.now(),
+                        hostPing: Date.now(),
+                        reactions: []
+                    };
+                    setPartyState(initialState);
+                    resolve(code);
                 });
 
-                conn.on('data', (data: any) => {
-                    if (data.type === 'PING') {
-                        // Respond to Clock Sync PING
-                        // Client sent time is reflected back so client can calc latency
-                        conn.send({
-                            type: 'PONG',
-                            payload: {
-                                clientSentTime: data.payload,
-                                hostTime: Date.now()
-                            }
-                        });
+                peer.on('connection', (conn: any) => {
+                    console.log('Host: New connection from', conn.peer);
+                    connectionsRef.current.push(conn);
+                    
+                    conn.on('open', () => {
+                        // IMMEDIATE SYNC: Send state right away on connection open
+                        if (partyStateRef.current) {
+                            conn.send({ type: 'STATE_UPDATE', payload: partyStateRef.current });
+                        }
+                    });
+
+                    conn.on('data', (data: any) => {
+                        if (data.type === 'PING') {
+                            // Respond to Clock Sync PING
+                            // Client sent time is reflected back so client can calc latency
+                            conn.send({
+                                type: 'PONG',
+                                payload: {
+                                    clientSentTime: data.payload,
+                                    hostTime: Date.now()
+                                }
+                            });
+                        } else {
+                            handleActionFromParticipant(data);
+                        }
+                    });
+
+                    conn.on('close', () => {
+                        connectionsRef.current = connectionsRef.current.filter(c => c !== conn);
+                    });
+                });
+
+                peer.on('error', (err: any) => {
+                    clearTimeout(timeout);
+                    console.error('Peer Error:', err);
+                    if (err.type === 'unavailable-id') {
+                         reject(new Error("Code collision, try again"));
                     } else {
-                        handleActionFromParticipant(data);
+                         reject(err);
                     }
                 });
-
-                conn.on('close', () => {
-                    connectionsRef.current = connectionsRef.current.filter(c => c !== conn);
-                    // Note: We don't automatically remove participants on disconnect to allow reconnection/ghosts,
-                    // but user can manually leave.
-                });
-            });
-
-            peer.on('error', (err: any) => {
-                console.error('Peer Error:', err);
-                // Handle ID taken (rare with random code)
-                if (err.type === 'unavailable-id') {
-                     reject(new Error("Code collision, try again"));
-                } else {
-                     reject(err);
-                }
-            });
+            } catch (error) {
+                reject(error);
+            }
         });
     }, [myId, destroyPeer]);
 
@@ -224,75 +232,80 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         return new Promise((resolve) => {
              // Guest gets a random peer ID
-            const peer = new Peer(getPeerConfig());
+            try {
+                const peer = new Peer(getPeerConfig());
 
-            peer.on('open', () => {
-                peerRef.current = peer;
-                const conn = peer.connect(targetPeerId, { reliable: true });
-                
-                // Timeout if host doesn't respond
-                const timeout = setTimeout(() => {
-                    if(!hostConnectionRef.current) {
-                        conn.close();
+                peer.on('open', () => {
+                    peerRef.current = peer;
+                    const conn = peer.connect(targetPeerId, { reliable: true });
+                    
+                    // Timeout if host doesn't respond
+                    const timeout = setTimeout(() => {
+                        if(!hostConnectionRef.current) {
+                            conn.close();
+                            resolve({ success: false, messageKey: 'party.notFound' });
+                        }
+                    }, 10000); // Increased timeout
+
+                    conn.on('open', () => {
+                        clearTimeout(timeout);
+                        hostConnectionRef.current = conn;
+                        
+                        // 1. Initiate Time Sync PING immediately
+                        conn.send({ type: 'PING', payload: Date.now() });
+
+                        // 2. Send Join Request
+                        conn.send({
+                            type: 'JOIN',
+                            payload: { id: myId, name: nameRef.current, imageUrl: imageRef.current }
+                        });
+                    });
+
+                    conn.on('data', (data: any) => {
+                        if (data.type === 'PONG') {
+                            // Calculate Clock Offset
+                            const now = Date.now();
+                            const { clientSentTime, hostTime } = data.payload;
+                            const latency = (now - clientSentTime) / 2;
+                            // Offset = (Now - Latency) - HostTime
+                            // Basically: MyClock - HostClock
+                            const offset = (now - latency) - hostTime;
+                            timeOffsetRef.current = offset;
+                            console.log(`Clock synced. Latency: ${latency.toFixed(0)}ms, Offset: ${offset.toFixed(0)}ms`);
+                        }
+                        else if (data.type === 'STATE_UPDATE') {
+                            if (data.payload === null) {
+                                // Host ended party
+                                setPartyEndedMessage({ key: 'modals.partyEnded.endedByHost', replacements: { partyId: code } });
+                                leaveParty();
+                            } else {
+                                setPartyState(data.payload);
+                            }
+                        }
+                    });
+                    
+                    conn.on('close', () => {
+                         // Only show error if we were actually connected and it wasn't an intentional leave
+                         if (hostConnectionRef.current) {
+                            setPartyEndedMessage({ key: 'modals.partyEnded.connectionLost', replacements: { partyId: code } });
+                            leaveParty();
+                         }
+                    });
+
+                    resolve({ success: true, messageKey: 'party.joined' });
+                });
+
+                peer.on('error', (err: any) => {
+                    console.error("Guest Peer Error", err);
+                    // Only reject if we haven't established connection yet
+                    if (!hostConnectionRef.current) {
                         resolve({ success: false, messageKey: 'party.notFound' });
                     }
-                }, 8000); // Increased timeout for slower networks
-
-                conn.on('open', () => {
-                    clearTimeout(timeout);
-                    hostConnectionRef.current = conn;
-                    
-                    // 1. Initiate Time Sync PING immediately
-                    conn.send({ type: 'PING', payload: Date.now() });
-
-                    // 2. Send Join Request
-                    conn.send({
-                        type: 'JOIN',
-                        payload: { id: myId, name: nameRef.current, imageUrl: imageRef.current }
-                    });
                 });
-
-                conn.on('data', (data: any) => {
-                    if (data.type === 'PONG') {
-                        // Calculate Clock Offset
-                        const now = Date.now();
-                        const { clientSentTime, hostTime } = data.payload;
-                        const latency = (now - clientSentTime) / 2;
-                        // Offset = (Now - Latency) - HostTime
-                        // Basically: MyClock - HostClock
-                        const offset = (now - latency) - hostTime;
-                        timeOffsetRef.current = offset;
-                        console.log(`Clock synced. Latency: ${latency.toFixed(0)}ms, Offset: ${offset.toFixed(0)}ms`);
-                    }
-                    else if (data.type === 'STATE_UPDATE') {
-                        if (data.payload === null) {
-                            // Host ended party
-                            setPartyEndedMessage({ key: 'modals.partyEnded.endedByHost', replacements: { partyId: code } });
-                            leaveParty();
-                        } else {
-                            setPartyState(data.payload);
-                        }
-                    }
-                });
-                
-                conn.on('close', () => {
-                     // Only show error if we were actually connected and it wasn't an intentional leave
-                     if (hostConnectionRef.current) {
-                        setPartyEndedMessage({ key: 'modals.partyEnded.connectionLost', replacements: { partyId: code } });
-                        leaveParty();
-                     }
-                });
-
-                resolve({ success: true, messageKey: 'party.joined' });
-            });
-
-            peer.on('error', (err: any) => {
-                console.error("Guest Peer Error", err);
-                // Only reject if we haven't established connection yet
-                if (!hostConnectionRef.current) {
-                    resolve({ success: false, messageKey: 'party.notFound' });
-                }
-            });
+            } catch (error) {
+                console.error("PeerJS failed to initialize", error);
+                resolve({ success: false, messageKey: 'party.inactive' });
+            }
         });
 
     }, [myId, destroyPeer, leaveParty]);
