@@ -69,7 +69,7 @@ export const PlaylistRecommendations: React.FC<PlaylistRecommendationsProps> = (
             // 5. Deduplicate suggestions and filter out songs already in the playlist
             const existingIds = new Set(playlistSongs.map(s => s.id));
             const uniqueSuggestions = allSuggestions.filter((song: Song, index: number) => 
-                index === allSuggestions.findIndex((t: Song) => t.id === song.id) && !existingIds.has(song.id)
+                index === allSuggestions.findIndex((t: any) => t.id === song.id) && !existingIds.has(song.id)
             );
 
             // 6. Shuffle the final results to mix the sources

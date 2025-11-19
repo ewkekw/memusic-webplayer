@@ -5,7 +5,7 @@ import { useDebounce } from './useDebounce';
 import { generateRandomName, defaultAvatars } from '../utils/defaults';
 
 const STORAGE_KEY = 'memusic-v1-storage';
-const DEBOUNCE_DELAY = 1000; // Increased delay to reduce write frequency
+const DEBOUNCE_DELAY = 1000;
 
 const eqBands = [
     { f: 60, type: 'lowshelf' as const }, { f: 230, type: 'peaking' as const },
@@ -52,125 +52,68 @@ export const defaultAppState: AppState = {
     searchHistory: [],
 };
 
-// --- Advanced Type Enforcement ---
+const isObject = (item: any): boolean => (item && typeof item === 'object' && !Array.isArray(item));
 
-const isObject = (item: any): boolean => {
-    return (item && typeof item === 'object' && !Array.isArray(item));
-};
-
-/**
- * Recursively merges source into target (default), strictly enforcing types from the target.
- * If a key in source matches target but has wrong type, it is reset to target's value.
- * Unknown keys in source are ignored (cleaning up old/bad data).
- */
 const strictMerge = (defaults: any, source: any): any => {
     if (source === undefined || source === null) return defaults;
-    
-    // Strict Type Check: If types don't match, revert to default
-    // Exception: Allow null in source if default is object (though usually we want the object) 
-    // But for our AppState, we prefer initialized objects over nulls.
-    if (typeof defaults !== typeof source) {
-        // Special case: Allow upgrading numbers to strings if needed, but here we are strict
-        return defaults; 
-    }
+    if (typeof defaults !== typeof source) return defaults;
 
     if (Array.isArray(defaults)) {
-        // For arrays, we trust the source is an array (checked above by typeof)
-        // We apply a basic filter to remove nulls/undefineds which might have crept in
         return Array.isArray(source) ? source.filter((i: any) => i !== null && i !== undefined) : defaults;
     }
 
     if (isObject(defaults)) {
         const output: any = {};
-        // Iterate over keys in DEFAULTS (Source of Truth)
         Object.keys(defaults).forEach(key => {
-            const defaultValue = defaults[key];
-            const sourceValue = source[key];
-            
-            if (sourceValue === undefined) {
-                output[key] = defaultValue;
-            } else {
-                output[key] = strictMerge(defaultValue, sourceValue);
-            }
+            output[key] = source[key] === undefined ? defaults[key] : strictMerge(defaults[key], source[key]);
         });
         return output;
     }
 
-    return source; // Primitive values (string, number, boolean)
+    return source;
 };
 
 const validateSpecificLogic = (state: AppState): AppState => {
-    // Ensure eqSettings has correct length
-    if (state.settings.player.eqSettings.length !== 5) {
-        state.settings.player.eqSettings = defaultAppState.settings.player.eqSettings;
-    }
-    // Ensure current index is valid
-    if (state.playerQueue.currentIndex >= state.playerQueue.currentQueue.length) {
-        state.playerQueue.currentIndex = -1;
-    }
+    if (state.settings.player.eqSettings.length !== 5) state.settings.player.eqSettings = defaultAppState.settings.player.eqSettings;
+    if (state.playerQueue.currentIndex >= state.playerQueue.currentQueue.length) state.playerQueue.currentIndex = -1;
     return state;
 }
 
 const loadState = (): AppState => {
     try {
         const serializedState = localStorage.getItem(STORAGE_KEY);
-        if (serializedState === null) {
-            return defaultAppState;
-        }
-        const storedState = JSON.parse(serializedState);
-        // Strictly enforce structure based on defaultAppState
-        const mergedState = strictMerge(defaultAppState, storedState);
-        return validateSpecificLogic(mergedState);
+        if (serializedState === null) return defaultAppState;
+        return validateSpecificLogic(strictMerge(defaultAppState, JSON.parse(serializedState)));
     } catch (error) {
-        console.error("Failed to load state, resetting to defaults.", error);
+        console.error("Failed to load state, resetting.", error);
         return defaultAppState;
     }
 };
 
-// --- Smart Storage Saving with Quota Management ---
-
 const saveState = (state: AppState) => {
     try {
-        const serializedState = JSON.stringify(state);
-        localStorage.setItem(STORAGE_KEY, serializedState);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (error: any) {
-        if (error.name === 'QuotaExceededError' || error.code === 22 || error.number === -2147024882) {
-            console.warn("Storage quota exceeded. Attempting to prune data...");
+        if (error.name === 'QuotaExceededError' || error.code === 22) {
+            console.warn("Storage quota exceeded. Pruning data...");
             
-            // Strategy 1: Halve the music history
             if (state.music.history.length > 10) {
                 state.music.history = state.music.history.slice(0, Math.floor(state.music.history.length / 2));
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-                    console.log("Recovered by pruning music history.");
-                    return;
-                } catch (e) {}
+                saveState(state);
+                return;
             }
-
-            // Strategy 2: Clear search history
             if (state.searchHistory.length > 0) {
                 state.searchHistory = [];
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-                    console.log("Recovered by clearing search history.");
-                    return;
-                } catch (e) {}
+                saveState(state);
+                return;
             }
-
-             // Strategy 3: Clear playlist history
              if (state.music.playlistHistory.length > 0) {
                 state.music.playlistHistory = [];
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-                    console.log("Recovered by clearing playlist history.");
-                    return;
-                } catch (e) {}
+                saveState(state);
+                return;
             }
-            
-            console.error("Critically out of space. Unable to save state even after pruning.");
-        } else {
-            console.error("Failed to save state to localStorage.", error);
         }
+        console.error("Failed to save state.", error);
     }
 };
 
@@ -178,23 +121,14 @@ export const useStorage = (): [AppState, (updater: (draft: AppState) => void) =>
     const [appState, setAppState] = useState<AppState>(loadState);
     const debouncedState = useDebounce(appState, DEBOUNCE_DELAY);
 
-    // Debounced save
-    useEffect(() => {
-        saveState(debouncedState);
-    }, [debouncedState]);
+    useEffect(() => { saveState(debouncedState); }, [debouncedState]);
     
-    // Listen for external changes
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === STORAGE_KEY && e.newValue) {
                 try {
-                    // When loading from external change, re-run strict merge for safety
-                    const rawNewState = JSON.parse(e.newValue);
-                    const validatedState = validateSpecificLogic(strictMerge(defaultAppState, rawNewState));
-                    setAppState(validatedState);
-                } catch (error) {
-                     console.error("Failed to parse state from other tab.", error);
-                }
+                    setAppState(validateSpecificLogic(strictMerge(defaultAppState, JSON.parse(e.newValue))));
+                } catch (error) { console.error("Failed to sync state.", error); }
             }
         };
         window.addEventListener('storage', handleStorageChange);
@@ -204,28 +138,21 @@ export const useStorage = (): [AppState, (updater: (draft: AppState) => void) =>
     const updateState = useCallback((updater: (draft: AppState) => void) => {
         setAppState(currentState => {
             try {
-                // Modern Deep Clone using structuredClone for performance
-                // Fallback to JSON parsing if not available (older browsers)
                 const currentDraft: AppState = typeof structuredClone === 'function'
                     ? structuredClone(currentState)
                     : JSON.parse(JSON.stringify(currentState));
                 
                 updater(currentDraft);
                 
-                // Runtime Safety: Ensure top-level keys were not accidentally deleted by the updater
-                const keys = Object.keys(defaultAppState) as Array<keyof AppState>;
-                let isSafe = true;
-                for (const key of keys) {
+                // Check for accidental deletions of top-level keys
+                for (const key of Object.keys(defaultAppState) as Array<keyof AppState>) {
                     if (currentDraft[key] === undefined) {
-                        console.warn(`State update missing key: '${key}'. Restoring default.`);
                         (currentDraft as any)[key] = defaultAppState[key];
-                        isSafe = false;
                     }
                 }
-                
                 return currentDraft;
             } catch (error) {
-                console.error("Critical error during state update. Rollback initiated.", error);
+                console.error("State update error.", error);
                 return currentState;
             }
         });

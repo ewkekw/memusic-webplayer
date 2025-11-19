@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { PartyState, PartyMode, PartyContextType, Song, PartyQueueSong } from '../types';
@@ -47,15 +48,18 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
         },
         onConnectionLost: () => {
-            setPartyEndedMessage({ key: 'modals.partyEnded.connectionLost', replacements: { partyId: partyStateRef.current?.partyId || '' } });
-            leaveParty();
+            if (partyStateRef.current) {
+                setPartyEndedMessage({ key: 'modals.partyEnded.connectionLost', replacements: { partyId: partyStateRef.current?.partyId || '' } });
+                leaveParty();
+            }
         }
     };
 
-    const startParty = useCallback(async (mode: PartyMode): Promise<string> => {
+    const startParty = useCallback(async (mode: PartyMode, onStatusUpdate?: (status: string) => void): Promise<string> => {
         if (guestRef.current) guestRef.current.destroy();
         
         hostRef.current = new PartyHost(myId, hostCallbacks);
+        
         return await hostRef.current.start(
             mode, 
             name, 
@@ -65,11 +69,12 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 currentSong: playerContext.currentSong,
                 currentQueue: playerContext.currentQueue,
                 currentTime: playerContext.currentTime
-            }
+            },
+            onStatusUpdate
         );
     }, [myId, name, imageUrl, playerContext]);
 
-    const joinParty = useCallback(async (partyId: string): Promise<{success: boolean, messageKey: string}> => {
+    const joinParty = useCallback(async (partyId: string): Promise<{success: boolean, messageKey: string, errorMessage?: string}> => {
         if (hostRef.current) hostRef.current.destroy();
         if (guestRef.current) guestRef.current.destroy();
 

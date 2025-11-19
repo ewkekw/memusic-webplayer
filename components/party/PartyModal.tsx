@@ -1,5 +1,4 @@
 
-
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { PartyContext } from '../../context/PartyContext';
 import { PartyMode } from '../../types';
@@ -60,12 +59,18 @@ const JoinView: React.FC<JoinViewProps> = ({ setView, onClose, initialCode }) =>
         didAttemptJoin.current = true;
         setLoading(true);
         setError('');
-        const result = await joinParty(code.join(''));
-        setLoading(false);
-        if (result.success) {
-            onClose();
-        } else {
-            setError(t(result.messageKey));
+        
+        try {
+            const result = await joinParty(code.join(''));
+            if (result.success) {
+                onClose();
+            } else {
+                setError(result.errorMessage || t(result.messageKey));
+            }
+        } catch (e: any) {
+             setError(e.message || t('party.inactive'));
+        } finally {
+            setLoading(false);
         }
     };
     
@@ -99,7 +104,7 @@ const JoinView: React.FC<JoinViewProps> = ({ setView, onClose, initialCode }) =>
             </div>
 
             {error && (
-                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
+                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center animate-in fade-in">
                     {error}
                 </div>
             )}
@@ -114,9 +119,14 @@ const JoinView: React.FC<JoinViewProps> = ({ setView, onClose, initialCode }) =>
                 <button
                     onClick={handleJoin}
                     disabled={loading || !isCodeFull}
-                    className="w-full sm:w-auto px-10 py-3 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#fc4b08]/20 hover:shadow-[#fc4b08]/40 text-sm transform active:scale-95 duration-100"
+                    className="w-full sm:w-auto px-10 py-3 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#fc4b08]/20 hover:shadow-[#fc4b08]/40 text-sm transform active:scale-95 duration-100 flex items-center justify-center gap-2"
                 >
-                    {loading ? t('partyModal.joining') : t('partyModal.joinButton')}
+                    {loading ? (
+                        <>
+                            <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"/>
+                            {t('partyModal.joining')}
+                        </>
+                    ) : t('partyModal.joinButton')}
                 </button>
             </div>
         </div>
@@ -138,27 +148,79 @@ const MixerIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+const WifiOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <line x1="12" y1="20" x2="12.01" y2="20"></line>
+    </svg>
+);
+
 const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPartyId: (id: string) => void }> = ({ setView, setPartyId }) => {
     const { startParty } = useContext(PartyContext);
     const { t } = useTranslation();
     const [mode, setMode] = useState<PartyMode>('collaborative');
     const [error, setError] = useState<string | null>(null);
+    const [status, setStatus] = useState<string | null>(null);
     const [creating, setCreating] = useState(false);
 
     const handleCreate = async () => {
         setCreating(true);
         setError(null);
+        setStatus("Initializing...");
+        
         try {
-            const newPartyId = await startParty(mode);
+            const newPartyId = await startParty(mode, (statusUpdate) => {
+                setStatus(statusUpdate);
+            });
             setPartyId(newPartyId);
             setView('share');
-        } catch (e) {
+        } catch (e: any) {
             console.error("Failed to create party", e);
-            setError("Failed to create party. Please try again.");
+            // If it's our specific connection error code, simplified message
+            if (e.message === 'CONNECTION_FAILED') {
+                setError('CONNECTION_FAILED');
+            } else {
+                setError(e.message || "Unknown error");
+            }
         } finally {
             setCreating(false);
+            setStatus(null);
         }
     };
+
+    // CLEAN ERROR VIEW (Replaces the entire view content)
+    if (error === 'CONNECTION_FAILED') {
+        return (
+            <div className="animate-in fade-in zoom-in-95 duration-300 ease-out text-center flex flex-col items-center">
+                <div className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-6">
+                    <WifiOffIcon className="w-10 h-10 text-red-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Connection Blocked</h2>
+                <p className="text-gray-400 mb-8 text-sm leading-relaxed max-w-xs">
+                    Your network seems to be restricting peer-to-peer connections. This is common with VPNs or corporate firewalls.
+                </p>
+                <div className="flex gap-4 w-full justify-center">
+                     <button
+                        onClick={() => setError(null)}
+                        className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-medium transition-colors text-sm border border-white/5"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleCreate}
+                        className="px-8 py-3 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] shadow-lg shadow-[#fc4b08]/20 hover:shadow-[#fc4b08]/40 transition-all text-sm"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const OptionCard: React.FC<{
         title: string;
@@ -197,8 +259,8 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
             <h2 className="text-3xl font-black mb-3 text-center tracking-tight text-white">{t('partyModal.createTitle')}</h2>
             <p className="mb-8 text-center text-gray-400 text-sm">{t('partyModal.createSubtitle')}</p>
             
-             {error && (
-                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
+            {error && (
+                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center animate-in fade-in">
                     {error}
                 </div>
             )}
@@ -230,9 +292,14 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
                 <button
                     onClick={handleCreate}
                     disabled={creating}
-                    className="w-full sm:w-auto px-10 py-3 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] shadow-lg shadow-[#fc4b08]/20 hover:shadow-[#fc4b08]/40 transition-all text-sm transform active:scale-95 duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-10 py-3 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] shadow-lg shadow-[#fc4b08]/20 hover:shadow-[#fc4b08]/40 transition-all text-sm transform active:scale-95 duration-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                    {creating ? "Starting..." : t('partyModal.startButton')}
+                     {creating ? (
+                        <>
+                            <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"/>
+                            <span>{status || "Starting..."}</span>
+                        </>
+                    ) : t('partyModal.startButton')}
                 </button>
             </div>
         </div>

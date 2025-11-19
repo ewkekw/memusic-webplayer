@@ -3,7 +3,6 @@ import { SearchSongsResponse, SearchAlbumsResponse, SearchArtistsResponse, Searc
 
 const API_BASE_URL = 'https://lowkey-backend.vercel.app';
 
-// Implement a simple LRU (Least Recently Used) Cache to prevent memory bloat
 const CACHE_LIMIT = 100;
 const cache = new Map<string, any>();
 
@@ -12,28 +11,19 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const fetchWithRetry = async (url: string, retries = 3, delay = 1000): Promise<Response> => {
     try {
         const response = await fetch(url);
-        
-        // If server error (5xx) or rate limited (429), retry.
-        // We don't retry on 404 (Not Found) or 400 (Bad Request).
         if (!response.ok && (response.status >= 500 || response.status === 429)) {
              throw new Error(`Server/Network Error: ${response.status}`);
         }
         return response;
     } catch (error) {
         if (retries === 0) throw error;
-        
-        // Wait for the delay time (exponential backoff could be applied here: delay * 2)
         await wait(delay);
-        
-        // Retry with decremented retry count and doubled delay (Exponential Backoff)
-        console.warn(`Retrying request to ${url}. Attempts left: ${retries}`);
         return fetchWithRetry(url, retries - 1, delay * 2);
     }
 };
 
 const apiRequest = async <T,>(endpoint: string, cacheKey?: string): Promise<T> => {
   if (cacheKey && cache.has(cacheKey)) {
-    // Refresh item position (LRU logic: move accessed item to the end)
     const cachedData = cache.get(cacheKey);
     cache.delete(cacheKey);
     cache.set(cacheKey, cachedData);
@@ -42,16 +32,12 @@ const apiRequest = async <T,>(endpoint: string, cacheKey?: string): Promise<T> =
 
   try {
     const response = await fetchWithRetry(`${API_BASE_URL}${endpoint}`);
-    
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
     
     const data = await response.json() as T;
     
     if (cacheKey) {
         if (cache.size >= CACHE_LIMIT) {
-            // Remove the first item (oldest accessed)
             const firstKey = cache.keys().next().value;
             if (firstKey) cache.delete(firstKey);
         }
@@ -59,40 +45,15 @@ const apiRequest = async <T,>(endpoint: string, cacheKey?: string): Promise<T> =
     }
     return data;
   } catch (error) {
-    // Don't console.error here; let the caller decide how to log or handle it.
-    // This reduces noise for expected network fluctuations handled by fallback layers.
     throw error;
   }
 };
 
-export const searchSongs = (query: string, page: number = 1, limit: number = 20): Promise<SearchSongsResponse> => {
-    return apiRequest<SearchSongsResponse>(`/api/search/songs?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
-};
-
-export const getSongsByIds = (ids: string[]): Promise<GetSongsResponse> => {
-    return apiRequest<GetSongsResponse>(`/api/songs?ids=${ids.join(',')}`);
-};
-
-export const searchAlbums = (query: string, page: number = 1, limit: number = 20): Promise<SearchAlbumsResponse> => {
-    return apiRequest<SearchAlbumsResponse>(`/api/search/albums?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
-};
-
-export const getAlbumDetails = (albumId: string): Promise<GetAlbumDetailsResponse> => {
-    return apiRequest<GetAlbumDetailsResponse>(`/api/albums?id=${albumId}`, `album-${albumId}`);
-};
-
-export const getArtistDetails = (artistId: string): Promise<GetArtistDetailsResponse> => {
-    return apiRequest<GetArtistDetailsResponse>(`/api/artists?id=${artistId}`, `artist-${artistId}`);
-};
-
-export const searchArtists = (query: string, page: number = 1, limit: number = 20): Promise<SearchArtistsResponse> => {
-    return apiRequest<SearchArtistsResponse>(`/api/search/artists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
-};
-
-export const searchPlaylists = (query: string, page: number = 1, limit: number = 20): Promise<SearchPlaylistsResponse> => {
-    return apiRequest<SearchPlaylistsResponse>(`/api/search/playlists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
-};
-
-export const getSongSuggestions = (songId: string, limit: number = 10): Promise<SongSuggestionsResponse> => {
-    return apiRequest<SongSuggestionsResponse>(`/api/songs/${songId}/suggestions?limit=${limit}`);
-};
+export const searchSongs = (query: string, page: number = 1, limit: number = 20) => apiRequest<SearchSongsResponse>(`/api/search/songs?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+export const getSongsByIds = (ids: string[]) => apiRequest<GetSongsResponse>(`/api/songs?ids=${ids.join(',')}`);
+export const searchAlbums = (query: string, page: number = 1, limit: number = 20) => apiRequest<SearchAlbumsResponse>(`/api/search/albums?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+export const getAlbumDetails = (albumId: string) => apiRequest<GetAlbumDetailsResponse>(`/api/albums?id=${albumId}`, `album-${albumId}`);
+export const getArtistDetails = (artistId: string) => apiRequest<GetArtistDetailsResponse>(`/api/artists?id=${artistId}`, `artist-${artistId}`);
+export const searchArtists = (query: string, page: number = 1, limit: number = 20) => apiRequest<SearchArtistsResponse>(`/api/search/artists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+export const searchPlaylists = (query: string, page: number = 1, limit: number = 20) => apiRequest<SearchPlaylistsResponse>(`/api/search/playlists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
+export const getSongSuggestions = (songId: string, limit: number = 10) => apiRequest<SongSuggestionsResponse>(`/api/songs/${songId}/suggestions?limit=${limit}`);

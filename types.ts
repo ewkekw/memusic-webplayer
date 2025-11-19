@@ -314,8 +314,8 @@ export interface PartyContextType {
     partyState: PartyState | null;
     isHost: boolean;
     myId: string;
-    startParty: (mode: PartyMode) => Promise<string>;
-    joinParty: (partyId: string) => Promise<{success: boolean, messageKey: string}>;
+    startParty: (mode: PartyMode, onStatusUpdate?: (status: string) => void) => Promise<string>;
+    joinParty: (partyId: string) => Promise<{success: boolean, messageKey: string, errorMessage?: string}>;
     leaveParty: () => void;
     endParty: () => void;
     seekPartyPlayer: (time: number) => void;
