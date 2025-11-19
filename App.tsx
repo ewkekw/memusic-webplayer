@@ -1,3 +1,4 @@
+
 import React, { useState, useContext, useEffect, ReactNode, createContext, useCallback, lazy, Suspense, ErrorInfo, Component } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/layout/Sidebar';
@@ -34,13 +35,10 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-    };
-  }
+  public state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+  };
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { Song } from '../../../types';
 import { getSongSuggestions } from '../../../services/jioSaavnApi';
@@ -63,11 +64,11 @@ export const PlaylistRecommendations: React.FC<PlaylistRecommendationsProps> = (
             const responses = await Promise.all(recommendationPromises);
             
             // 4. Flatten results
-            const allSuggestions = responses.flatMap(res => (res.success ? res.data : [])) as Song[];
+            const allSuggestions: Song[] = responses.flatMap(res => (res.success ? res.data : []));
             
             // 5. Deduplicate suggestions and filter out songs already in the playlist
             const existingIds = new Set(playlistSongs.map(s => s.id));
-            const uniqueSuggestions = allSuggestions.filter((song, index) => 
+            const uniqueSuggestions = allSuggestions.filter((song: Song, index: number) => 
                 index === allSuggestions.findIndex((t: Song) => t.id === song.id) && !existingIds.has(song.id)
             );
 

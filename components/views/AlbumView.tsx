@@ -270,8 +270,9 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div className="px-4 sm:px-8 pb-8">
+        <div className="px-4 sm:px-8 pb-8">
             <SongList
                 songs={album.songs || []}
                 navigateToArtist={navigateToArtist}
