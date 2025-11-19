@@ -1,30 +1,47 @@
 
 import { v4 as uuidv4 } from 'uuid';
-// @ts-ignore
-import { Peer } from 'peerjs';
+import Peerjs from 'peerjs';
 import { PartyState, PartyMode, PartyParticipant, PartyQueueSong } from '../types';
 
-const PEER_ID_PREFIX = 'memusic-party-';
-const GOOGLE_STUN = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }];
+// Robust Peer class retrieval to handle various ESM/CommonJS output formats
+// @ts-ignore
+const Peer = Peerjs.default || Peerjs.Peer || Peerjs;
 
-const getPeerConfig = (strategy: 'robust' | 'minimal' | 'default') => {
-    const baseConfig = { debug: 1, pingInterval: 5000 };
-    if (strategy === 'default') return { ...baseConfig };
-    if (strategy === 'minimal') return { ...baseConfig, host: '0.peerjs.com', port: 443, secure: true, config: { iceServers: GOOGLE_STUN, iceTransportPolicy: 'all' } };
-    return { ...baseConfig, host: '0.peerjs.com', port: 443, secure: true, config: { iceServers: GOOGLE_STUN, sdpSemantics: 'unified-plan', iceTransportPolicy: 'all' } };
+const PEER_ID_PREFIX = 'memusic-party-';
+const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+];
+
+const getPeerConfig = (strategy: 'default' | 'robust' | 'legacy') => {
+    const base = { debug: 0, pingInterval: 5000 };
+    const cloudConfig = {
+        host: '0.peerjs.com',
+        port: 443,
+        secure: true,
+        config: { iceServers: ICE_SERVERS }
+    };
+
+    switch (strategy) {
+        case 'default':
+            return { ...base, ...cloudConfig };
+        case 'robust':
+            return { 
+                ...base, 
+                ...cloudConfig, 
+                config: { ...cloudConfig.config, sdpSemantics: 'unified-plan' } 
+            };
+        case 'legacy':
+        default:
+            return base;
+    }
 };
 
 const generatePartyCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 5; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
-    return result;
-};
-
-const logger = {
-    info: (msg: string) => console.log(`%c[PartySystem] ${msg}`, 'color: #3b82f6'),
-    warn: (msg: string) => console.warn(`[PartySystem] WARNING: ${msg}`),
-    error: (msg: string, err?: any) => console.error(`[PartySystem] ERROR: ${msg}`, err || ''),
+    return Array.from({ length: 5 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
 };
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -44,50 +61,55 @@ export class PartyHost {
     }
 
     public async start(mode: PartyMode, initialName: string, initialImage: string, playerState: any, onStatusUpdate?: (status: string) => void): Promise<string> {
+        this.destroy();
         this.isDestroyed = false;
-        this.destroy(); 
         
-        const strategies: ('default' | 'robust' | 'minimal')[] = ['default', 'robust', 'minimal'];
+        const strategies: ('default' | 'robust' | 'legacy')[] = ['default', 'robust', 'legacy'];
 
         for (const strategy of strategies) {
              if (this.isDestroyed) break;
              try {
                  if (onStatusUpdate) onStatusUpdate(strategy === 'default' ? "Initializing..." : "Retrying connection...");
+                 // Small delay between attempts to clear previous sockets
                  await wait(500); 
                  return await this.attemptConnection(strategy, mode, initialName, initialImage, playerState);
              } catch (e: any) {
-                 logger.warn(`Strategy '${strategy}' failed: ${e.message}`);
-                 await wait(1000);
+                 console.warn(`[PartyHost] Strategy '${strategy}' failed:`, e);
              }
         }
         throw new Error("CONNECTION_FAILED");
     }
 
-    private attemptConnection(strategy: 'default' | 'robust' | 'minimal', mode: PartyMode, initialName: string, initialImage: string, playerState: any): Promise<string> {
+    private attemptConnection(strategy: 'default' | 'robust' | 'legacy', mode: PartyMode, initialName: string, initialImage: string, playerState: any): Promise<string> {
         return new Promise((resolve, reject) => {
+            // Generate a new code for each attempt to avoid ID collisions/caching issues
             this.partyCode = generatePartyCode();
             const hostId = `${PEER_ID_PREFIX}${this.partyCode}`;
-            const config = getPeerConfig(strategy);
             
-            if (this.peer) { this.peer.destroy(); this.peer = null; }
+            if (this.peer) { 
+                try { this.peer.destroy(); } catch(e) {}
+                this.peer = null; 
+            }
 
             try {
-                const peer = new Peer(hostId, config);
+                // @ts-ignore
+                const peer = new Peer(hostId, getPeerConfig(strategy));
                 this.peer = peer;
                 let isResolved = false;
 
-                const connectionTimeout = setTimeout(() => {
+                const timeout = setTimeout(() => {
                     if (!isResolved) {
-                        peer.destroy();
+                        isResolved = true;
+                        console.warn(`[PartyHost] Connection timeout for strategy ${strategy}`);
+                        try { peer.destroy(); } catch(e) {}
                         reject(new Error("Timeout"));
                     }
-                }, 8000);
+                }, 15000); // Increased timeout for slower networks
 
-                peer.on('open', () => {
+                peer.on('open', (id: string) => {
                     if (isResolved) return;
                     isResolved = true;
-                    clearTimeout(connectionTimeout);
-                    logger.info(`Host Session Active. ID: ${this.partyCode}`);
+                    clearTimeout(timeout);
                     
                     this.startHeartbeat();
                     this.setupPeerListeners();
@@ -112,29 +134,30 @@ export class PartyHost {
                 });
 
                 peer.on('error', (err: any) => {
-                    if (['invalid-id', 'unavailable-id', 'network', 'socket-error', 'ssl-unavailable'].includes(err.type)) {
-                        if (!isResolved) {
-                            isResolved = true;
-                            clearTimeout(connectionTimeout);
-                            reject(err);
-                        }
-                    } else {
-                        logger.error(`Peer Error (${err.type})`, err);
+                    if (!isResolved) {
+                        isResolved = true;
+                        clearTimeout(timeout);
+                        // Don't destroy here, let the caller handle cleanup or retry
+                        reject(err);
                     }
                 });
                 
                 peer.on('disconnected', () => {
-                    if (!peer.destroyed && !this.isDestroyed) peer.reconnect();
+                    if (!peer.destroyed && !this.isDestroyed) {
+                        try { peer.reconnect(); } catch(e) {}
+                    }
                 });
 
-            } catch (e) { reject(e); }
+            } catch (e) { 
+                reject(e); 
+            }
         });
     }
 
     private startHeartbeat() {
         if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
         this.heartbeatInterval = setInterval(() => {
-            if (this.connections.length > 0) this.broadcast(null);
+            if (this.connections.length > 0 && !this.isDestroyed) this.broadcast(null);
         }, 3000);
     }
 
@@ -210,6 +233,7 @@ export class PartyHost {
     }
 
     public broadcast(state: PartyState | null) {
+        if (this.isDestroyed) return;
         const message = state ? { type: 'STATE_UPDATE', payload: state } : { type: 'HEARTBEAT' };
         this.connections.forEach(conn => {
             if (conn.open) { try { conn.send(message); } catch (e) {} }
@@ -219,10 +243,15 @@ export class PartyHost {
     public destroy() {
         this.isDestroyed = true;
         if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-        this.broadcast(null); 
-        this.connections.forEach(c => c.close());
+        // Try to notify clients before closing, but don't wait
+        try { this.broadcast(null); } catch(e) {}
+        
+        this.connections.forEach(c => { try { c.close(); } catch(e){} });
         this.connections = [];
-        if (this.peer) { this.peer.destroy(); this.peer = null; }
+        if (this.peer) { 
+            try { this.peer.destroy(); } catch(e){} 
+            this.peer = null; 
+        }
     }
 }
 
@@ -240,10 +269,11 @@ export class PartyGuest {
     }
 
     public async join(partyCode: string, name: string, image: string): Promise<{success: boolean, messageKey: string, errorMessage?: string}> {
-        this.isDestroyed = false;
         this.destroy();
+        this.isDestroyed = false;
+        
         const targetId = `${PEER_ID_PREFIX}${partyCode.toUpperCase()}`;
-        const strategies: ('default' | 'minimal' | 'robust')[] = ['default', 'minimal', 'robust'];
+        const strategies: ('default' | 'robust' | 'legacy')[] = ['default', 'robust', 'legacy'];
 
         for (const strategy of strategies) {
              if (this.isDestroyed) break;
@@ -251,27 +281,34 @@ export class PartyGuest {
                  await wait(500);
                  return await this.attemptJoin(targetId, strategy, name, image);
              } catch (e: any) {
-                 logger.warn(`Guest join strategy '${strategy}' failed: ${e.message}`);
+                 console.warn(`[PartyGuest] Join strategy '${strategy}' failed:`, e);
              }
         }
         return { success: false, messageKey: 'party.inactive', errorMessage: "Could not find party." };
     }
 
-    private attemptJoin(targetId: string, strategy: 'default' | 'minimal' | 'robust', name: string, image: string): Promise<{success: boolean, messageKey: string}> {
+    private attemptJoin(targetId: string, strategy: 'default' | 'robust' | 'legacy', name: string, image: string): Promise<{success: boolean, messageKey: string}> {
         return new Promise((resolve, reject) => {
-             const config = getPeerConfig(strategy);
-             if (this.peer) { this.peer.destroy(); }
+             if (this.peer) { try { this.peer.destroy(); } catch(e){} }
              
              try {
-                const peer = new Peer(config);
+                // @ts-ignore
+                const peer = new Peer(getPeerConfig(strategy));
                 this.peer = peer;
                 let connectionMade = false;
 
                 const timeout = setTimeout(() => {
-                    if (!connectionMade) reject(new Error("Handshake Timeout"));
-                }, 6000);
+                    if (!connectionMade) {
+                        try { peer.destroy(); } catch(e){}
+                        reject(new Error("Handshake Timeout"));
+                    }
+                }, 10000);
 
                 peer.on('open', () => {
+                    if (this.isDestroyed) {
+                        peer.destroy();
+                        return;
+                    }
                     const conn = peer.connect(targetId, { reliable: true, serialization: 'json' });
                     
                     conn.on('open', () => {
@@ -286,7 +323,7 @@ export class PartyGuest {
                     });
 
                     conn.on('error', (err: any) => { if(!connectionMade) reject(err); });
-                    conn.on('close', () => { if(connectionMade) this.callbacks.onConnectionLost(); });
+                    conn.on('close', () => { if(connectionMade && !this.isDestroyed) this.callbacks.onConnectionLost(); });
                 });
 
                 peer.on('error', (err: any) => { if (!connectionMade) reject(err); });
@@ -309,13 +346,21 @@ export class PartyGuest {
     }
 
     public send(type: string, payload: any) {
-        if (this.conn && this.conn.open) this.conn.send({ type, payload, senderId: this.myId });
+        if (this.conn && this.conn.open) {
+            try { this.conn.send({ type, payload, senderId: this.myId }); } catch(e) {}
+        }
     }
 
     public destroy() {
         this.isDestroyed = true;
-        if (this.conn) { this.send('LEAVE', null); this.conn.close(); this.conn = null; }
-        if (this.peer) { this.peer.destroy(); this.peer = null; }
+        if (this.conn) { 
+            try { this.send('LEAVE', null); this.conn.close(); } catch(e){}
+            this.conn = null; 
+        }
+        if (this.peer) { 
+            try { this.peer.destroy(); } catch(e){}
+            this.peer = null; 
+        }
         this.timeOffset = null;
     }
 }
