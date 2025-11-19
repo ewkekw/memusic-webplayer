@@ -124,7 +124,11 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children, player
         const pannerOscillator = context.createOscillator(); const pannerFrequency = 0.2;
         pannerOscillator.frequency.setValueAtTime(pannerFrequency, context.currentTime);
         const pannerGain = context.createGain(); pannerGain.gain.setValueAtTime(0, context.currentTime);
-        const pannerDelay = context.createDelay(); pannerDelay.delayTime.setValueAtTime((1 / pannerFrequency) / 4, context.currentTime);
+        
+        // CRITICAL FIX: Set max delay time to 5.0 seconds to accommodate the 1.25s calculation.
+        const pannerDelay = context.createDelay(5.0); 
+        pannerDelay.delayTime.setValueAtTime((1 / pannerFrequency) / 4, context.currentTime);
+        
         pannerOscillator.connect(pannerGain); pannerGain.connect(panner.positionZ); pannerGain.connect(pannerDelay); pannerDelay.connect(panner.positionX);
         pannerOscillator.start();
         panner.connect(analyserNode); analyserNode.connect(context.destination);
