@@ -146,7 +146,7 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return new Promise((resolve, reject) => {
             const peer = new Peer(hostPeerId, getPeerConfig());
             
-            peer.on('open', (id) => {
+            peer.on('open', (id: string) => {
                 console.log('Host Peer Open:', id);
                 peerRef.current = peer;
                 
@@ -169,7 +169,7 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 resolve(code);
             });
 
-            peer.on('connection', (conn) => {
+            peer.on('connection', (conn: DataConnection) => {
                 console.log('Host: New connection from', conn.peer);
                 connectionsRef.current.push(conn);
                 
@@ -203,7 +203,7 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 });
             });
 
-            peer.on('error', (err) => {
+            peer.on('error', (err: any) => {
                 console.error('Peer Error:', err);
                 // Handle ID taken (rare with random code)
                 if (err.type === 'unavailable-id') {
@@ -286,7 +286,7 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 resolve({ success: true, messageKey: 'party.joined' });
             });
 
-            peer.on('error', (err) => {
+            peer.on('error', (err: any) => {
                 console.error("Guest Peer Error", err);
                 // Only reject if we haven't established connection yet
                 if (!hostConnectionRef.current) {
