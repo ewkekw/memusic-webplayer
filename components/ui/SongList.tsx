@@ -1,7 +1,6 @@
 
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { Song } from '../../types';
-// Fix: Import PlayerContextTypeString from `types.ts` where it is exported.
 import { PlayerContext } from '../../context/PlayerContext';
 import { PlayerContextTypeString } from '../../types';
 import { UserMusicContext } from '../../context/UserMusicContext';
@@ -51,9 +50,6 @@ const SongListItem: React.FC<SongListItemProps> = React.memo(({ song, index, son
     
     const handlePlay = () => {
         onInteraction?.();
-        // If playing from search, we only queue this specific song.
-        // This allows the radio/autoplay logic to trigger immediately (if it's the only song) 
-        // providing a dynamic "radio" experience.
         if (context.type === 'search') {
             playSong(song, [song], context);
         } else {
@@ -134,7 +130,7 @@ interface SongListProps {
 }
 
 export const SongList: React.FC<SongListProps> = (props) => {
-  const { songs } = props;
+  const { songs, ...restProps } = props;
   const { t } = useTranslation();
 
   if (!songs || songs.length === 0) {
@@ -149,7 +145,7 @@ export const SongList: React.FC<SongListProps> = (props) => {
           song={song}
           index={index}
           songs={songs}
-          {...props}
+          {...restProps}
         />
       ))}
     </div>

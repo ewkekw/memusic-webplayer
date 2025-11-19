@@ -172,7 +172,7 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
             </div>
 
             <div className={`w-16 h-16 mb-5 flex items-center justify-center rounded-2xl transition-colors duration-200 ${isSelected ? 'bg-[#fc4b08] text-black' : 'bg-white/10 text-gray-400 group-hover:text-white'}`}>
-                {React.cloneElement(icon as React.ReactElement, { className: 'w-8 h-8' })}
+                {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'w-8 h-8' })}
             </div>
             
             <h4 className={`font-bold text-lg mb-2 transition-colors duration-200 ${isSelected ? 'text-white' : 'text-gray-200 group-hover:text-white'}`}>{title}</h4>

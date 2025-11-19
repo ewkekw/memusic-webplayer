@@ -17,6 +17,18 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    "*.ts", 
+    "*.tsx", 
+    "components/**/*.ts", 
+    "components/**/*.tsx", 
+    "context/**/*.ts", 
+    "context/**/*.tsx", 
+    "hooks/**/*.ts", 
+    "hooks/**/*.tsx", 
+    "services/**/*.ts", 
+    "types.ts", 
+    "utils/**/*.ts"
+  ],
+  "exclude": ["node_modules", "src"]
 }

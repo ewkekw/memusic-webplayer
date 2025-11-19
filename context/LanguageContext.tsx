@@ -5,7 +5,7 @@ import { AppState } from '../types';
 // Define translations structure
 type Translations = { [key: string]: string | Translations };
 
-// Define translation files as any to avoid TypeScript errors with dynamic imports/requires
+// Define translation files
 const en: Translations = {
   "sidebar": { "home": "Home", "search": "Search", "library": "Library", "settings": "Settings", "playlist": "Playlist" },
   "player": { "noSong": "No song selected", "shuffle": "Shuffle", "repeat": "Repeat: {{mode}}", "download": "Download song", "addToPlaylist": "Add to playlist", "newPlaylist": "New Playlist", "noPlaylists": "No playlists.", "favorite": "Favorite song", "showQueue": "Show queue", "unmute": "Unmute", "mute": "Mute", "partyMode": "Party Mode" },
@@ -54,14 +54,14 @@ interface LanguageContextType {
 export const LanguageContext = createContext<LanguageContextType>({} as LanguageContextType);
 
 const resolveKey = (obj: Translations, key: string): string => {
-  const result = key.split('.').reduce((acc, part) => {
+  const result = key.split('.').reduce<any>((acc, part) => {
     if (acc && typeof acc === 'object' && !Array.isArray(acc) && part in acc) {
       return (acc as Translations)[part];
     }
     return undefined;
   }, obj);
   if (typeof result !== 'string') {
-    const fallbackResult = key.split('.').reduce((acc, part) => {
+    const fallbackResult = key.split('.').reduce<any>((acc, part) => {
         if (acc && typeof acc === 'object' && !Array.isArray(acc) && part in acc) return (acc as Translations)[part];
         return undefined;
     }, translations.en);

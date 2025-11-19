@@ -167,9 +167,9 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
           return;
       }
       showModal({ title: "Compressing Files", content: <p>Creating .zip file...</p> });
-      zip.generateAsync({ type: "blob" }, (metadata) => {
+      zip.generateAsync({ type: "blob" }, (metadata: { percent: number }) => {
           showModal({ title: "Compressing Files", content: <div className="space-y-2"><p>Compressing... {metadata.percent.toFixed(0)}%</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${metadata.percent}%` }}></div></div></div> });
-      }).then((content) => {
+      }).then((content: Blob) => {
           const zipUrl = URL.createObjectURL(content);
           const a = document.createElement('a');
           a.href = zipUrl;
@@ -179,7 +179,7 @@ export const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist, setAct
           URL.revokeObjectURL(zipUrl);
           a.remove();
           hideModal();
-      }).catch(err => {
+      }).catch((err: unknown) => {
           showModal({ title: "Error", content: <p>Failed to create .zip file.</p> });
       });
     };
