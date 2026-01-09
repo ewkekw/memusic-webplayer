@@ -5,51 +5,36 @@ import { searchSongs } from '../../services/jioSaavnApi';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { Loader } from '../ui/Loader';
-import { ModalContext } from '../../App';
+import { ModalContext } from '../../context/ModalContext';
+import { CinematicHeader } from '../ui/CinematicHeader';
+import { useTranslation } from '../../context/LanguageContext';
+import { SmartMenu } from '../ui/SmartMenu';
 
 declare const JSZip: any;
 
-const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
-  </svg>
-);
-const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="5" width="3" height="14" rx="1" />
-    <rect x="15" y="5" width="3" height="14" rx="1" />
-  </svg>
-);
-const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
-);
-const PlusIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-);
-const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-);
 const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>
 );
 const ClockIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
 );
 const ChevronDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
 );
 const DownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
 );
-const PlaylistPlaceholderIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-    </svg>
+const QueueIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+);
+const PlusIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+);
+const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
 );
 const RadioIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.136 12.006a8.25 8.25 0 0113.728 0M1.984 8.974a12 12 0 0119.032 0M12 18.75a.75.75 0 01.75.75v.008c0 .414-.336.75-.75.75h-.008a.75.75 0 01-.75-.75v-.008c0-.414.336.75.75-.75z" />
-    </svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="2" /><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" /></svg>
 );
 
 const formatDuration = (seconds: number | null) => {
@@ -67,54 +52,44 @@ const ApiPlaylistTrackItem: React.FC<{
     navigateToArtist: (artistId: string) => void;
 }> = ({ song, index, playlistSongs, playlist, navigateToArtist }) => {
     const { playSong, currentSong, addSongNext, addSongsToEnd, playRadio } = useContext(PlayerContext);
+    const { t } = useTranslation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLButtonElement>(null);
 
     const isCurrent = song.id === currentSong?.id;
 
-     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-          if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-            setIsMenuOpen(false);
-          }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const handleMenuAction = (e: React.MouseEvent, action: () => void) => {
-        e.stopPropagation();
+    const handleMenuAction = (action: () => void) => {
         action();
         setIsMenuOpen(false);
     }
 
     return (
-        <div onClick={() => playSong(song, playlistSongs, { type: 'api_playlist', id: playlist.id })} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-4 p-2 px-4 rounded-md hover:bg-white/10 cursor-pointer group">
-            <span className={`text-center w-5 ${isCurrent ? 'text-[#fc4b08]' : 'text-gray-400'}`}>{index + 1}</span>
+        <div onClick={() => playSong(song, playlistSongs, { type: 'api_playlist', id: playlist.id })} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-x-4 p-3 px-4 rounded-xl hover:bg-white/10 cursor-pointer group transition-colors">
+            <span className={`text-center w-6 font-medium ${isCurrent ? 'text-[#fc4b08]' : 'text-gray-500'}`}>{index + 1}</span>
             <div>
-                <p className={`font-medium truncate ${isCurrent ? 'text-[#fc4b08]' : 'text-white'}`}>{song.name}</p>
-                <p className="text-sm text-gray-400 truncate">
+                <p className={`font-semibold truncate text-base ${isCurrent ? 'text-[#fc4b08]' : 'text-white'}`}>{song.name}</p>
+                <p className="text-sm text-gray-400 truncate mt-0.5">
                     {song.artists.primary.map((a, i) => (
                         <React.Fragment key={a.id}>
-                            <span onClick={(e) => { e.stopPropagation(); navigateToArtist(a.id); }} className="hover:underline">{a.name}</span>
+                            <span onClick={(e) => { e.stopPropagation(); navigateToArtist(a.id); }} className="hover:text-white hover:underline transition-colors">{a.name}</span>
                             {i < song.artists.primary.length - 1 && ', '}
                         </React.Fragment>
                     ))}
                 </p>
             </div>
-            <span className="text-sm text-gray-400 opacity-70 group-hover:opacity-100 transition-opacity hidden sm:block">{formatDuration(song.duration)}</span>
-            <div className="relative" ref={menuRef}>
-                <button onClick={(e) => { e.stopPropagation(); setIsMenuOpen(p => !p); }} className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreIcon className="w-5 h-5"/>
-                </button>
-                {isMenuOpen && (
-                    <div className="absolute bottom-full right-0 mb-1 w-40 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                        <button onClick={(e) => handleMenuAction(e, () => playRadio(song))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10 flex items-center gap-2"><RadioIcon className="w-4 h-4"/>Go to radio</button>
-                        <button onClick={(e) => handleMenuAction(e, () => addSongNext(song))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Play Next</button>
-                        <button onClick={(e) => handleMenuAction(e, () => addSongsToEnd([song]))} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to Queue</button>
-                    </div>
-                )}
-            </div>
+            <span className="text-sm text-gray-500 group-hover:text-gray-300 transition-colors hidden sm:block font-variant-numeric tabular-nums">{formatDuration(song.duration)}</span>
+            
+            <button ref={menuRef} onClick={(e) => { e.stopPropagation(); setIsMenuOpen(p => !p); }} className="p-2 rounded-full text-gray-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all">
+                <MoreIcon className="w-5 h-5"/>
+            </button>
+            
+            <SmartMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} triggerRef={menuRef}>
+                <div className="flex flex-col py-1">
+                    <button onClick={(e) => {e.stopPropagation(); handleMenuAction(() => playRadio(song))}} className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 flex items-center gap-3 text-gray-200 transition-colors"><RadioIcon className="w-4 h-4"/>{t('songlist.menu.goToRadio')}</button>
+                    <button onClick={(e) => {e.stopPropagation(); handleMenuAction(() => addSongNext(song))}} className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 text-gray-200 transition-colors">{t('songlist.menu.playNext')}</button>
+                    <button onClick={(e) => {e.stopPropagation(); handleMenuAction(() => addSongsToEnd([song]))}} className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 text-gray-200 transition-colors">{t('songlist.menu.addToQueue')}</button>
+                </div>
+            </SmartMenu>
         </div>
     );
 };
@@ -125,22 +100,16 @@ interface ApiPlaylistViewProps {
     navigateToArtist: (artistId: string) => void;
 }
 
-const getTitleClass = (name: string): string => {
-    const base = "font-extrabold tracking-tighter leading-tight";
-    if (name.length > 50) return `${base} text-3xl sm:text-4xl`;
-    if (name.length > 30) return `${base} text-4xl sm:text-5xl`;
-    return `${base} text-4xl sm:text-6xl`;
-}
-
 const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveView, navigateToArtist }) => {
     const [songs, setSongs] = useState<Song[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortKey, setSortKey] = useState<'default' | 'title' | 'duration'>('default');
     const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
     const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
-    const sortMenuRef = useRef<HTMLDivElement>(null);
-    const actionMenuRef = useRef<HTMLDivElement>(null);
+    const sortMenuRef = useRef<HTMLButtonElement>(null);
+    const moreButtonRef = useRef<HTMLButtonElement>(null);
     const { showModal, hideModal } = useContext(ModalContext);
+    const { t } = useTranslation();
 
     const { playSong, addSongsToEnd, isPlaying, togglePlay, contextId } = useContext(PlayerContext);
     const { createPlaylist, playlists: localPlaylists, isFavoriteApiPlaylist, toggleFavoriteApiPlaylist } = useContext(UserMusicContext);
@@ -160,15 +129,6 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
         };
         fetchSongs();
     }, [playlist]);
-    
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-          if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) setIsSortMenuOpen(false);
-          if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) setIsActionMenuOpen(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const sortedSongs = useMemo(() => {
         const songsCopy = [...songs];
@@ -194,13 +154,13 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
         if (songs.length > 0 && !isPlaylistSaved) {
             createPlaylist(playlist.name, playlist.description || `From public playlist`, songs);
             showModal({
-                title: "Playlist Saved",
+                title: t('apiPlaylistView.savedModalTitle'),
                 content: (
                     <>
-                        <p className="text-gray-300 mb-6">{`"${playlist.name}" has been added to your library.`}</p>
+                        <p className="text-gray-300 mb-6">{t('apiPlaylistView.savedModalMsg', { name: playlist.name })}</p>
                         <div className="flex justify-end space-x-4">
-                            <button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20">Close</button>
-                            <button onClick={() => { hideModal(); setActiveView('library'); }} className="px-4 py-2 rounded-md bg-[#fc4b08] text-black font-bold">View in Library</button>
+                            <button onClick={hideModal} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 font-bold transition-colors">{t('apiPlaylistView.close')}</button>
+                            <button onClick={() => { hideModal(); setActiveView('library'); }} className="px-4 py-2 rounded-lg bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] transition-colors">{t('apiPlaylistView.viewInLibrary')}</button>
                         </div>
                     </>
                 )
@@ -213,7 +173,7 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
         const zip = new JSZip();
         let filesAdded = 0;
         const totalFiles = songs.length;
-        showModal({ title: "Preparing Download", content: <p>Fetching... (0/${totalFiles})</p> });
+        showModal({ title: t('albumView.downloadPreparing'), content: <p>{t('albumView.downloadFetching', {current: 0, total: totalFiles})}</p> });
         for (const song of songs) {
             const url = song.downloadUrl.find(q => q.quality === '320kbps')?.url || song.downloadUrl[0]?.url;
             if (!url) continue;
@@ -222,16 +182,24 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
                 const blob = await response.blob();
                 zip.file(`${song.artists.primary.map(a => a.name).join(', ')} - ${song.name}.mp3`, blob);
                 filesAdded++;
-                showModal({ title: "Preparing Download", content: <div className="space-y-2"><p>Fetching song {filesAdded} of {totalFiles}...</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${(filesAdded / totalFiles) * 100}%` }}></div></div></div> });
+                showModal({ 
+                    title: t('albumView.downloadPreparing'), 
+                    content: (
+                        <div className="space-y-2">
+                            <p>{t('albumView.downloadFetching_plural', {current: filesAdded, total: totalFiles})}</p>
+                            <div className="w-full bg-gray-600 rounded-full h-1"><div className="bg-[#fc4b08] h-1 rounded-full" style={{ width: `${(filesAdded / totalFiles) * 100}%` }}></div></div>
+                        </div>
+                    ) 
+                });
             } catch (error) { console.error(`Download failed for ${song.name}:`, error); }
         }
         if (filesAdded === 0) {
-            showModal({ title: "Download Failed", content: <p>Could not download any songs.</p> });
+            showModal({ title: t('albumView.downloadFailed'), content: <p>{t('albumView.downloadFailedMsg')}</p> });
             return;
         }
-        showModal({ title: "Compressing Files", content: <p>Creating .zip file...</p> });
+        showModal({ title: t('albumView.downloadCompressing'), content: <p>{t('albumView.downloadCompressingMsg')}</p> });
         zip.generateAsync({ type: "blob" }, (metadata: { percent: number }) => {
-            showModal({ title: "Compressing Files", content: <div className="space-y-2"><p>Compressing... {metadata.percent.toFixed(0)}%</p><div className="w-full bg-gray-600 rounded-full h-2.5"><div className="bg-[#fc4b08] h-2.5 rounded-full" style={{ width: `${metadata.percent}%` }}></div></div></div> });
+            showModal({ title: t('albumView.downloadCompressing'), content: <div className="space-y-2"><p>{t('albumView.downloadCompressingProgress', { percent: metadata.percent.toFixed(0) })}</p><div className="w-full bg-gray-600 rounded-full h-1"><div className="bg-[#fc4b08] h-1 rounded-full" style={{ width: `${metadata.percent}%` }}></div></div></div> });
         }).then((content: Blob) => {
             const zipUrl = URL.createObjectURL(content);
             const a = document.createElement('a');
@@ -243,91 +211,84 @@ const ApiPlaylistView: React.FC<ApiPlaylistViewProps> = ({ playlist, setActiveVi
             a.remove();
             hideModal();
         }).catch((err: unknown) => {
-            showModal({ title: "Error", content: <p>Failed to create .zip file.</p> });
+            showModal({ title: t('albumView.error'), content: <p>{t('albumView.errorZip')}</p> });
         });
       };
 
     const imageUrl = playlist.image?.find(img => img.quality === '500x500')?.url || playlist.image?.[0]?.url;
     const totalDuration = songs.reduce((acc, song) => acc + (song.duration || 0), 0);
+    const metaString = `${songs.length || playlist.songCount} songs • ${Math.floor(totalDuration / 60)} min`;
 
     return (
-        <div className="text-white">
-            <div className="p-4 md:p-8 flex flex-col sm:flex-row items-center sm:items-end gap-6 relative">
-                <div className="absolute inset-0 z-0 opacity-30 overflow-hidden">
-                    {imageUrl && <img src={imageUrl} className="w-full h-full object-cover blur-3xl scale-125" alt=""/>}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/80 to-transparent"></div>
-                </div>
-                <div className="w-40 h-40 sm:w-52 sm:h-52 rounded-lg shadow-2xl z-10 flex-shrink-0 bg-white/5 flex items-center justify-center">
-                    {imageUrl ? (
-                        <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-lg animate-image-appear" loading="lazy"/>
-                    ) : (
-                         <div className="w-full h-full bg-gradient-to-br from-[#1e1e1e] to-[#121212] flex items-center justify-center rounded-lg shadow-lg border border-white/5">
-                            <PlaylistPlaceholderIcon className="w-1/2 h-1/2 text-white/10" />
-                        </div>
-                    )}
-                </div>
-                <div className="z-10 text-center sm:text-left">
-                    <p className="text-sm font-bold uppercase tracking-wider">Public Playlist</p>
-                    <h1 className={getTitleClass(playlist.name)}>{playlist.name}</h1>
-                    <div className="flex items-center justify-center sm:justify-start text-gray-300 mt-2 text-sm">
-                        <span>{songs.length || playlist.songCount} songs, {`${Math.floor(totalDuration / 60)} min`}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div className="sticky top-0 z-20 backdrop-blur-md bg-gradient-to-b from-[#121212] via-[#121212]/70 to-transparent">
-                <div className="px-4 md:px-8 py-5 flex items-center justify-between">
-                    <div className="flex items-center gap-4 md:gap-5">
-                        <button 
-                            onClick={handlePlayPlaylist} 
-                            className="w-12 h-12 md:w-14 md:h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transition-all duration-200 active:scale-95"
-                        >
-                          {isPlaylistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8"/>}
-                        </button>
-                        <button onClick={handleSavePlaylist} disabled={isPlaylistSaved} title={isPlaylistSaved ? "Already in your library" : "Save to your library"} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent">
-                            {isPlaylistSaved ? <CheckIcon className="w-7 md:w-8 h-7 md:h-8 text-green-400" /> : <PlusIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white" />}
-                        </button>
-                        <button onClick={() => toggleFavoriteApiPlaylist(playlist)} title="Favorite" className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
-                            <HeartIcon className={`w-7 md:w-8 h-7 md:h-8 ${isFavoriteApiPlaylist(playlist.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
-                        </button>
-                        <div className="relative" ref={actionMenuRef}>
-                            <button onClick={() => setIsActionMenuOpen(p => !p)} title="More..." className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
-                                <MoreIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white"/>
-                            </button>
-                             {isActionMenuOpen && (
-                                <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                                    <button onClick={() => {addSongsToEnd(songs); setIsActionMenuOpen(false);}} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Add to Queue</button>
-                                    <button onClick={() => {handleDownloadAll(); setIsActionMenuOpen(false);}} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">Download .zip</button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div className="text-white pb-20">
+            <CinematicHeader
+                title={playlist.name}
+                description="Public Playlist"
+                type={t('apiPlaylistView.publicPlaylist')}
+                imageUrl={imageUrl}
+                meta={metaString}
+                isPlaying={isPlaying}
+                isCurrentContext={isPlaylistCurrentlyPlaying}
+                onPlay={handlePlayPlaylist}
+                isFavorite={isFavoriteApiPlaylist(playlist.id)}
+                onToggleFavorite={() => toggleFavoriteApiPlaylist(playlist)}
+            >
+                <button 
+                    ref={moreButtonRef}
+                    onClick={(e) => { e.stopPropagation(); setIsActionMenuOpen(p => !p); }} 
+                    className="w-12 h-12 rounded-full border border-transparent hover:bg-white/5 flex items-center justify-center transition-all text-gray-400 hover:text-white"
+                >
+                    <MoreIcon className="w-6 h-6" />
+                </button>
 
-            <div className="px-4 sm:px-8 pb-8">
-                 {loading ? <Loader /> : songs.length > 0 ? (
-                    <>
-                    <div className="flex justify-between items-center text-gray-400 border-b border-white/10 pb-2 mb-2 px-4 text-sm uppercase font-semibold">
-                        <div className="flex items-center gap-x-4"><span className="text-center w-5">#</span><span>Title</span></div>
-                        <div className="flex items-center gap-x-4">
-                        <div className="relative hidden sm:block" ref={sortMenuRef}>
-                            <button onClick={() => setIsSortMenuOpen(p => !p)} className="flex items-center gap-2 text-xs hover:text-white"><span >SORT BY</span><ChevronDownIcon className="w-4 h-4"/></button>
-                            {isSortMenuOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-40 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                                    <button onClick={() => {setSortKey('default'); setIsSortMenuOpen(false);}} className={`w-full text-left px-3 py-2 text-sm rounded-md h:bg-white/10 ${sortKey === 'default' && 'text-[#fc4b08]'}`}>Default</button>
-                                    <button onClick={() => {setSortKey('title'); setIsSortMenuOpen(false);}} className={`w-full text-left px-3 py-2 text-sm rounded-md h:bg-white/10 ${sortKey === 'title' && 'text-[#fc4b08]'}`}>Title</button>
-                                    <button onClick={() => {setSortKey('duration'); setIsSortMenuOpen(false);}} className={`w-full text-left px-3 py-2 text-sm rounded-md h:bg-white/10 ${sortKey === 'duration' && 'text-[#fc4b08]'}`}>Duration</button>
+                <button 
+                    onClick={handleSavePlaylist} 
+                    disabled={isPlaylistSaved} 
+                    title={isPlaylistSaved ? t('apiPlaylistView.alreadySaved') : t('apiPlaylistView.saveToLibrary')} 
+                    className="flex items-center gap-2 px-6 py-3 font-bold rounded-full border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/30 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed ml-2"
+                >
+                    {isPlaylistSaved ? <CheckIcon className="w-5 h-5 text-green-400" /> : <PlusIcon className="w-5 h-5" />}
+                    <span>{isPlaylistSaved ? 'Saved' : 'Save'}</span>
+                </button>
+            </CinematicHeader>
+
+            <SmartMenu isOpen={isActionMenuOpen} onClose={() => setIsActionMenuOpen(false)} triggerRef={moreButtonRef} width="w-56">
+                <div className="flex flex-col py-1">
+                    <button onClick={() => {addSongsToEnd(songs); setIsActionMenuOpen(false);}} className="w-full flex items-center gap-3 text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 text-gray-200 transition-colors"><QueueIcon className="w-4 h-4"/>{t('apiPlaylistView.addToQueue')}</button>
+                    <button onClick={() => {handleDownloadAll(); setIsActionMenuOpen(false);}} className="w-full flex items-center gap-3 text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 text-gray-200 transition-colors"><DownloadIcon className="w-4 h-4"/>{t('apiPlaylistView.downloadZip')}</button>
+                </div>
+            </SmartMenu>
+
+            <div className="px-6 md:px-10 mt-8">
+                 {loading ? <div className="py-20"><Loader /></div> : songs.length > 0 ? (
+                    <div className="bg-white/5 rounded-3xl border border-white/5 p-2 md:p-6 shadow-xl backdrop-blur-sm animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                        <div className="flex justify-between items-center text-gray-400 border-b border-white/10 pb-4 mb-2 px-4 text-xs uppercase font-bold tracking-wider">
+                            <div className="flex items-center gap-x-6"><span className="text-center w-6">#</span><span>{t('apiPlaylistView.title')}</span></div>
+                            <div className="flex items-center gap-x-6">
+                                <div className="relative hidden sm:block">
+                                    <button ref={sortMenuRef} onClick={() => setIsSortMenuOpen(p => !p)} className="flex items-center gap-2 hover:text-white transition-colors">
+                                        <span>{t('apiPlaylistView.sortBy')}</span>
+                                        <ChevronDownIcon className="w-4 h-4"/>
+                                    </button>
+                                    <SmartMenu isOpen={isSortMenuOpen} onClose={() => setIsSortMenuOpen(false)} triggerRef={sortMenuRef} width="w-48">
+                                        <div className="flex flex-col py-1">
+                                            <button onClick={() => {setSortKey('default'); setIsSortMenuOpen(false);}} className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 transition-colors ${sortKey === 'default' ? 'text-[#fc4b08] font-bold' : 'text-gray-300'}`}>{t('apiPlaylistView.sort_default')}</button>
+                                            <button onClick={() => {setSortKey('title'); setIsSortMenuOpen(false);}} className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 transition-colors ${sortKey === 'title' ? 'text-[#fc4b08] font-bold' : 'text-gray-300'}`}>{t('apiPlaylistView.sort_title')}</button>
+                                            <button onClick={() => {setSortKey('duration'); setIsSortMenuOpen(false);}} className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 transition-colors ${sortKey === 'duration' ? 'text-[#fc4b08] font-bold' : 'text-gray-300'}`}>{t('apiPlaylistView.sort_duration')}</button>
+                                        </div>
+                                    </SmartMenu>
                                 </div>
-                            )}
+                                <span title="Duration" className="hidden sm:block"><ClockIcon className="w-5 h-5" /></span>
+                            </div>
                         </div>
-                        <span title="Duration" className="hidden sm:block"><ClockIcon className="w-5 h-5" /></span><div className="w-5"></div>
+                        <div className="space-y-1">
+                            {sortedSongs.map((song, index) => (
+                                <ApiPlaylistTrackItem key={song.id+index} song={song} index={index} playlistSongs={sortedSongs} playlist={playlist} navigateToArtist={navigateToArtist} />
+                            ))}
                         </div>
                     </div>
-                    {sortedSongs.map((song, index) => <ApiPlaylistTrackItem key={song.id+index} song={song} index={index} playlistSongs={sortedSongs} playlist={playlist} navigateToArtist={navigateToArtist} />)}
-                    </>
                  ) : (
-                    <div className="text-center py-10"><p className="text-gray-400">Could not find songs for this playlist.</p></div>
+                    <div className="text-center py-20 text-gray-500 bg-white/5 rounded-3xl border border-white/5">{t('apiPlaylistView.noSongs')}</div>
                  )}
             </div>
         </div>

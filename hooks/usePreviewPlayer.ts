@@ -25,7 +25,6 @@ export const usePreviewPlayer = () => {
   }, []);
 
   useEffect(() => {
-    // Initialize audio element once
     previewAudioRef.current = new Audio();
     const audio = previewAudioRef.current;
 
@@ -64,7 +63,6 @@ export const usePreviewPlayer = () => {
     };
   }, [resetPreviewState]);
 
-  // Effect for exclusive playback
   useEffect(() => {
     if (isMainPlayerPlaying && isPreviewPlaying) {
       resetPreviewState();
@@ -91,7 +89,7 @@ export const usePreviewPlayer = () => {
       const previewUrl = song.downloadUrl.find(q => q.quality === '96kbps')?.url || song.downloadUrl[0]?.url;
       if (previewUrl) {
         setPreviewingSongId(song.id);
-        setIsPreviewPlaying(true); // Set to true immediately for better UI feedback
+        setIsPreviewPlaying(true);
         setPreviewProgress(0);
         audio.src = previewUrl.replace(/^http:/, 'https:');
         audio.load();

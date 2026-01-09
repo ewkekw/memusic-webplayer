@@ -15,7 +15,6 @@ interface UserMusicProviderProps {
 }
 
 export const UserMusicProvider: React.FC<UserMusicProviderProps> = ({ children, musicData, fullState, setAppState }) => {
-  // Resiliency: Fallback to default state if musicData is corrupted (e.g., missing or invalid properties).
   const safeMusicData = (
     musicData &&
     Array.isArray(musicData.favoriteSongs) &&
@@ -132,19 +131,18 @@ export const UserMusicProvider: React.FC<UserMusicProviderProps> = ({ children, 
       }
       
       setAppState(draft => {
-        // Always replace profile and settings
         if (data.profile) draft.profile = { ...defaultAppState.profile, ...data.profile };
         if (data.settings) draft.settings = { ...defaultAppState.settings, ...data.settings };
         
         const musicData: Partial<MusicData> = data.music || {};
         if (mode === 'replace') {
             draft.music = { ...defaultAppState.music, ...musicData };
-        } else { // Merge logic
+        } else {
             const mergeUniqueById = (prev: any[], incoming: any[] | undefined) => {
                 if (!Array.isArray(incoming)) return prev;
                 const existingIds = new Set(prev.map(item => item.id));
                 const newItems = incoming.filter(item => item && item.id && !existingIds.has(item.id));
-                return [...newItems, ...prev]; // Prepend new items
+                return [...newItems, ...prev];
             };
             
             draft.music.favoriteSongs = mergeUniqueById(draft.music.favoriteSongs, musicData.favoriteSongs);

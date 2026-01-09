@@ -1,4 +1,7 @@
+
 import { PartyState, PlayerContextType } from '../types';
+
+let lastSeekTime = 0;
 
 export const synchronizePlayback = (
     partyState: PartyState,
@@ -11,14 +14,16 @@ export const synchronizePlayback = (
 
     if (currentSong?.id !== player.currentSong?.id) {
         if (currentSong) {
+            console.log("[PartySync] Switching song to match host");
             player.playSong(currentSong, currentQueue, { type: 'party', id: partyId });
             if (player.playbackRate !== 1) player.setPlaybackRate(1);
             return;
         }
     }
 
-    const localStateUpdateTime = lastStateUpdate + timeOffset;
-    const secondsPassedSinceUpdate = (Date.now() - localStateUpdateTime) / 1000;
+    const now = Date.now();
+    const localStateUpdateTime = lastStateUpdate - timeOffset; 
+    const secondsPassedSinceUpdate = Math.max(0, (now - localStateUpdateTime) / 1000);
     const estimatedHostTime = isPlaying ? (currentTime + secondsPassedSinceUpdate) : currentTime;
 
     if (isPlaying !== player.isPlaying) {
@@ -30,23 +35,34 @@ export const synchronizePlayback = (
                 player.togglePlay();
             }
         }
+        return;
     }
 
     if (isPlaying && player.isPlaying && currentSong?.id === player.currentSong?.id) {
         const drift = estimatedHostTime - player.currentTime;
-        
-        if (Math.abs(drift) > 2.0) {
-            player.seek(estimatedHostTime);
-            if (player.playbackRate !== 1) player.setPlaybackRate(1);
-        } else if (Math.abs(drift) > 0.05) {
-            const targetRate = drift > 0 ? 1.04 : 0.96;
-            if (Math.abs(player.playbackRate - targetRate) > 0.01) {
-                player.setPlaybackRate(targetRate);
-            }
-        } else {
+        const absDrift = Math.abs(drift);
+
+        if (absDrift < 0.35) {
             if (player.playbackRate !== 1) {
                 player.setPlaybackRate(1);
             }
+            return;
+        }
+
+        if (absDrift > 3.0) {
+            if (now - lastSeekTime > 2000) {
+                console.log(`[PartySync] Large drift (${drift.toFixed(2)}s). Seeking.`);
+                player.seek(estimatedHostTime);
+                lastSeekTime = now;
+                if (player.playbackRate !== 1) player.setPlaybackRate(1);
+            }
+            return;
+        } 
+        
+        const targetRate = drift > 0 ? 1.06 : 0.94; 
+        
+        if (Math.abs(player.playbackRate - targetRate) > 0.01) {
+            player.setPlaybackRate(targetRate);
         }
     }
 };

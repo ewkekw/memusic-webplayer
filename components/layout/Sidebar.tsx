@@ -11,33 +11,46 @@ interface SidebarProps {
 }
 
 const HomeIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h7.5" />
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
   </svg>
 );
 
 const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 
 const LibraryIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" style={{ display: 'none' }} /> 
+    <path d="M12 20v-6M6 20V10M18 20V4" />
   </svg>
 );
 
+const RealLibraryIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
+        <line x1="9" y1="20" x2="9" y2="4" />
+        <line x1="15" y1="20" x2="15" y2="4" />
+    </svg>
+)
+
 const SettingsIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995s.145.755.438.995l1.003.827c.424.35.534.954.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.127c-.331.183-.581.495-.644.87l-.213 1.281c-.09.543-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.437-.995s-.145-.755-.437-.995l-1.004-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.076-.124.072-.044.146-.087.22-.127.332-.183.582-.495.644-.87l.213-1.281z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
 );
 
 const MinimalistMusicIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l6-2m0 0l-6 2m6-2v6a2 2 0 01-2 2h-2a2 2 0 01-2-2V9a2 2 0 012-2h2a2 2 0 012 2zm-6 2v6a2 2 0 002 2h2a2 2 0 002-2v-6" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 18V5l12-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="16" r="3" />
     </svg>
 );
 
@@ -57,12 +70,12 @@ const NavItem = React.forwardRef<HTMLButtonElement, NavItemProps>(
       className={`group relative z-10 flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${
         isActive
           ? 'text-white'
-          : 'text-gray-400 hover:text-white hover:bg-white/10'
+          : 'text-gray-400 hover:text-white'
       }`}
     >
-      <div className="flex items-center transition-transform duration-300 ease-in-out group-hover:translate-x-1">
-        {React.cloneElement(icon, { className: 'w-6 h-6 mr-4' })}
-        <span className="truncate">{label}</span>
+      <div className={`flex items-center transition-transform duration-300 ease-out group-hover:translate-x-1 ${isActive ? 'translate-x-1' : ''}`}>
+        {React.cloneElement(icon, { className: `w-6 h-6 mr-4 transition-colors duration-300 ${isActive ? 'text-[#fc4b08] drop-shadow-[0_0_5px_rgba(252,75,8,0.5)]' : ''}` })}
+        <span className="truncate tracking-wide">{label}</span>
       </div>
     </button>
   )
@@ -84,20 +97,20 @@ const PlaylistSidebarItem: React.FC<PlaylistSidebarItemProps> = ({ playlist, onC
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center text-left p-2 rounded-lg transition-colors hover:bg-white/10 ${className || ''}`}
+      className={`w-full flex items-center text-left p-2 rounded-lg transition-all hover:bg-white/5 group ${className || ''}`}
       title={playlist.name}
       style={style}
     >
       {imageUrl ? (
-        <img src={imageUrl} alt={playlist.name} className="w-12 h-12 rounded-md flex-shrink-0 object-cover" />
+        <img src={imageUrl} alt={playlist.name} className="w-10 h-10 rounded-md flex-shrink-0 object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
       ) : (
-        <div className="w-12 h-12 bg-white/5 rounded-md flex items-center justify-center flex-shrink-0">
-          <MinimalistMusicIcon className="w-6 h-6 text-gray-500" />
+        <div className="w-10 h-10 bg-white/5 rounded-md flex items-center justify-center flex-shrink-0">
+          <MinimalistMusicIcon className="w-5 h-5 text-gray-500" />
         </div>
       )}
       <div className="ml-3 min-w-0">
-        <p className="font-semibold text-white truncate">{playlist.name}</p>
-        <p className="text-sm text-gray-400 truncate">{t('sidebar.playlist')}</p>
+        <p className="font-semibold text-white truncate text-sm group-hover:text-[#fc4b08] transition-colors">{playlist.name}</p>
+        <p className="text-xs text-gray-500 truncate">{t('sidebar.playlist')}</p>
       </div>
     </button>
   );
@@ -139,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
     {
       id: 'library',
       ref: libraryRef,
-      icon: <LibraryIcon />,
+      icon: <RealLibraryIcon />,
       label: t('sidebar.library'),
       isActive: libraryViews.includes(activeView),
       onClick: () => setActiveView('library'),
@@ -166,8 +179,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
   }, [activeView, navItems, hasMounted]);
 
   useEffect(() => {
-    // Enable transitions only after the initial position has been set.
-    // This prevents the "surge" animation on first load.
     const timer = setTimeout(() => setHasMounted(true), 50);
     return () => clearTimeout(timer);
   }, []);
@@ -179,16 +190,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
   }, [playlistHistory, playlists]);
   
   return (
-    <aside className="w-64 bg-black/30 backdrop-blur-md p-4 flex-col h-full border-r border-white/10 hidden md:flex">
+    <aside className="w-64 glass-panel border-r border-white/5 p-4 flex-col h-full hidden md:flex z-20">
 
-      <nav ref={navRef} className="relative flex flex-col space-y-2 pt-1">
+      <nav ref={navRef} className="relative flex flex-col space-y-1 pt-1">
         <div
           aria-hidden="true"
-          className="absolute left-0 w-full bg-white/20 rounded-lg shadow-lg"
+          className="absolute left-0 w-full bg-white/5 rounded-lg shadow-inner border border-white/5"
           style={{
             ...sliderStyle,
             transition: hasMounted
-              ? 'top 0.35s cubic-bezier(0.4, 0, 0.2, 1), height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+              ? 'top 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)'
               : 'none',
           }}
         />
@@ -204,9 +215,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, nav
         ))}
       </nav>
       
-      <hr className="my-4 border-t border-white/10" />
+      <hr className="my-6 border-t border-white/5" />
       
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1">
+      <h3 className="px-4 text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">{t('library.recentPlaylists')}</h3>
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-1">
         {recentPlaylists.map((playlist, index) => (
           <PlaylistSidebarItem
             key={playlist.id}

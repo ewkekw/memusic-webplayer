@@ -142,6 +142,14 @@ export interface GetArtistDetailsResponse {
     success: boolean;
     data: FullArtist;
 }
+export interface GetLyricsResponse {
+    success: boolean;
+    data: {
+        lyrics: string;
+        snippet: string;
+        copyright: string;
+    }
+}
 
 // --- App State Interfaces for Consolidated Storage ---
 
@@ -223,6 +231,8 @@ export interface PlayerContextType {
   currentQueue: Song[];
   isQueueOpen: boolean;
   toggleQueue: (force?: boolean) => void;
+  isLyricsOpen: boolean;
+  toggleLyrics: (force?: boolean) => void;
   addSongNext: (song: Song) => void;
   addSongsToEnd: (songs: Song[]) => void;
   reorderQueue: (oldIndex: number, newIndex: number) => void;

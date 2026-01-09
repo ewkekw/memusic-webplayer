@@ -7,20 +7,37 @@ import { PartyParticipantList } from '../party/PartyParticipantList';
 import { useTranslation } from '../../context/LanguageContext';
 
 const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="19" cy="12" r="1" />
+        <circle cx="5" cy="12" r="1" />
+    </svg>
+);
+
+const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
 );
 
 const QueueIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <line x1="8" y1="6" x2="21" y2="6" />
+        <line x1="8" y1="12" x2="21" y2="12" />
+        <line x1="8" y1="18" x2="21" y2="18" />
+        <line x1="3" y1="6" x2="3.01" y2="6" />
+        <line x1="3" y1="12" x2="3.01" y2="12" />
+        <line x1="3" y1="18" x2="3.01" y2="18" />
     </svg>
 );
 
 const SignalIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12z" />
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+      <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
   </svg>
 );
 
@@ -183,10 +200,8 @@ const QueueView: React.FC<{ navigateToArtist: (artistId: string) => void }> = ({
     const upNextSongs = currentSongIndex !== -1 ? queue.slice(currentSongIndex + 1) : queue;
     const previouslyPlayedSongs = currentSongIndex !== -1 ? queue.slice(0, currentSongIndex) : [];
 
-    // Check if we should show the autoplay banner
     const isAutoplayEnabled = !partyState && repeatMode === 'off';
     
-    // If Up Next is empty, show the banner as a placeholder/indicator that more will come
     const willAutoplaySoon = isAutoplayEnabled && upNextSongs.length === 0;
 
     const handleDragStart = (index: number) => setDraggedIndex(index);
@@ -278,6 +293,7 @@ const QueueView: React.FC<{ navigateToArtist: (artistId: string) => void }> = ({
 
 export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => void }> = ({ navigateToArtist }) => {
     const { partyState } = useContext(PartyContext);
+    const { toggleQueue } = useContext(PlayerContext);
     const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
 
@@ -290,30 +306,40 @@ export const QueueSidebar: React.FC<{ navigateToArtist: (artistId: string) => vo
     };
 
     return (
-        <aside className="w-80 bg-black/30 backdrop-blur-md p-4 flex flex-col h-full border-l border-white/10 hidden md:flex">
+        <aside className="w-full bg-black/40 backdrop-blur-3xl p-6 flex flex-col h-full border-l border-white/10 shadow-2xl">
             {partyState ? (
                 <>
-                    <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                        <h2 className="text-2xl font-bold text-white">{t('queue.party')}</h2>
-                        <button
-                            onClick={handleCopy}
-                            title={t('queue.copyCode')}
-                            className="relative text-xs font-bold uppercase bg-white/10 px-3 py-1.5 rounded-md hover:bg-white/20 transition-all duration-200"
-                            style={{ minWidth: '70px' }}
-                        >
-                           <span className={`transition-opacity duration-300 ${copied ? 'opacity-0' : 'opacity-100'}`}>{partyState.partyId}</span>
-                           <span className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${copied ? 'opacity-100' : 'opacity-0'}`}>{t('queue.copied')}</span>
+                    <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-2xl font-bold text-white tracking-tight">{t('queue.party')}</h2>
+                            <button
+                                onClick={handleCopy}
+                                title={t('queue.copyCode')}
+                                className="relative text-xs font-bold uppercase bg-[#fc4b08]/20 text-[#fc4b08] px-3 py-1 rounded-md hover:bg-[#fc4b08]/30 transition-all duration-200 border border-[#fc4b08]/20"
+                                style={{ minWidth: '70px' }}
+                            >
+                               <span className={`transition-opacity duration-300 ${copied ? 'opacity-0' : 'opacity-100'}`}>{partyState.partyId}</span>
+                               <span className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${copied ? 'opacity-100' : 'opacity-0'}`}>{t('queue.copied')}</span>
+                            </button>
+                        </div>
+                        <button onClick={() => toggleQueue(false)} className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+                            <CloseIcon className="w-5 h-5" />
                         </button>
                     </div>
-                    <div className="flex-shrink-0 mb-4">
+                    <div className="flex-shrink-0 mb-6">
                         <PartyParticipantList />
                     </div>
-                    <hr className="border-white/10 mb-4"/>
+                    <hr className="border-white/10 mb-6"/>
                     <QueueView navigateToArtist={navigateToArtist} />
                 </>
             ) : (
                 <>
-                    <h2 className="text-2xl font-bold text-white mb-4 flex-shrink-0">{t('queue.queue')}</h2>
+                    <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                        <h2 className="text-2xl font-bold text-white tracking-tight">{t('queue.queue')}</h2>
+                        <button onClick={() => toggleQueue(false)} className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+                            <CloseIcon className="w-5 h-5" />
+                        </button>
+                    </div>
                     <QueueView navigateToArtist={navigateToArtist} />
                 </>
             )}

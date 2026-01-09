@@ -13,7 +13,6 @@ interface ProfileProviderProps {
 }
 
 export const ProfileProvider: React.FC<ProfileProviderProps> = ({ children, profile, setAppState }) => {
-    // Resiliency: Fallback to default state if profile data is corrupted.
     const safeProfile = (profile && typeof profile.name === 'string' && typeof profile.imageUrl === 'string') 
         ? profile 
         : defaultAppState.profile;

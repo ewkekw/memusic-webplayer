@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useContext } from 'react';
-import { FullArtist, View, Album, Song, Artist } from '../../types';
+import React, { useState, useContext } from 'react';
+import { View } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { Loader } from '../ui/Loader';
@@ -9,19 +9,7 @@ import { AlbumCard } from '../ui/AlbumCard';
 import { ArtistCard } from '../ui/ArtistCard';
 import { useArtist } from '../../hooks/useArtist';
 import { useTranslation } from '../../context/LanguageContext';
-
-const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
-  </svg>
-);
-const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="5" width="3" height="14" rx="1" />
-    <rect x="15" y="5" width="3" height="14" rx="1" />
-  </svg>
-);
-
+import { CinematicHeader } from '../ui/CinematicHeader';
 
 interface ArtistViewProps {
   artistId: string;
@@ -53,95 +41,106 @@ const ArtistView: React.FC<ArtistViewProps> = ({ artistId, setActiveView, naviga
   };
 
   const bioText = artist.bio?.find(b => b.title === 'Bio')?.text || artist.bio?.[0]?.text || '';
-  const shortBio = bioText.split(' ').slice(0, 30).join(' ') + (bioText.split(' ').length > 30 ? '...' : '');
+  const shortBio = bioText.split(' ').slice(0, 40).join(' ') + (bioText.split(' ').length > 40 ? '...' : '');
 
-  const latestRelease = artist.topAlbums?.sort((a, b) => (b.year || 0) - (a.year || 0))[0];
+  const metaString = t('artistView.followers', { count: parseInt(artist.fanCount || '0').toLocaleString() });
 
   return (
-    <div className="text-white">
-      <div className="p-4 md:p-8 flex flex-col sm:flex-row items-center sm:items-end gap-6 relative">
-        <div className="absolute inset-0 z-0 opacity-30 overflow-hidden">
-          {imageUrl && <img src={imageUrl} className="w-full h-full object-cover blur-3xl scale-125" alt="" loading="lazy" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/80 to-transparent"></div>
-        </div>
-        
-        {imageUrl && <img src={imageUrl} alt={artist.name} className="w-40 h-40 sm:w-52 sm:h-52 rounded-full shadow-2xl z-10 flex-shrink-0 animate-image-appear" loading="lazy" />}
-        <div className="z-10 text-center sm:text-left">
-          {artist.isVerified && <p className="text-sm font-bold uppercase tracking-wider text-blue-400">{t('artistView.verified')}</p>}
-          <h1 className="font-extrabold tracking-tighter leading-tight text-4xl sm:text-6xl">{artist.name}</h1>
-          <p className="text-gray-300 mt-2 text-sm">{t('artistView.followers', { count: artist.fanCount || 0 })}</p>
-        </div>
-      </div>
-
-      <div className="px-4 md:px-8 py-5">
-        <div className="flex items-center gap-4 md:gap-5">
-          <button 
-            onClick={handlePlay} 
-            className="w-14 h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transition-all duration-200 active:scale-95"
-          >
-            {isArtistCurrentlyPlaying && isPlaying ? <PauseIcon className="w-8 h-8"/> : <PlayIcon className="w-8 h-8"/>}
-          </button>
-           <button 
+    <div className="text-white pb-20">
+      <CinematicHeader
+        title={artist.name}
+        type="Artist"
+        imageUrl={imageUrl}
+        isVerified={artist.isVerified || false}
+        meta={metaString}
+        isPlaying={isPlaying}
+        isCurrentContext={isArtistCurrentlyPlaying}
+        onPlay={handlePlay}
+        isFavorite={isFavoriteArtist(artist.id)}
+        onToggleFavorite={() => toggleFavoriteArtist(artist)}
+      >
+         <button 
             onClick={() => toggleFavoriteArtist(artist)}
-            className={`px-6 py-2 md:py-3 border-2 font-bold rounded-full transition-colors ${isFavoriteArtist(artist.id) ? 'bg-white/10 border-gray-500 text-gray-300' : 'border-gray-500 text-gray-300 hover:border-white hover:text-white'}`}
+            className={`px-6 py-3 font-bold rounded-full transition-colors border ${isFavoriteArtist(artist.id) ? 'bg-white/10 border-white/20 text-white' : 'border-white/30 text-white hover:bg-white/10'}`}
           >
             {isFavoriteArtist(artist.id) ? t('artistView.following') : t('artistView.follow')}
           </button>
-        </div>
-      </div>
+      </CinematicHeader>
       
-      <div className="px-4 md:px-8 pb-8 space-y-12">
+      <div className="px-6 md:px-10 space-y-16 mt-8">
+        
         {topSongs.length > 0 && (
-          <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.popular')}</h2>
-            <SongList
-                songs={topSongs}
-                navigateToArtist={navigateToArtist}
-                context={{ type: 'artist', id: artist.id }}
-            />
+          <section className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+            <h2 className="text-2xl font-bold mb-6 tracking-tight">{t('artistView.popular')}</h2>
+            <div className="bg-white/5 rounded-3xl border border-white/5 p-2 md:p-6 shadow-xl backdrop-blur-sm">
+                <SongList
+                    songs={topSongs}
+                    navigateToArtist={navigateToArtist}
+                    context={{ type: 'artist', id: artist.id }}
+                />
+            </div>
           </section>
         )}
 
-        {latestRelease && (
-            <section>
-                <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.latestRelease')}</h2>
-                <div className="max-w-md">
-                    <AlbumCard album={latestRelease} onAlbumClick={navigateToAlbum} onArtistClick={navigateToArtist} />
-                </div>
-            </section>
-        )}
-
         {artist.topAlbums && artist.topAlbums.length > 0 && (
-            <section>
-                <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.albums')}</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                    {artist.topAlbums.map(album => (
-                        <AlbumCard key={album.id} album={album} onAlbumClick={navigateToAlbum} onArtistClick={navigateToArtist} />
+            <section className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold tracking-tight">{t('artistView.albums')}</h2>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                    {artist.topAlbums.map((album, idx) => (
+                        <div key={album.id} style={{ animationDelay: `${idx * 50}ms` }} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards">
+                            <AlbumCard album={album} onAlbumClick={navigateToAlbum} onArtistClick={navigateToArtist} />
+                        </div>
                     ))}
                 </div>
             </section>
         )}
         
         {bioText && (
-          <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.about')}</h2>
-            <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
-              {showFullBio ? bioText : shortBio}
-              {bioText.length > shortBio.length && (
-                <button onClick={() => setShowFullBio(!showFullBio)} className="text-[#fc4b08] font-bold ml-2">
-                  {showFullBio ? t('artistView.showLess') : t('artistView.readMore')}
-                </button>
-              )}
-            </p>
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
+            <div className="md:col-span-2">
+                <h2 className="text-2xl font-bold mb-6 tracking-tight">{t('artistView.about')}</h2>
+                <div className="prose prose-invert max-w-none text-gray-300 leading-relaxed text-lg">
+                    <p>{showFullBio ? bioText : shortBio}</p>
+                    {bioText.length > shortBio.length && (
+                        <button onClick={() => setShowFullBio(!showFullBio)} className="text-[#fc4b08] font-bold mt-2 hover:underline">
+                        {showFullBio ? t('artistView.showLess') : t('artistView.readMore')}
+                        </button>
+                    )}
+                </div>
+            </div>
+            
+            <div className="bg-white/5 rounded-3xl p-8 border border-white/5 h-fit">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Artist Stats</h3>
+                <div className="space-y-4">
+                    <div>
+                        <div className="text-3xl font-black text-white">{artist.fanCount || 'N/A'}</div>
+                        <div className="text-sm text-gray-400">Total Followers</div>
+                    </div>
+                    <div>
+                        <div className="text-xl font-bold text-white capitalize">{artist.dominantType || artist.type}</div>
+                        <div className="text-sm text-gray-400">Artist Type</div>
+                    </div>
+                    {artist.availableLanguages && (
+                        <div>
+                            <div className="text-sm font-medium text-white capitalize">{artist.availableLanguages.join(', ')}</div>
+                            <div className="text-sm text-gray-400">Languages</div>
+                        </div>
+                    )}
+                </div>
+            </div>
           </section>
         )}
 
         {artist.similarArtists && artist.similarArtists.length > 0 && (
-          <section>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">{t('artistView.fansLike')}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-              {artist.similarArtists.map(simArtist => (
-                <ArtistCard key={simArtist.id} artist={simArtist} onArtistClick={navigateToArtist} />
+          <section className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 pb-10">
+            <h2 className="text-2xl font-bold mb-6 tracking-tight">{t('artistView.fansLike')}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              {artist.similarArtists.map((simArtist, idx) => (
+                <div key={simArtist.id} style={{ animationDelay: `${idx * 50}ms` }} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards">
+                    <ArtistCard artist={simArtist} onArtistClick={navigateToArtist} />
+                </div>
               ))}
             </div>
           </section>

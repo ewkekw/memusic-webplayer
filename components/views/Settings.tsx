@@ -2,123 +2,733 @@
 import React, { useContext, useRef, useState, useEffect } from 'react';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
-import { ModalContext } from '../../App';
+import { ModalContext } from '../../context/ModalContext';
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 import { ProfileContext } from '../../context/ProfileContext';
 import { defaultAvatars } from '../../utils/defaults';
-import { AppState, EqSetting, PlayerSettings, ProfileData } from '../../types';
 import { useTranslation } from '../../context/LanguageContext';
 
-const ChevronLeftIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg> );
-const ChevronRightIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg> );
-const DiceIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"> <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <path d="M15.5 8.5v.01" strokeWidth="2.5" /> <path d="M8.5 8.5v.01" strokeWidth="2.5" /> <path d="M12 12v.01" strokeWidth="2.5" /> <path d="M8.5 15.5v.01" strokeWidth="2.5" /> <path d="M15.5 15.5v.01" strokeWidth="2.5" /> </svg> );
-const UploadIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg> );
-const PencilIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg> );
-const ResetIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"> <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-11.667-11.667l3.181 3.183m0 0l-3.181 3.183m0 0l3.181-3.183M3.75 5.25h4.992m0 0v4.992m0-4.992L5.578 3.47m11.667 11.667l3.181-3.183m0 0l-3.181-3.183m0 0l-3.181 3.183" /> </svg> );
-const ImportIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg> );
-const ExportIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5h-2.25M16.5 12l-4.5 4.5m0 0l-4.5-4.5m4.5 4.5V3" /></svg> );
-const CameraIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg> );
-const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"> <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" /> </svg> );
-const Audio8DIcon: React.FC<{ isEnabled: boolean }> = ({ isEnabled }) => {
-    const { audioContext } = useContext(PlayerContext); const orbitingElementRef = useRef<SVGGElement>(null); const animationFrameRef = useRef<number | null>(null);
-    useEffect(() => {
-        if (!isEnabled || !audioContext) { if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current); if (orbitingElementRef.current) orbitingElementRef.current.style.transform = 'rotate(0deg)'; return; }
-        const animate = () => { const pannerFrequency = 0.2; const angleDegrees = (audioContext.currentTime * pannerFrequency * 360) % 360; if (orbitingElementRef.current) orbitingElementRef.current.style.transform = `rotate(${angleDegrees}deg)`; animationFrameRef.current = requestAnimationFrame(animate); };
-        animate(); return () => { if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current); };
-    }, [isEnabled, audioContext]);
-    return ( <svg viewBox="0 0 112 112" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full"> <circle cx="56" cy="56" r="40" stroke={isEnabled ? '#fc4b08' : '#6b7280'} strokeOpacity="0.3" strokeWidth="2" strokeDasharray="4 4" className="transition-all duration-500" /> <g ref={orbitingElementRef} style={{ transformOrigin: '56px 56px', willChange: 'transform' }}> <g transform="translate(16 56)" className={`transition-opacity duration-500 ${isEnabled ? 'opacity-100' : 'opacity-0'}`} style={{ filter: 'drop-shadow(0 0 6px #fc4b08)' }}> <circle cx="0" cy="0" r="6" fill="#fc4b08" style={{ animation: isEnabled ? 'pulse-8d 2s infinite ease-in-out' : 'none', transformOrigin: 'center', transformBox: 'fill-box' }} /> </g> </g> <g className={`transition-opacity duration-500 ${isEnabled ? 'opacity-100' : 'opacity-70'}`}> <circle cx="56" cy="48" r="14" fill={isEnabled ? '#d1d5db' : '#9ca3af'} className="transition-colors duration-500"/> <path d="M42 62 C 42 72, 70 72, 70 62 L 70 60 Q 70 52, 64 52 L 48 52 Q 42 52, 42 60 Z" fill={isEnabled ? '#d1d5db' : '#9ca3af'} className="transition-colors duration-500" /> </g> </svg> );
-};
-const ChevronDownIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"> <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /> </svg> );
-const Section: React.FC<{title: string, description?: string, children: React.ReactNode, className?: string}> = ({ title, description, children, className }) => (
-    <section className={className}>
-        <div className="px-1"> <h3 className="text-xl font-bold text-white">{title}</h3> {description && <p className="mt-1 text-sm text-gray-400">{description}</p>} </div>
-        <div className="mt-4 bg-black/20 border border-white/10 rounded-xl p-6"> {children} </div>
-    </section>
-);
-const AVATARS_PER_PAGE = 12;
-const ProfileImageSelector: React.FC<{ currentImageUrl: string; onSelect: (imageUrl: string) => void; onUploadClick: () => void; }> = ({ currentImageUrl, onSelect, onUploadClick }) => {
-    const [currentPage, setCurrentPage] = useState(0); const { t } = useTranslation(); const totalPages = Math.ceil(defaultAvatars.length / AVATARS_PER_PAGE);
-    const paginatedAvatars = defaultAvatars.slice( currentPage * AVATARS_PER_PAGE, (currentPage + 1) * AVATARS_PER_PAGE );
-    const handleRandom = () => onSelect(defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)]);
-    return ( <div className="flex flex-col max-h-[calc(100vh-12rem)]"> <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 p-1 flex-1 overflow-y-auto custom-scrollbar"> {paginatedAvatars.map((avatarUrl, index) => ( <button key={`${avatarUrl}-${index}`} onClick={() => onSelect(avatarUrl)} className="relative aspect-square rounded-full transition-all duration-300 transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#282828] focus-visible:ring-[#fc4b08]"> <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-full bg-white/5" loading="lazy" /> <div className={`absolute inset-0 rounded-full border-4 transition-all duration-300 ${currentImageUrl === avatarUrl ? 'border-[#fc4b08] shadow-[0_0_15px_rgba(252,75,8,0.6)]' : 'border-transparent'}`}></div> </button> ))} </div> <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/10 flex-shrink-0"> <button onClick={() => setCurrentPage(p => Math.max(0, p - 1))} disabled={currentPage === 0} className="p-2 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"> <ChevronLeftIcon className="w-5 h-5" /> </button> <span className="text-sm text-gray-400 font-medium tabular-nums"> {currentPage + 1} / {totalPages} </span> <button onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage >= totalPages - 1} className="p-2 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"> <ChevronRightIcon className="w-5 h-5" /> </button> </div> <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 flex-shrink-0"> <button onClick={handleRandom} className="w-full bg-white/10 py-3 px-4 rounded-full text-center font-bold hover:bg-white/20 transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"> <DiceIcon className="w-5 h-5" /> {t('settings.profile.random')} </button> <button onClick={onUploadClick} className="w-full bg-[#fc4b08] py-3 px-4 rounded-full text-center text-black font-bold hover:bg-[#ff5f22] transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"> <UploadIcon className="w-5 h-5"/> {t('settings.profile.upload')} </button> </div> </div> );
-};
-const ProfileSection: React.FC = () => {
-    const { name, imageUrl, updateName, updateImage } = useContext(ProfileContext); const { showModal, hideModal } = useContext(ModalContext); const { t } = useTranslation();
-    const [isEditing, setIsEditing] = useState(false); const [tempName, setTempName] = useState(name); const [tempImage, setTempImage] = useState(imageUrl); const fileInputRef = useRef<HTMLInputElement>(null);
-    useEffect(() => { if (!isEditing) { setTempName(name); setTempImage(imageUrl); } }, [name, imageUrl, isEditing]);
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file && file.type.startsWith('image/')) { const reader = new FileReader(); reader.onloadend = () => setTempImage(reader.result as string); reader.readAsDataURL(file); } };
-    const handleSave = () => { if(tempName.trim()) updateName(tempName); updateImage(tempImage); setIsEditing(false); };
-    const handleImageEdit = () => { showModal({ title: t('settings.profile.chooseAvatar'), size: 'xl', content: ( <ProfileImageSelector currentImageUrl={tempImage} onSelect={(imageUrl) => { setTempImage(imageUrl); hideModal(); }} onUploadClick={() => { hideModal(); setTimeout(() => fileInputRef.current?.click(), 100); }} /> ) }); };
-    return ( <Section title={t('settings.profile.title')} description={t('settings.profile.description')}> <div className="flex flex-col items-center gap-6"> <div className="relative group flex-shrink-0"> <img key={isEditing ? tempImage : imageUrl} src={isEditing ? tempImage : imageUrl} alt="Profile" className="w-32 h-32 rounded-full object-cover shadow-lg animate-image-appear" /> {isEditing && ( <> <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" /> <button onClick={handleImageEdit} className="absolute inset-0 bg-black/60 rounded-full flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"> <CameraIcon className="w-8 h-8" /> <span className="text-xs font-bold mt-1">{t('settings.profile.changePhoto')}</span> </button> </> )} </div> <div className="w-full max-w-xs text-center"> {isEditing ? ( <input id="displayName" type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} maxLength={30} className="w-full bg-white/10 p-3 rounded-md text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-[#fc4b08]" /> ) : ( <h4 className="text-2xl font-bold text-white truncate">{name}</h4> )} </div> <div className="mt-4"> {isEditing ? ( <div className="flex gap-4"> <button onClick={() => setIsEditing(false)} className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 font-semibold transition-colors">{t('settings.profile.cancel')}</button> <button onClick={handleSave} className="px-5 py-2.5 rounded-full bg-[#fc4b08] text-black font-bold disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">{t('settings.profile.save')}</button> </div> ) : ( <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 font-semibold transition-colors"> <PencilIcon className="w-5 h-5"/> {t('settings.profile.editProfile')} </button> )} </div> </div> </Section> );
-};
-const LanguageSection: React.FC = () => {
-    const { language, setLanguage, t } = useTranslation();
-    return ( <Section title={t('settings.language.title')} description={t('settings.language.description')}> <div className="flex flex-col sm:flex-row gap-4"> <button onClick={() => setLanguage('en')} className={`flex-1 p-4 rounded-lg border-2 transition-all duration-200 text-center ${language === 'en' ? 'border-[#fc4b08] bg-[#fc4b08]/10' : 'border-white/10 bg-transparent hover:border-white/20'}`}> <h4 className="font-bold text-white">{t('settings.language.english')}</h4> </button> <button onClick={() => setLanguage('pt')} className={`flex-1 p-4 rounded-lg border-2 transition-all duration-200 text-center ${language === 'pt' ? 'border-[#fc4b08] bg-[#fc4b08]/10' : 'border-white/10 bg-transparent hover:border-white/20'}`}> <h4 className="font-bold text-white">{t('settings.language.portuguese')}</h4> </button> </div> </Section> )
+const UserIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>);
+const SpeakerIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>);
+const EqualizerIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>);
+const DatabaseIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" /></svg>);
+const InfoIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>);
+const UploadIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>);
+const PencilIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>);
+const CameraIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>);
+const DiceIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" /></svg>);
+const DownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>);
+const ImportIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>);
+const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>);
+
+type SettingsTab = 'profile' | 'audio' | 'effects' | 'data' | 'about';
+
+interface SectionProps {
+    isActive: boolean;
 }
-const AudioQualitySection: React.FC = () => {
-    const { selectedQuality, setSelectedQuality } = useContext(PlayerContext); const { t } = useTranslation();
-    const qualities = [ { id: '96kbps', label: t('settings.quality.low'), description: t('settings.quality.lowDesc') }, { id: '160kbps', label: t('settings.quality.normal'), description: t('settings.quality.normalDesc') }, { id: '320kbps', label: t('settings.quality.high'), description: t('settings.quality.highDesc') }, ];
-    return ( <Section title={t('settings.quality.title')} description={t('settings.quality.description')}> <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4"> {qualities.map((quality) => ( <button key={quality.id} onClick={() => setSelectedQuality(quality.id)} className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${selectedQuality === quality.id ? 'border-[#fc4b08] bg-[#fc4b08]/10' : 'border-white/10 bg-transparent hover:border-white/20'}`}> <h4 className="font-bold text-white">{quality.label} <span className="text-sm font-normal text-gray-400">({quality.id})</span></h4> <p className="text-sm text-gray-400 mt-1">{quality.description}</p> </button> ))} </div> </Section> );
-};
-const ImportExportSection: React.FC = () => {
-    const { importData, exportData } = useContext(UserMusicContext); const { showModal, hideModal } = useContext(ModalContext); const { t } = useTranslation(); const fileInputRef = useRef<HTMLInputElement>(null);
-    const handleExport = () => {
-        const jsonString = exportData();
-        const blob = new Blob([jsonString], { type: 'application/json' }); const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `memusic_backup_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+
+const SettingsHeader: React.FC<{ title: string; description: string; }> = ({ title, description }) => (
+    <div className="mb-8">
+        <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter mb-2">{title}</h2>
+        <p className="text-gray-400 font-medium">{description}</p>
+    </div>
+);
+
+const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+    <div className={`glass-panel border border-white/5 rounded-3xl p-6 md:p-8 ${className}`}>
+        {children}
+    </div>
+);
+
+const VerticalFader: React.FC<{
+    value: number;
+    min: number;
+    max: number;
+    onChange: (val: number) => void;
+    label: string;
+    disabled?: boolean;
+}> = ({ value, min, max, onChange, label, disabled }) => {
+    const trackRef = useRef<HTMLDivElement>(null);
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (disabled || !trackRef.current) return;
+        const track = trackRef.current;
+        track.setPointerCapture(e.pointerId);
+
+        const updateValue = (clientY: number) => {
+            const rect = track.getBoundingClientRect();
+            const height = rect.height;
+            const relativeY = rect.bottom - clientY;
+            const percentage = Math.max(0, Math.min(1, relativeY / height));
+            const range = max - min;
+            const newValue = min + (percentage * range);
+            onChange(newValue);
+        };
+
+        updateValue(e.clientY);
+
+        const onPointerMove = (ev: PointerEvent) => updateValue(ev.clientY);
+        const onPointerUp = (ev: PointerEvent) => {
+            track.releasePointerCapture(ev.pointerId);
+            track.removeEventListener('pointermove', onPointerMove);
+            track.removeEventListener('pointerup', onPointerUp);
+        };
+
+        track.addEventListener('pointermove', onPointerMove);
+        track.addEventListener('pointerup', onPointerUp);
     };
-    const handleImport = (mode: 'replace' | 'merge') => {
-        hideModal(); const file = fileInputRef.current?.files?.[0];
+
+    const percent = ((value - min) / (max - min)) * 100;
+
+    return (
+        <div className={`flex flex-col items-center h-full group select-none ${disabled ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+            <div 
+                ref={trackRef}
+                onPointerDown={handlePointerDown}
+                className="relative w-14 h-48 sm:h-56 cursor-pointer touch-none flex justify-center py-4 bg-[#0a0a0a] rounded-lg border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]"
+            >
+                <div className="absolute w-1 h-[calc(100%-2rem)] top-4 bg-[#222] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,1)]">
+                    <div 
+                        className="absolute bottom-0 left-0 right-0 bg-[#fc4b08] w-full rounded-b-full opacity-40"
+                        style={{ height: `${percent}%` }}
+                    />
+                </div>
+
+                <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-white/20 pointer-events-none" />
+
+                <div 
+                    className="absolute left-1/2 -translate-x-1/2 w-10 h-6 bg-gradient-to-b from-[#444] to-[#222] rounded-sm shadow-[0_4px_6px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.1)] flex items-center justify-center z-10 pointer-events-none transition-transform duration-100 ease-out group-active:scale-105"
+                    style={{ bottom: `calc(${percent}% - 12px)` }}
+                >
+                    <div className="w-6 h-[1px] bg-white/30 mb-[2px]" />
+                    <div className="w-6 h-[1px] bg-white/30" />
+                    <div className="w-6 h-[1px] bg-white/30 mt-[2px]" />
+                    
+                    <div className="absolute w-8 h-[2px] bg-[#fc4b08] top-1/2 -translate-y-1/2 shadow-[0_0_4px_#fc4b08]" />
+                </div>
+            </div>
+            
+            <span className="mt-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider group-hover:text-white transition-colors">{label}</span>
+            <span className="text-[10px] font-mono text-[#fc4b08] mt-1">{value > 0 ? `+${value.toFixed(1)}` : value.toFixed(1)}</span>
+        </div>
+    );
+};
+
+
+const AvatarSelector: React.FC<{
+    currentAvatar: string;
+    onSelect: (url: string) => void;
+    onClose: () => void;
+}> = ({ currentAvatar, onSelect, onClose }) => {
+    const { t } = useTranslation();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = importData(e.target?.result as string, mode);
-                showModal({ title: result.success ? t('settings.data.importSuccess') : t('settings.data.importFailure'), content: ( <> <p className="text-gray-300 mb-6">{t(result.messageKey)}</p> <div className="flex justify-end"> <button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20">{t('albumView.close')}</button> </div> </> ), });
+            reader.onload = (ev) => {
+                if (ev.target?.result) onSelect(ev.target.result as string);
             };
-            reader.readAsText(file);
+            reader.readAsDataURL(file);
         }
-        if (fileInputRef.current) fileInputRef.current.value = "";
     };
-    const onFileSelected = () => {
-        if (!fileInputRef.current?.files?.length) return;
-        const MergeIcon = (p: React.SVGProps<SVGSVGElement>) => ( <svg {...p} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.962 3.935l.387.216m-8.634 8.634l.216.387m16.402-4.634l.387-.216m-8.634-8.634l.216-.387M3.75 20.25h16.5M16.5 3.75h-1.875a4.5 4.5 0 00-4.5 4.5v.375m-1.875 0v5.25a3 3 0 01-3 3h-1.5m1.5-3h5.25m-5.25 0h1.875a3 3 0 003-3V8.25a4.5 4.5 0 00-4.5-4.5H6.375" /></svg> );
-        const ReplaceIcon = (p: React.SVGProps<SVGSVGElement>) => ( <svg {...p} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-11.667-11.667l3.181 3.183m0 0l-3.181 3.183m0 0l3.181-3.183M3.75 5.25h4.992m0 0v4.992m0-4.992L5.578 3.47m11.667 11.667l3.181-3.183m0 0l-3.181-3.183m0 0l-3.181 3.183" /></svg> );
-        showModal({ title: t('settings.data.importTitle'), content: ( <div> <p className="text-gray-300 mb-4">{t('settings.data.importSubtitle')}</p> <div className="space-y-4"> <button onClick={() => handleImport('merge')} className="w-full text-left p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center space-x-4"> <MergeIcon className="w-10 h-10 text-gray-400 flex-shrink-0" /> <div> <h4 className="font-bold text-white">{t('settings.data.merge')}</h4> <p className="text-sm text-gray-400">{t('settings.data.mergeDesc')}</p> </div> </button> <button onClick={() => handleImport('replace')} className="w-full text-left p-4 rounded-lg bg-red-900/20 hover:bg-red-900/40 border border-red-500/30 transition-colors flex items-center space-x-4"> <ReplaceIcon className="w-10 h-10 text-red-400 flex-shrink-0" /> <div> <h4 className="font-bold text-red-300">{t('settings.data.replace')}</h4> <p className="text-sm text-red-400">{t('settings.data.replaceDesc')}</p> </div> </button> </div> <div className="flex justify-end mt-6"> <button onClick={hideModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20">{t('library.cancel')}</button> </div> </div> ) });
-    }
-    return ( <Section title={t('settings.data.title')} description={t('settings.data.description')}> <div className="flex flex-col sm:flex-row gap-4"> <input type="file" ref={fileInputRef} onChange={onFileSelected} accept=".json" className="hidden" /> <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 text-center px-4 py-3 border border-gray-600 rounded-md text-sm font-medium text-gray-300 hover:bg-white/10 transition-colors"> <ImportIcon className="w-5 h-5" /> {t('settings.data.import')} </button> <button onClick={handleExport} className="flex-1 flex items-center justify-center gap-2 text-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-[#fc4b08] hover:bg-[#ff5f22] transition-colors"> <ExportIcon className="w-5 h-5" /> {t('settings.data.export')} </button> </div> </Section> );
-};
-const AudioEffectsSection: React.FC = () => {
-    const { eqSettings, setEqGain, resetEq, isEqEnabled, toggleEq, is8DEnabled, toggle8D, isReverbEnabled, toggleReverb, reverbMix, setReverbMix } = useContext(PlayerContext);
-    const { t } = useTranslation(); const reverbSliderRef = useRef<HTMLInputElement>(null); const [isPresetMenuOpen, setIsPresetMenuOpen] = useState(false); const presetMenuRef = useRef<HTMLDivElement>(null);
-    const eqBands = [60, 230, 910, 3600, 14000]; const presets = { 'preset_flat': [0, 0, 0, 0, 0], 'preset_pop': [-1, 4, 5, 2, -2], 'preset_rock': [5, 2, -4, 1, 4], 'preset_jazz': [4, 1, -2, 2, 3], 'preset_voice': [-2, -1, 3, 2, -1], };
-    const applyPreset = (name: keyof typeof presets) => presets[name].forEach((gain, i) => setEqGain(i, gain));
-    useEffect(() => { if (reverbSliderRef.current) reverbSliderRef.current.style.setProperty('--reverb-progress', `${reverbMix * 100}%`); }, [reverbMix]);
-    useEffect(() => { const handleClickOutside = (e: MouseEvent) => { if (presetMenuRef.current && !presetMenuRef.current.contains(e.target as Node)) setIsPresetMenuOpen(false); }; document.addEventListener('mousedown', handleClickOutside); return () => document.removeEventListener('mousedown', handleClickOutside); }, []);
-    return ( <Section title={t('settings.effects.title')} description={t('settings.effects.description')}> <div className="space-y-8 divide-y divide-white/10"> <div className="space-y-6 pt-2"> <ToggleSwitch label={t('settings.effects.enableEQ')} enabled={isEqEnabled} onChange={toggleEq} /> <div className={`transition-opacity duration-300 ${isEqEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}> <div className="flex justify-around items-center h-64 bg-black/20 p-4 rounded-lg overflow-x-auto custom-scrollbar"> {eqSettings.map((band, i) => ( <div key={i} className="flex flex-col items-center h-full w-16 min-w-[4rem]"> <div className="flex-1 flex flex-col items-center justify-between w-full"> <span className="text-xs font-bold text-white/80">+12</span> <div className="eq-slider-container relative"> <span className="absolute text-sm font-semibold text-[#fc4b08] tabular-nums pointer-events-none ml-2" style={{ left: '100%', top: `${50 - (band.gain / 12) * 50}%`, transform: 'translateY(-50%)', }}> {band.gain > 0 ? '+' : ''}{band.gain} </span> <input type="range" min="-12" max="12" step="1" value={band.gain} onChange={(e) => setEqGain(i, Number(e.target.value))} className="eq-slider" /> </div> <span className="text-xs font-bold text-white/80">-12</span> </div> <div className="mt-2 text-center"> <span className="text-xs text-gray-400 mt-1"> {eqBands[i] >= 1000 ? `${eqBands[i]/1000}` : eqBands[i]} <span className="text-gray-500">{eqBands[i] >= 1000 ? 'k' : ''}Hz</span> </span> </div> </div> ))} </div> <div className="mt-6 flex items-center justify-between"> <div className="relative" ref={presetMenuRef}> <button onClick={() => setIsPresetMenuOpen(p => !p)} className="flex items-center space-x-2 bg-white/10 px-4 py-2 rounded-md text-sm text-gray-300 hover:bg-white/20 hover:text-white transition-colors"> <span>{t('settings.effects.presets')}</span> <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isPresetMenuOpen ? 'rotate-180' : ''}`} /> </button> {isPresetMenuOpen && ( <div className="absolute bottom-full left-0 mb-2 w-40 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-10 origin-bottom-left animate-in fade-in slide-in-from-bottom-2 duration-200"> {Object.keys(presets).map(name => ( <button key={name} onClick={() => { applyPreset(name as keyof typeof presets); setIsPresetMenuOpen(false); }} className="w-full text-left px-3 py-2 text-sm rounded-md text-gray-300 hover:bg-white/10"> {t(`settings.effects.${name}`)} </button> ))} </div> )} </div> <button onClick={resetEq} className="flex items-center gap-2 px-4 py-2 text-sm bg-white/10 rounded-md hover:bg-white/20 transition-colors"> <ResetIcon className="w-4 h-4" /> {t('settings.effects.reset')} </button> </div> </div> </div> <div className="pt-8"> <ToggleSwitch label={t('settings.effects.enableReverb')} enabled={isReverbEnabled} onChange={toggleReverb} /> <div className={`mt-4 space-y-2 transition-opacity duration-300 ${isReverbEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}> <label htmlFor="reverb-mix" className="text-sm text-gray-400">{t('settings.effects.intensity')}</label> <input ref={reverbSliderRef} id="reverb-mix" type="range" min="0" max="1" step="0.01" value={reverbMix} onChange={(e) => setReverbMix(parseFloat(e.target.value))} className="reverb-slider" /> </div> </div> <div className="pt-8"> <div className="flex flex-col sm:flex-row items-center gap-6"> <div className="flex-shrink-0 w-28 h-28"> <Audio8DIcon isEnabled={is8DEnabled} /> </div> <div className="w-full"> <ToggleSwitch label={t('settings.effects.enable8D')} enabled={is8DEnabled} onChange={toggle8D} /> <p className="text-xs text-gray-500 mt-2">{t('settings.effects.eightDDesc')}</p> </div> </div> </div> </div> </Section> );
-};
-const AboutSection: React.FC<{className?: string}> = ({ className }) => {
-    const { t } = useTranslation();
-    return ( <Section title={t('settings.about.title')} description={t('settings.about.description')} className={className}> <div className="text-gray-300 space-y-4 text-sm"> <p><span className="font-bold text-white">{t('settings.about.version')}:</span> 1.0.0</p> <p>{t('settings.about.p1')}</p> <p>{t('settings.about.p2')} <a href="https://github.com/sumitkolhe/jiosaavn-api" target="_blank" rel="noopener noreferrer" className="text-[#fc4b08] hover:underline">JioSaavn API</a>. {t('settings.about.p3')}</p> <div className="pt-4 text-center"> <p className="font-bold text-white">{t('settings.about.sourceCode')}</p> <a href="https://github.com/ewkekw/memusic-webplayer" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-2 text-[#fc4b08] hover:underline"> <GithubIcon className="w-5 h-5" /> <span className="font-semibold">ewkekw/memusic-webplayer</span> </a> </div> <div className="pt-4"> <p className="font-bold text-white">{t('settings.about.tech')}:</p> <ul className="list-disc list-inside space-y-1 mt-1"> <li>React & TypeScript</li> <li>TailwindCSS</li> <li>Web Audio API</li> </ul> </div> </div> </Section> );
-};
-const Settings: React.FC = () => {
-  const { t } = useTranslation();
-  return (
-    <div className="p-4 md:p-6 lg:p-8 text-white max-w-7xl mx-auto space-y-8 pb-24">
-        <h1 className="text-4xl font-black tracking-tight text-white">{t('settings.title')}</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            <div className="space-y-6 lg:col-span-1">
-                 <ProfileSection />
-                 <ImportExportSection />
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-4 max-h-[300px] overflow-y-auto custom-scrollbar p-1">
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-square rounded-2xl bg-white/5 border-2 border-dashed border-white/10 hover:border-[#fc4b08] hover:bg-white/10 flex flex-col items-center justify-center transition-all group"
+                    title={t('settings.profile.upload')}
+                >
+                    <UploadIcon className="w-6 h-6 text-gray-500 group-hover:text-[#fc4b08] transition-colors" />
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+                </button>
+                {defaultAvatars.map((url, index) => (
+                    <button
+                        key={index}
+                        onClick={() => onSelect(url)}
+                        className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all duration-300 hover:scale-105 ${currentAvatar === url ? 'border-[#fc4b08] ring-2 ring-[#fc4b08]/30' : 'border-transparent hover:border-white/30'}`}
+                    >
+                        <img src={url} alt={`Avatar ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                    </button>
+                ))}
             </div>
-            <div className="space-y-6 md:col-span-1 lg:col-span-2">
-                <LanguageSection />
-                <AudioQualitySection />
-                <AudioEffectsSection />
+            <div className="flex justify-end pt-2">
+                <button onClick={onClose} className="px-6 py-2 rounded-full bg-white/5 hover:bg-white/10 text-white font-medium transition-colors text-sm">
+                    {t('settings.profile.cancel')}
+                </button>
             </div>
-            <AboutSection className="col-span-1 md:col-span-2 lg:col-span-3"/>
         </div>
-    </div>
-  );
+    );
 };
+
+const EditProfileForm: React.FC<{
+    initialName: string;
+    initialImage: string;
+    onSave: (name: string, image: string) => void;
+    onCancel: () => void;
+}> = ({ initialName, initialImage, onSave, onCancel }) => {
+    const [name, setName] = useState(initialName);
+    const [image, setImage] = useState(initialImage);
+    const [isAvatarSelectorOpen, setIsAvatarSelectorOpen] = useState(false);
+    const { t } = useTranslation();
+
+    const handleRandomAvatar = () => {
+        const random = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
+        setImage(random);
+    };
+
+    return (
+        <div className="space-y-8">
+            <div className="flex flex-col items-center space-y-6">
+                <div className="relative group">
+                    <div className="w-32 h-32 rounded-full p-1 border-2 border-[#fc4b08] shadow-[0_0_30px_rgba(252,75,8,0.3)] bg-[#121212] overflow-hidden">
+                        <img src={image} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                    </div>
+                    <button onClick={handleRandomAvatar} className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 p-2.5 bg-[#2a2a2a] rounded-full text-white hover:bg-[#3a3a3a] hover:text-[#fc4b08] border border-white/10 transition-colors shadow-lg z-10" title={t('settings.profile.random')}>
+                        <DiceIcon className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setIsAvatarSelectorOpen(true)} className="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-1/4 p-2.5 bg-[#fc4b08] rounded-full text-black hover:bg-[#ff5f22] transition-colors shadow-lg z-10" title={t('settings.profile.chooseAvatar')}>
+                        <CameraIcon className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+
+            {isAvatarSelectorOpen ? (
+                <div className="bg-black/20 p-6 rounded-3xl border border-white/5 animate-in fade-in zoom-in-95">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">{t('settings.profile.chooseAvatar')}</h3>
+                    <AvatarSelector currentAvatar={image} onSelect={(url) => { setImage(url); setIsAvatarSelectorOpen(false); }} onClose={() => setIsAvatarSelectorOpen(false)} />
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">{t('settings.profile.title')}</label>
+                        <div className="relative">
+                            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:outline-none focus:border-[#fc4b08] focus:ring-1 focus:ring-[#fc4b08] transition-all text-white text-lg font-medium placeholder-gray-600 pl-12" placeholder="Your Name" />
+                            <PencilIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={onCancel} className="flex-1 px-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition-colors">{t('settings.profile.cancel')}</button>
+                        <button onClick={() => onSave(name, image)} disabled={!name.trim()} className="flex-1 px-4 py-3.5 rounded-xl bg-[#fc4b08] text-black font-bold hover:bg-[#ff5f22] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#fc4b08]/20">{t('settings.profile.save')}</button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const SectionProfile: React.FC = () => {
+    const { name, imageUrl, updateName, updateImage } = useContext(ProfileContext);
+    const { showModal, hideModal } = useContext(ModalContext);
+    const { t } = useTranslation();
+
+    const handleEditProfile = () => {
+        showModal({
+            title: t('settings.profile.editProfile'),
+            content: <EditProfileForm initialName={name} initialImage={imageUrl} onSave={(newName, newImage) => { updateName(newName); updateImage(newImage); hideModal(); }} onCancel={hideModal} />
+        });
+    };
+
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <SettingsHeader title={t('settings.profile.title')} description={t('settings.profile.description')} />
+            <Card className="flex flex-col sm:flex-row items-center gap-8 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#fc4b08]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                <div className="relative">
+                    <div className="w-32 h-32 rounded-full p-1 border-2 border-[#fc4b08] shadow-[0_0_40px_rgba(252,75,8,0.3)] bg-[#121212] overflow-hidden group-hover:scale-105 transition-transform duration-500">
+                        <img src={imageUrl} alt={name} className="w-full h-full rounded-full object-cover" />
+                    </div>
+                </div>
+                <div className="flex-1 text-center sm:text-left z-10">
+                    <h3 className="text-4xl font-black text-white mb-2">{name}</h3>
+                    <p className="text-gray-400 mb-6 max-w-md">Music Lover • Audio Enthusiast</p>
+                    <button onClick={handleEditProfile} className="px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white font-bold transition-all hover:scale-105 hover:shadow-lg backdrop-blur-md">
+                        {t('settings.profile.editProfile')}
+                    </button>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
+const SectionAudio: React.FC = () => {
+    const { selectedQuality, setSelectedQuality } = useContext(PlayerContext);
+    const { language, setLanguage, t } = useTranslation();
+
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <SettingsHeader title={t('settings.quality.title')} description="Manage your listening experience and app preferences." />
+            
+            <Card>
+                <div className="space-y-8">
+                    <div>
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <span className="w-1 h-6 bg-[#fc4b08] rounded-full block" />
+                            Streaming Quality
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {[
+                                { id: '160kbps', label: t('settings.quality.normal'), desc: t('settings.quality.normalDesc') },
+                                { id: '320kbps', label: t('settings.quality.high'), desc: t('settings.quality.highDesc') },
+                            ].map((q) => (
+                                <button
+                                    key={q.id}
+                                    onClick={() => setSelectedQuality(q.id)}
+                                    className={`relative p-4 rounded-2xl border-2 text-left transition-all duration-300 ${selectedQuality === q.id ? 'border-[#fc4b08] bg-[#fc4b08]/10' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                >
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className={`font-bold text-lg ${selectedQuality === q.id ? 'text-[#fc4b08]' : 'text-white'}`}>{q.label}</span>
+                                        {selectedQuality === q.id && <div className="w-3 h-3 bg-[#fc4b08] rounded-full shadow-[0_0_10px_#fc4b08]" />}
+                                    </div>
+                                    <p className="text-sm text-gray-400">{q.desc}</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-white/5 w-full" />
+
+                    <div>
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <span className="w-1 h-6 bg-blue-500 rounded-full block" />
+                            {t('settings.language.title')}
+                        </h3>
+                        <div className="flex p-1 bg-black/40 rounded-xl border border-white/5 relative max-w-sm">
+                            <div className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#fc4b08] rounded-lg transition-all duration-300 shadow-lg ${language === 'pt' ? 'left-[calc(50%+2px)]' : 'left-1'}`} />
+                            {(['en', 'pt'] as const).map((lang) => (
+                                <button
+                                    key={lang}
+                                    onClick={() => setLanguage(lang)}
+                                    className={`flex-1 py-3 rounded-lg text-sm font-bold relative z-10 transition-colors ${language === lang ? 'text-black' : 'text-gray-500 hover:text-gray-300'}`}
+                                >
+                                    {lang === 'en' ? 'English' : 'Português'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
+const SectionEffects: React.FC = () => {
+    const { isEqEnabled, setIsEqEnabled, eqSettings, setEqGain, resetEq, is8DEnabled, setIs8DEnabled, isReverbEnabled, setIsReverbEnabled, reverbMix, setReverbMix } = useContext(PlayerContext);
+    const { t } = useTranslation();
+
+    const eqPresets = { 'flat': [0,0,0,0,0], 'pop': [2,4,0,3,5], 'rock': [4,3,-2,4,6], 'jazz': [3,2,-3,3,4], 'voice': [-2,-1,4,3,1] };
+    const bands = ["60Hz", "230Hz", "910Hz", "4kHz", "14kHz"];
+
+    return (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <SettingsHeader title="Sonic Lab" description={t('settings.effects.description')} />
+
+            <div className="glass-panel-heavy p-6 md:p-8 rounded-[32px] relative overflow-hidden border border-white/5 shadow-2xl bg-[#121212]">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/brushed-alum-dark.png')] opacity-20 pointer-events-none" />
+                
+                <div className="absolute top-4 left-4 w-3 h-3 rounded-full bg-[#1a1a1a] shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_1px_1px_rgba(0,0,0,0.8)] border border-[#333]" />
+                <div className="absolute top-4 right-4 w-3 h-3 rounded-full bg-[#1a1a1a] shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_1px_1px_rgba(0,0,0,0.8)] border border-[#333]" />
+                <div className="absolute bottom-4 left-4 w-3 h-3 rounded-full bg-[#1a1a1a] shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_1px_1px_rgba(0,0,0,0.8)] border border-[#333]" />
+                <div className="absolute bottom-4 right-4 w-3 h-3 rounded-full bg-[#1a1a1a] shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_1px_1px_rgba(0,0,0,0.8)] border border-[#333]" />
+
+                <div className="flex flex-wrap items-center justify-between gap-6 mb-10 relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 shadow-inner bg-[#1a1a1a] border border-white/5`}>
+                            <EqualizerIcon className={`w-6 h-6 transition-colors ${isEqEnabled ? 'text-[#fc4b08]' : 'text-gray-600'}`} />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-white tracking-tight">Master EQ</h3>
+                            <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full transition-all duration-300 ${isEqEnabled ? 'bg-[#fc4b08] shadow-[0_0_8px_#fc4b08]' : 'bg-[#333] shadow-none'}`} />
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">5-Band Parametric</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 bg-black/40 p-1.5 rounded-full border border-white/5 backdrop-blur-sm shadow-inner">
+                        <span className={`text-[10px] font-bold px-3 py-1 rounded-full transition-colors ${!isEqEnabled ? 'bg-white/10 text-white' : 'text-gray-500'}`}>BYPASS</span>
+                        <ToggleSwitch enabled={isEqEnabled} onChange={() => setIsEqEnabled(!isEqEnabled)} />
+                        <span className={`text-[10px] font-bold px-3 py-1 rounded-full transition-colors ${isEqEnabled ? 'text-[#fc4b08]' : 'text-gray-500'}`}>ACTIVE</span>
+                    </div>
+                </div>
+
+                <div className="relative z-10 transition-opacity duration-500">
+                    <div className="flex justify-between items-end h-72 px-2 md:px-8 pb-4 gap-2 md:gap-4 overflow-x-auto custom-scrollbar-hidden">
+                        <div className="absolute inset-x-8 top-0 bottom-16 flex flex-col justify-between pointer-events-none opacity-10">
+                            <div className="w-full h-px bg-white" />
+                            <div className="w-full h-px bg-white" />
+                            <div className="w-full h-px bg-white" />
+                        </div>
+
+                        {eqSettings.map((band, i) => (
+                            <VerticalFader 
+                                key={i}
+                                value={band.gain} 
+                                min={-12} 
+                                max={12} 
+                                onChange={(val) => setEqGain(i, val)} 
+                                label={bands[i]} 
+                                disabled={!isEqEnabled}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-6 border-t border-white/5">
+                        <div className="flex gap-2 overflow-x-auto max-w-full pb-2 md:pb-0 custom-scrollbar-hidden mask-linear-fade">
+                            {(Object.keys(eqPresets) as Array<keyof typeof eqPresets>).map(preset => (
+                                <button
+                                    key={preset}
+                                    onClick={() => {
+                                        const gains = eqPresets[preset];
+                                        gains.forEach((g, i) => setEqGain(i, g));
+                                    }}
+                                    className="px-4 py-2 rounded bg-[#1a1a1a] hover:bg-[#252525] border border-white/5 hover:border-white/10 text-[10px] font-bold text-gray-400 hover:text-white transition-all uppercase tracking-wider whitespace-nowrap active:scale-95 shadow-md"
+                                >
+                                    {t(`settings.effects.preset_${preset}`)}
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={resetEq} className="text-[10px] font-bold text-red-400 hover:text-red-300 uppercase tracking-widest px-4 py-2 hover:bg-red-500/10 rounded transition-colors">
+                            {t('settings.effects.reset')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div className="glass-panel p-6 rounded-[24px] relative overflow-hidden group border border-white/5 bg-[#121212] shadow-2xl">
+                    <div className="absolute top-3 left-3 w-2 h-2 rounded-full bg-[#222] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]" />
+                    <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#222] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]" />
+                    <div className="absolute bottom-3 left-3 w-2 h-2 rounded-full bg-[#222] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]" />
+                    <div className="absolute bottom-3 right-3 w-2 h-2 rounded-full bg-[#222] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]" />
+
+                    <div className="flex items-center justify-between mb-6 relative z-10 px-2">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${is8DEnabled ? 'bg-[#00ff00] shadow-[0_0_8px_#00ff00]' : 'bg-[#330000]'} transition-colors duration-200`} />
+                            <div>
+                                <span className="font-bold text-lg text-white block tracking-tight">Spatial 8D</span>
+                                <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Binaural Panner</span>
+                            </div>
+                        </div>
+                        <ToggleSwitch enabled={is8DEnabled} onChange={() => setIs8DEnabled(!is8DEnabled)} />
+                    </div>
+                    
+                    <div className="relative h-32 bg-black rounded-lg border border-white/10 flex items-center justify-center overflow-hidden shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] mx-2">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle,transparent_20%,#111_20%,#111_21%,transparent_21%,transparent_40%,#111_40%,#111_41%,transparent_41%,transparent_60%,#111_60%,#111_61%,transparent_61%)] opacity-30" />
+                        <div className="absolute w-full h-[1px] bg-[#222]" />
+                        <div className="absolute h-full w-[1px] bg-[#222]" />
+                        
+                        <div className="absolute w-8 h-8 rounded-full bg-[#222] border border-white/20 z-10" />
+                        
+                        <div className={`absolute w-full h-full flex items-center justify-center transition-opacity duration-500 ${is8DEnabled ? 'opacity-100' : 'opacity-0'}`}>
+                            <div className="w-[80px] h-[80px] animate-[spin_8s_linear_infinite]">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_10px_#a855f7]" />
+                            </div>
+                        </div>
+                        
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none rounded-lg" />
+                    </div>
+                    <p className="mt-4 px-2 text-xs text-gray-500 font-medium leading-relaxed font-mono">
+                        {is8DEnabled ? "STATUS: ORBITING // LFO: 0.2Hz" : "STATUS: BYPASSED"}
+                    </p>
+                </div>
+
+                <div className="glass-panel p-6 rounded-[24px] relative overflow-hidden group border border-white/5 bg-[#121212] shadow-2xl">
+                    <div className="absolute top-3 left-3 w-2 h-2 rounded-full bg-[#222] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]" />
+                    <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#222] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]" />
+                    <div className="absolute bottom-3 left-3 w-2 h-2 rounded-full bg-[#222] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]" />
+                    <div className="absolute bottom-3 right-3 w-2 h-2 rounded-full bg-[#222] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]" />
+
+                    <div className="flex items-center justify-between mb-6 relative z-10 px-2">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${isReverbEnabled ? 'bg-[#00ff00] shadow-[0_0_8px_#00ff00]' : 'bg-[#330000]'} transition-colors duration-200`} />
+                            <div>
+                                <span className="font-bold text-lg text-white block tracking-tight">Verb Unit</span>
+                                <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Plate Reverb</span>
+                            </div>
+                        </div>
+                        <ToggleSwitch enabled={isReverbEnabled} onChange={() => setIsReverbEnabled(!isReverbEnabled)} />
+                    </div>
+
+                    <div className="relative h-16 bg-[#0a0a0a] rounded-lg border border-white/10 mb-5 overflow-hidden shadow-[inset_0_2px_5px_rgba(0,0,0,1)] mx-2">
+                        <svg className="absolute bottom-0 left-0 w-full h-full p-2" viewBox="0 0 100 40" preserveAspectRatio="none">
+                            <path 
+                                d="M0,40 Q10,5 20,20 T40,30 T60,35 T100,38" 
+                                fill="none" 
+                                stroke={isReverbEnabled ? "#3b82f6" : "#222"} 
+                                strokeWidth="2"
+                                className="transition-colors duration-300"
+                            />
+                            <path 
+                                d="M0,40 Q10,5 20,20 T40,30 T60,35 T100,38 L100,40 L0,40 Z" 
+                                fill={isReverbEnabled ? "rgba(59, 130, 246, 0.2)" : "transparent"} 
+                                className="transition-colors duration-300"
+                            />
+                        </svg>
+                        <div className="absolute top-1 right-2 font-mono text-[9px] text-blue-500/80">
+                            {isReverbEnabled ? `MIX: ${(reverbMix * 100).toFixed(0)}%` : "OFF"}
+                        </div>
+                    </div>
+
+                    <div className={`px-2 transition-all duration-300 ${isReverbEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none grayscale'}`}>
+                        <div className="flex justify-between text-[9px] font-bold text-gray-500 uppercase mb-2 tracking-widest font-mono">
+                            <span>Dry</span>
+                            <span>Wet</span>
+                        </div>
+                        
+                        <div className="relative h-8 w-full flex items-center group/slider">
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="1" 
+                                step="0.05" 
+                                value={reverbMix} 
+                                onChange={(e) => setReverbMix(parseFloat(e.target.value))} 
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                            />
+                            
+                            <div className="w-full h-1.5 bg-[#050505] rounded-full border-b border-white/10 relative z-10 shadow-[inset_0_1px_2px_rgba(0,0,0,1)]"></div>
+                            
+                            <div 
+                                className="absolute h-6 w-10 bg-gradient-to-b from-[#333] to-[#111] rounded shadow-[0_2px_4px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.1)] border border-black z-10 pointer-events-none flex items-center justify-center transition-transform duration-75 ease-out group-active/slider:scale-105"
+                                style={{ left: `calc(${reverbMix * 100}% - 20px)` }}
+                            >
+                                <div className="w-0.5 h-3 bg-blue-500 shadow-[0_0_4px_#3b82f6]" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const SectionData: React.FC = () => {
+    const { importData, exportData } = useContext(UserMusicContext);
+    const { showModal, hideModal } = useContext(ModalContext);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { t } = useTranslation();
+
+    const handleExport = () => {
+        const dataStr = exportData();
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `memusic_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const jsonString = event.target?.result as string;
+            showModal({
+                title: t('settings.data.importTitle'),
+                content: (
+                    <div className="space-y-4">
+                        <p className="text-gray-300 text-sm leading-relaxed mb-4">{t('settings.data.importSubtitle')}</p>
+                        <div className="grid gap-3">
+                            <button onClick={() => processImport(jsonString, 'merge')} className="flex items-center p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/50 transition-all text-left group">
+                                <div className="p-3 rounded-xl bg-blue-500/20 text-blue-400 mr-4 group-hover:scale-110 transition-transform"><ImportIcon className="w-6 h-6" /></div>
+                                <div><h4 className="font-bold text-white text-sm mb-1">{t('settings.data.merge')}</h4><p className="text-xs text-gray-400">{t('settings.data.mergeDesc')}</p></div>
+                            </button>
+                            <button onClick={() => processImport(jsonString, 'replace')} className="flex items-center p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-red-500/50 transition-all text-left group">
+                                <div className="p-3 rounded-xl bg-red-500/20 text-red-400 mr-4 group-hover:scale-110 transition-transform"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg></div>
+                                <div><h4 className="font-bold text-white text-sm mb-1">{t('settings.data.replace')}</h4><p className="text-xs text-gray-400">{t('settings.data.replaceDesc')}</p></div>
+                            </button>
+                        </div>
+                        <button onClick={hideModal} className="w-full py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-xs font-bold uppercase tracking-widest">{t('settings.profile.cancel')}</button>
+                    </div>
+                )
+            });
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    };
+
+    const processImport = (jsonString: string, mode: 'merge' | 'replace') => {
+        const result = importData(jsonString, mode);
+        hideModal();
+        showModal({
+            title: result.success ? t('settings.data.importSuccess') : t('settings.data.importFailure'),
+            content: (
+                <div className="text-center space-y-6 py-4">
+                    <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${result.success ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                        {result.success ? <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> : <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>}
+                    </div>
+                    <p className="text-white font-medium">{t(result.messageKey)}</p>
+                    <button onClick={hideModal} className="px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 font-bold transition-colors text-xs uppercase tracking-widest">OK</button>
+                </div>
+            )
+        });
+    };
+
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <SettingsHeader title={t('settings.data.title')} description={t('settings.data.description')} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button onClick={() => fileInputRef.current?.click()} className="group flex flex-col items-center justify-center p-8 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] transition-all duration-300">
+                    <div className="w-16 h-16 rounded-full bg-[#fc4b08]/10 text-[#fc4b08] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(252,75,8,0.2)]">
+                        <ImportIcon className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{t('settings.data.import')}</h3>
+                    <p className="text-sm text-gray-400 text-center">Restore from backup</p>
+                    <input type="file" ref={fileInputRef} onChange={handleImportFile} accept=".json" className="hidden" />
+                </button>
+
+                <button onClick={handleExport} className="group flex flex-col items-center justify-center p-8 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] transition-all duration-300">
+                    <div className="w-16 h-16 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+                        <DownloadIcon className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{t('settings.data.export')}</h3>
+                    <p className="text-sm text-gray-400 text-center">Save library to file</p>
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const SectionAbout: React.FC = () => {
+    const { t } = useTranslation();
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <SettingsHeader title={t('settings.about.title')} description="Project details." />
+            
+            <Card className="relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#fc4b08]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col gap-8">
+                    <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#fc4b08] to-orange-600 flex items-center justify-center shadow-lg shadow-orange-900/20 transform rotate-3 border border-white/10">
+                            <span className="font-['Cute_Font'] text-4xl text-white pt-1">me</span>
+                        </div>
+                        <div>
+                            <h3 className="text-3xl font-black text-white tracking-tighter">meMUSIC</h3>
+                            <div className="flex items-center gap-3 mt-1">
+                                <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/10 text-xs font-bold text-[#fc4b08] uppercase tracking-wider">
+                                    v1.2.0
+                                </span>
+                                <span className="w-1 h-1 rounded-full bg-gray-600" />
+                                <span className="text-xs font-medium text-gray-400">Web Player</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className="text-gray-300 text-sm leading-relaxed max-w-2xl border-l-2 border-[#fc4b08] pl-4">
+                        {t('settings.about.p1')}
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-2xl bg-black/20 border border-white/5 flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                                <UserIcon className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <div>
+                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Developer</div>
+                                <div className="text-white font-bold">ewkekw</div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-black/20 border border-white/5 flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                                <DatabaseIcon className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <div>
+                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Data Source</div>
+                                <div className="text-white font-bold">JioSaavn API</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <a 
+                            href="https://github.com/ewkekw/memusic-webplayer" 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="inline-flex items-center gap-3 px-6 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all border border-white/10 hover:border-[#fc4b08]/50 group"
+                        >
+                            <GithubIcon className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
+                            <span>View Source Code</span>
+                        </a>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
+
+const SettingsNav: React.FC<{ activeTab: SettingsTab; onSelect: (tab: SettingsTab) => void; }> = ({ activeTab, onSelect }) => {
+    const tabs: { id: SettingsTab; icon: React.ReactNode; label: string }[] = [
+        { id: 'profile', icon: <UserIcon className="w-5 h-5"/>, label: 'Profile' },
+        { id: 'audio', icon: <SpeakerIcon className="w-5 h-5"/>, label: 'Audio' },
+        { id: 'effects', icon: <EqualizerIcon className="w-5 h-5"/>, label: 'Sonic Lab' },
+        { id: 'data', icon: <DatabaseIcon className="w-5 h-5"/>, label: 'Data' },
+        { id: 'about', icon: <InfoIcon className="w-5 h-5"/>, label: 'About' },
+    ];
+
+    return (
+        <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible p-1 md:p-0 custom-scrollbar-hidden">
+            {tabs.map(tab => (
+                <button
+                    key={tab.id}
+                    onClick={() => onSelect(tab.id)}
+                    className={`
+                        flex items-center gap-3 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 whitespace-nowrap
+                        ${activeTab === tab.id 
+                            ? 'bg-[#fc4b08] text-black shadow-[0_0_20px_rgba(252,75,8,0.3)] scale-[1.02]' 
+                            : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/5'
+                        }
+                    `}
+                >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                </button>
+            ))}
+        </nav>
+    );
+};
+
+const Settings: React.FC = () => {
+    const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+
+    const renderContent = () => {
+        switch(activeTab) {
+            case 'profile': return <SectionProfile />;
+            case 'audio': return <SectionAudio />;
+            case 'effects': return <SectionEffects />;
+            case 'data': return <SectionData />;
+            case 'about': return <SectionAbout />;
+            default: return <SectionProfile />;
+        }
+    };
+
+    return (
+        <div className="h-full flex flex-col md:flex-row overflow-hidden bg-[#050505]">
+            <div className="w-full md:w-64 bg-[#121212]/50 backdrop-blur-xl border-b md:border-b-0 md:border-r border-white/5 z-20 flex-shrink-0">
+                <div className="p-4 md:p-8 h-full flex flex-col">
+                    <h1 className="text-2xl font-black text-white tracking-tight mb-6 hidden md:block">Settings</h1>
+                    <SettingsNav activeTab={activeTab} onSelect={setActiveTab} />
+                </div>
+            </div>
+
+            <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+                <div className="max-w-4xl mx-auto p-6 md:p-12 pb-32">
+                    {renderContent()}
+                </div>
+            </main>
+        </div>
+    );
+};
+
 export default Settings;

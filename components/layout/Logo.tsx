@@ -134,7 +134,6 @@ const Logo: React.FC<LogoProps> = ({ size = 'large' }) => {
       ctx.closePath();
       ctx.fill();
       
-      // --- Particle Emission (Continuous + Burst) ---
       const emitParticle = (speedMultiplier = 1) => {
           const angle = Math.random() * Math.PI * 2;
           const speed = (0.2 + Math.random() * 0.5) * speedMultiplier;
@@ -153,20 +152,18 @@ const Logo: React.FC<LogoProps> = ({ size = 'large' }) => {
           });
       };
 
-      // Continuous "effervescence" based on bass level
-      const continuousEmissionRate = (smoothedBass.current / 255) * 1.5; // Max ~1.5 particles per frame
+      const continuousEmissionRate = (smoothedBass.current / 255) * 1.5;
       emissionCounter.current += continuousEmissionRate;
       while (emissionCounter.current > 1) {
-          emitParticle(0.5); // Slower particles for the continuous bubbling
+          emitParticle(0.5); 
           emissionCounter.current -= 1;
       }
       
-      // Burst on kick
       bassHistory.current.push(bass);
       if (bassHistory.current.length > 30) bassHistory.current.shift();
       const avgBass = bassHistory.current.reduce((a, b) => a + b, 0) / bassHistory.current.length;
       const kickThreshold = 1.25;
-      const cooldown = 120; // ms
+      const cooldown = 120;
       const now = Date.now();
       
       if (bass > avgBass * kickThreshold && now - lastKickTime.current > cooldown) {
@@ -174,11 +171,10 @@ const Logo: React.FC<LogoProps> = ({ size = 'large' }) => {
         const kickStrength = Math.min(2.5, (bass - avgBass) / 40);
         const particleCount = Math.floor(1 + kickStrength * 1.5);
         for (let i = 0; i < particleCount; i++) {
-            emitParticle(1 + kickStrength * 0.5); // Faster particles for the kick
+            emitParticle(1 + kickStrength * 0.5);
         }
       }
       
-      // --- Update & Draw Particles ---
       particles.current = particles.current.filter(p => p.life > 0 && p.radius > 0.1);
       particles.current.forEach(p => {
           p.life--;
@@ -187,22 +183,18 @@ const Logo: React.FC<LogoProps> = ({ size = 'large' }) => {
           const dy = centerY - p.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           
-          // Heavier gravity to pull them back and contain them
           const gravity = 0.18;
           p.vx += (dx / dist) * gravity;
           p.vy += (dy / dist) * gravity;
           
-          // Heavier damping/friction
           p.vx *= 0.94;
           p.vy *= 0.94;
 
           p.x += p.vx;
           p.y += p.vy;
           
-          // Radius shrinks over the particle's lifetime for a fade-out effect.
           p.radius = p.initialRadius * (p.life / p.maxLife);
 
-          // When re-entering the blob, it shrinks even faster to simulate re-absorption.
           if (dist < baseRadius * 1.1) {
               p.radius *= 0.92;
           }
@@ -237,7 +229,6 @@ const Logo: React.FC<LogoProps> = ({ size = 'large' }) => {
     };
   }, [analyser, isPlaying]);
   
-  // Effect to match canvas size and initialize stars
    useEffect(() => {
     const meElement = staticLogoRef.current?.querySelector('.me-logo-part');
     if (!meElement) return;

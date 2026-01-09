@@ -1,40 +1,44 @@
 
-import { v4 as uuidv4 } from 'uuid';
 import Peerjs from 'peerjs';
 import { PartyState, PartyMode, PartyParticipant, PartyQueueSong } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
-// Robust Peer class retrieval to handle various ESM/CommonJS output formats
 // @ts-ignore
 const Peer = Peerjs.default || Peerjs.Peer || Peerjs;
 
-const PEER_ID_PREFIX = 'memusic-party-';
+const PEER_ID_PREFIX = 'memusic-party-v3-';
 
-// Single, robust configuration for both Host and Guest
+const HEARTBEAT_INTERVAL_MS = 2000;
+const CONNECTION_TIMEOUT_MS = 15000;
+const MAX_RECONNECT_ATTEMPTS = 10;
+const BASE_RECONNECT_DELAY = 1000;
+
 const PEER_CONFIG = {
     host: '0.peerjs.com',
     port: 443,
     secure: true,
     config: {
         iceServers: [
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
         ],
         sdpSemantics: 'unified-plan'
     },
     pingInterval: 5000,
-    debug: 1 // 0: None, 1: Errors, 2: Warnings, 3: All
+    debug: 0
 };
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const generatePartyCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     return Array.from({ length: 5 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
 };
 
 export class PartyHost {
     private peer: any = null;
-    private connections: any[] = [];
+    private connections: Map<string, any> = new Map();
+    private lastParticipantActivity: Map<string, number> = new Map(); // Track liveness
     private partyCode: string = '';
     private myId: string;
     private callbacks: any;
@@ -49,33 +53,44 @@ export class PartyHost {
     public async start(mode: PartyMode, initialName: string, initialImage: string, playerState: any, onStatusUpdate?: (status: string) => void): Promise<string> {
         this.destroy();
         this.isDestroyed = false;
-        
-        if (onStatusUpdate) onStatusUpdate("Connecting to server...");
+
+        if (onStatusUpdate) onStatusUpdate("Initializing Network...");
+
+        return this.createPeerSession(0, mode, initialName, initialImage, playerState, onStatusUpdate);
+    }
+
+    private async createPeerSession(
+        retryCount: number, 
+        mode: PartyMode, 
+        initialName: string, 
+        initialImage: string, 
+        playerState: any, 
+        onStatusUpdate?: (status: string) => void
+    ): Promise<string> {
+        if (retryCount > 5) throw new Error("Failed to secure a unique Party Code. Please try again.");
+
+        this.partyCode = generatePartyCode();
+        const hostId = `${PEER_ID_PREFIX}${this.partyCode}`;
 
         return new Promise((resolve, reject) => {
-            this.partyCode = generatePartyCode();
-            const hostId = `${PEER_ID_PREFIX}${this.partyCode}`;
-
             try {
                 // @ts-ignore
                 const peer = new Peer(hostId, PEER_CONFIG);
                 this.peer = peer;
 
                 const timeout = setTimeout(() => {
-                    if (!this.isDestroyed) {
-                        console.warn('[PartyHost] Connection to signaling server timed out.');
-                        reject(new Error("Connection timed out. Please try again."));
-                        this.destroy();
+                    if (!peer.open) {
+                        peer.destroy();
+                        resolve(this.createPeerSession(retryCount + 1, mode, initialName, initialImage, playerState, onStatusUpdate));
                     }
-                }, 15000);
+                }, 8000);
 
-                peer.on('open', (id: string) => {
+                peer.on('open', () => {
                     clearTimeout(timeout);
                     if (this.isDestroyed) return;
 
-                    if (onStatusUpdate) onStatusUpdate("Party created!");
-                    this.startHeartbeat();
-                    this.setupPeerListeners();
+                    if (onStatusUpdate) onStatusUpdate("Ready!");
+                    this.startHeartbeatLoop();
 
                     const initialState: PartyState = {
                         partyId: this.partyCode,
@@ -96,24 +111,20 @@ export class PartyHost {
                     resolve(this.partyCode);
                 });
 
+                peer.on('connection', (conn: any) => this.handleIncomingConnection(conn));
+
                 peer.on('error', (err: any) => {
                     clearTimeout(timeout);
-                    console.error('[PartyHost] Peer error:', err);
-                    if (!this.isDestroyed) {
-                         if (err.type === 'unavailable-id') {
-                             // Highly unlikely with random 5 chars, but possible. Recursion handled by caller usually, but we just fail here.
-                             reject(new Error("Party code collision. Please try again."));
-                         } else {
-                             reject(new Error("Failed to create party. Check connection."));
-                         }
-                         this.destroy();
+                    if (err.type === 'unavailable-id') {
+                        peer.destroy();
+                        resolve(this.createPeerSession(retryCount + 1, mode, initialName, initialImage, playerState, onStatusUpdate));
+                    } else if (['browser-incompatible', 'ssl-unavailable', 'socket-error'].includes(err.type)) {
+                        reject(new Error(`Network Error: ${err.type}`));
                     }
                 });
 
                 peer.on('disconnected', () => {
-                    if (!peer.destroyed && !this.isDestroyed) {
-                        try { peer.reconnect(); } catch (e) { }
-                    }
+                    if (!this.isDestroyed && this.peer) this.peer.reconnect();
                 });
 
             } catch (e) {
@@ -122,42 +133,64 @@ export class PartyHost {
         });
     }
 
-    private startHeartbeat() {
-        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-        this.heartbeatInterval = setInterval(() => {
-            if (this.connections.length > 0 && !this.isDestroyed) this.broadcast(null);
-        }, 3000);
-    }
-
-    private setupPeerListeners() {
-        if (!this.peer) return;
-
-        this.peer.on('connection', (conn: any) => {
-            this.connections.push(conn);
+    private handleIncomingConnection(conn: any) {
+        conn.on('open', () => {
+            this.connections.set(conn.connectionId, conn);
             
-            conn.on('open', () => {
-                const currentState = this.callbacks.getCurrentState();
-                if (currentState) conn.send({ type: 'STATE_UPDATE', payload: currentState });
-            });
-            
-            conn.on('data', (data: any) => this.handleData(conn, data));
-            
-            conn.on('close', () => { 
-                this.connections = this.connections.filter(c => c !== conn); 
-            });
-            
-            conn.on('error', (err: any) => {
-                console.error('[PartyHost] Connection error:', err);
-                this.connections = this.connections.filter(c => c !== conn);
-            });
+            const currentState = this.callbacks.getCurrentState();
+            if (currentState) {
+                const safeState = JSON.parse(JSON.stringify(currentState));
+                conn.send({ type: 'STATE_UPDATE', payload: safeState });
+            }
         });
+
+        conn.on('data', (data: any) => this.handleDataPacket(conn, data));
+        
+        const cleanup = () => {
+            this.connections.delete(conn.connectionId);
+        };
+
+        conn.on('close', cleanup);
+        conn.on('error', cleanup);
     }
 
-    private handleData(conn: any, data: any) {
+    private startHeartbeatLoop() {
+        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+        
+        this.heartbeatInterval = setInterval(() => {
+            if (this.isDestroyed) return;
+
+            const now = Date.now();
+
+            this.connections.forEach((conn, key) => {
+                if (!conn.open) this.connections.delete(key);
+            });
+
+            if (this.connections.size > 0) {
+                this.broadcast(null); 
+            }
+
+
+        }, HEARTBEAT_INTERVAL_MS);
+    }
+
+    private handleDataPacket(conn: any, data: any) {
         if (!data) return;
 
+        if (data.senderId) {
+            this.lastParticipantActivity.set(data.senderId, Date.now());
+        }
+
         if (data.type === 'PING') {
-            conn.send({ type: 'PONG', payload: { clientSentTime: data.payload, hostTime: Date.now() } });
+            try {
+                conn.send({ 
+                    type: 'PONG', 
+                    payload: { 
+                        clientSentTime: data.payload, 
+                        hostTime: Date.now() 
+                    } 
+                });
+            } catch (e) { /* ignore send errors */ }
             return;
         }
 
@@ -169,34 +202,39 @@ export class PartyHost {
 
         switch (data.type) {
             case 'JOIN':
-                if (!newState.participants.find((p: PartyParticipant) => p.id === data.payload.id)) {
-                    newState.participants = [...newState.participants, { ...data.payload, isHost: false }];
+                if (!newState.participants.some((p: PartyParticipant) => p.id === data.payload.id)) {
+                    newState.participants.push({ ...data.payload, isHost: false });
                     changed = true;
                 }
+                try { conn.send({ type: 'JOIN_ACK', payload: { success: true } }); } catch(e) {}
                 break;
+                
             case 'LEAVE':
                 newState.participants = newState.participants.filter((p: PartyParticipant) => p.id !== data.senderId);
                 changed = true;
                 break;
+                
             case 'ADD_SONG':
                 if (newState.mode === 'collaborative') {
                     const songToAdd = { ...data.payload, addedBy: data.senderId };
-                    if (!newState.currentQueue.some((s: PartyQueueSong) => s.id === songToAdd.id)) {
+                    const lastSong = newState.currentQueue[newState.currentQueue.length - 1];
+                    if (!lastSong || lastSong.id !== songToAdd.id) {
                         newState.currentQueue = [...newState.currentQueue, songToAdd];
                         this.callbacks.onAddSongs([songToAdd]);
                         changed = true;
                     }
                 }
                 break;
+                
             case 'REMOVE_SONG':
                 if (newState.mode === 'collaborative') {
-                    const song = newState.currentQueue.find((s: PartyQueueSong) => s.id === data.payload);
-                    if (song && (song.addedBy === data.senderId)) {
+                    const songIndex = newState.currentQueue.findIndex((s: PartyQueueSong) => s.id === data.payload && s.addedBy === data.senderId);
+                    if (songIndex !== -1) {
                         this.callbacks.onRemoveSong(data.payload);
-                        changed = true;
                     }
                 }
                 break;
+                
             case 'REACTION':
                 newState.reactions = [...newState.reactions.slice(-20), { id: uuidv4(), emoji: data.payload, senderId: data.senderId || 'anon' }];
                 changed = true;
@@ -212,24 +250,24 @@ export class PartyHost {
     public broadcast(state: PartyState | null) {
         if (this.isDestroyed) return;
         const message = state ? { type: 'STATE_UPDATE', payload: state } : { type: 'HEARTBEAT' };
+        
         this.connections.forEach(conn => {
-            if (conn.open) { try { conn.send(message); } catch (e) {} }
+            if (conn.open) {
+                try { conn.send(message); } catch (e) {
+                    console.warn(`Failed to broadcast to ${conn.connectionId}`);
+                }
+            }
         });
     }
 
     public destroy() {
         this.isDestroyed = true;
-        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-        try { this.broadcast(null); } catch (e) { }
-
-        this.connections.forEach(c => { try { c.close(); } catch (e) { } });
-        this.connections = [];
-        
+        clearInterval(this.heartbeatInterval);
+        try { this.broadcast(null); } catch (e) {}
+        this.connections.forEach(c => { try { c.close(); } catch (e) {} });
+        this.connections.clear();
         if (this.peer) {
-            try { 
-                this.peer.disconnect(); 
-                this.peer.destroy(); 
-            } catch (e) { }
+            try { this.peer.destroy(); } catch (e) {}
             this.peer = null;
         }
     }
@@ -242,6 +280,13 @@ export class PartyGuest {
     private callbacks: any;
     public timeOffset: number | null = null;
     private isDestroyed = false;
+    
+    private partyCode: string = '';
+    private guestProfile: { name: string, image: string } | null = null;
+    private lastPacketTime: number = 0;
+    private monitorInterval: any = null;
+    private isRecovering = false;
+    private reconnectAttempts = 0;
 
     constructor(myId: string, callbacks: any) {
         this.myId = myId;
@@ -249,68 +294,38 @@ export class PartyGuest {
     }
 
     public async join(partyCode: string, name: string, image: string): Promise<{ success: boolean, messageKey: string, errorMessage?: string }> {
-        this.destroy();
+        this.destroy(); 
         this.isDestroyed = false;
-        const targetId = `${PEER_ID_PREFIX}${partyCode.toUpperCase()}`;
+        this.reconnectAttempts = 0;
+        
+        this.partyCode = partyCode;
+        this.guestProfile = { name, image };
+        
+        return this.initializePeerAndConnect();
+    }
 
+    private initializePeerAndConnect(): Promise<any> {
         return new Promise((resolve, reject) => {
             try {
                 // @ts-ignore
-                const peer = new Peer(PEER_CONFIG);
-                this.peer = peer;
-                let connectionMade = false;
-
-                const timeout = setTimeout(() => {
-                    if (!connectionMade) {
-                        try { peer.destroy(); } catch (e) { }
-                        reject(new Error("Connection timed out. Party might be inactive."));
-                    }
-                }, 10000);
-
-                peer.on('open', () => {
-                    if (this.isDestroyed) {
-                        peer.destroy();
-                        return;
-                    }
-
-                    // Explicitly check if the peer is available by handling the error on the peer instance
-                    // Note: PeerJS 1.5+ emits 'error' with 'peer-unavailable' if connect fails for that reason
-                    const conn = peer.connect(targetId, { reliable: true });
-
-                    conn.on('open', () => {
-                        clearTimeout(timeout);
-                        connectionMade = true;
-                        this.conn = conn;
-                        this.setupConnectionListeners();
-
-                        this.send('PING', Date.now());
-                        this.send('JOIN', { id: this.myId, name, imageUrl: image });
-                        resolve({ success: true, messageKey: 'party.joined' });
-                    });
-
-                    conn.on('error', (err: any) => {
-                        console.error('[PartyGuest] Connection error:', err);
-                        if (!connectionMade) {
-                            clearTimeout(timeout);
-                            reject(new Error("Failed to connect to party host."));
-                        }
-                    });
-                    
-                    conn.on('close', () => {
-                         if (connectionMade && !this.isDestroyed) this.callbacks.onConnectionLost();
-                    });
+                this.peer = new Peer(PEER_CONFIG);
+                
+                this.peer.on('open', () => {
+                    this.connectToHost(resolve, reject);
                 });
 
-                peer.on('error', (err: any) => {
-                    console.error('[PartyGuest] Peer error:', err);
-                    if (!connectionMade) {
-                        clearTimeout(timeout);
-                        if (err.type === 'peer-unavailable') {
-                             resolve({ success: false, messageKey: 'party.notFound', errorMessage: "Party not found. Check the code." });
-                        } else {
-                             reject(new Error(`Connection failed: ${err.type}`));
-                        }
+                this.peer.on('error', (err: any) => {
+                    if (['browser-incompatible', 'ssl-unavailable'].includes(err.type)) {
+                        reject(new Error(`Device incompatible: ${err.type}`));
+                    } else if (err.type === 'peer-unavailable') {
+                        reject(new Error("Party not found. Check code or host status."));
+                    } else {
+                        reject(new Error("Connection error. Please try again."));
                     }
+                });
+
+                this.peer.on('disconnected', () => {
+                    if (!this.isDestroyed && this.peer) this.peer.reconnect();
                 });
 
             } catch (e) {
@@ -319,37 +334,137 @@ export class PartyGuest {
         });
     }
 
+    private connectToHost(resolve?: (val: any) => void, reject?: (err: any) => void) {
+        if (this.isDestroyed || !this.peer || !this.peer.open) {
+            if (reject) reject(new Error("Internal Peer Error"));
+            return;
+        }
+
+        const targetId = `${PEER_ID_PREFIX}${this.partyCode.toUpperCase()}`;
+        const conn = this.peer.connect(targetId, { reliable: true, serialization: 'json' });
+        
+        this.conn = conn;
+        
+        const handshakeTimeout = setTimeout(() => {
+            if (conn && !conn.open) {
+                conn.close();
+                if (reject) reject(new Error("Host unresponsive."));
+                else this.triggerRecovery();
+            }
+        }, 10000);
+
+        conn.on('open', () => {
+            clearTimeout(handshakeTimeout);
+            this.isRecovering = false;
+            this.reconnectAttempts = 0;
+            this.lastPacketTime = Date.now();
+
+            if (this.guestProfile) {
+                this.send('JOIN', { id: this.myId, name: this.guestProfile.name, imageUrl: this.guestProfile.image });
+            }
+            this.send('PING', Date.now());
+
+            this.setupConnectionListeners();
+            this.startConnectionMonitor();
+
+            if (resolve) resolve({ success: true, messageKey: 'party.joined' });
+        });
+
+        conn.on('error', (err: any) => {
+            console.warn("Connection Error:", err);
+        });
+
+        conn.on('close', () => {
+            if (!this.isDestroyed) this.triggerRecovery();
+        });
+    }
+
     private setupConnectionListeners() {
         if (!this.conn) return;
+        
         this.conn.on('data', (data: any) => {
+            this.lastPacketTime = Date.now();
             if (!data) return;
+            
             if (data.type === 'PONG') {
                 const now = Date.now();
                 const { clientSentTime, hostTime } = data.payload;
-                this.timeOffset = (now - (now - clientSentTime) / 2) - hostTime;
+                this.timeOffset = (hostTime + (now - clientSentTime) / 2) - now;
             } else if (data.type === 'STATE_UPDATE') {
                 if (data.payload) this.callbacks.onStateUpdate(data.payload);
             }
         });
     }
 
+    private startConnectionMonitor() {
+        if (this.monitorInterval) clearInterval(this.monitorInterval);
+        
+        this.monitorInterval = setInterval(() => {
+            if (this.isDestroyed) return;
+
+            const timeSinceLastPacket = Date.now() - this.lastPacketTime;
+
+            if (timeSinceLastPacket > CONNECTION_TIMEOUT_MS && !this.isRecovering) {
+                console.warn("[Guest] Connection stale. Attempting recovery...");
+                this.triggerRecovery();
+            }
+        }, 2000);
+    }
+
+    private async triggerRecovery() {
+        if (this.isDestroyed || this.isRecovering) return;
+        this.isRecovering = true;
+
+        if (this.conn) {
+            try { this.conn.close(); } catch(e) {}
+            this.conn = null;
+        }
+
+        if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            this.callbacks.onConnectionLost();
+            this.destroy();
+            return;
+        }
+
+        const delay = BASE_RECONNECT_DELAY * Math.pow(1.5, this.reconnectAttempts);
+        this.reconnectAttempts++;
+        await wait(delay);
+
+        if (this.peer) {
+            if (this.peer.disconnected) {
+                this.peer.reconnect();
+                await wait(1000);
+            } else if (this.peer.destroyed) {
+                this.callbacks.onConnectionLost();
+                return;
+            }
+        }
+
+        console.log(`[Guest] Reconnecting... Attempt ${this.reconnectAttempts}`);
+        this.connectToHost();
+    }
+
     public send(type: string, payload: any) {
         if (this.conn && this.conn.open) {
-            try { this.conn.send({ type, payload, senderId: this.myId }); } catch (e) { }
+            try { 
+                this.conn.send({ type, payload, senderId: this.myId }); 
+            } catch (e) {
+                console.warn("Send failed", e);
+            }
         }
     }
 
     public destroy() {
         this.isDestroyed = true;
+        clearInterval(this.monitorInterval);
+        
         if (this.conn) {
-            try { this.send('LEAVE', null); this.conn.close(); } catch (e) { }
+            try { this.send('LEAVE', null); this.conn.close(); } catch (e) {}
             this.conn = null;
         }
+        
         if (this.peer) {
-            try { 
-                this.peer.disconnect();
-                this.peer.destroy(); 
-            } catch (e) { }
+            try { this.peer.destroy(); } catch (e) {}
             this.peer = null;
         }
         this.timeOffset = null;

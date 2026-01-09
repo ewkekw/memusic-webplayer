@@ -2,12 +2,10 @@
 
 
 
-// A variety of styles from DiceBear
 const avatarStyles = [
     'adventurer'
 ];
 
-// A variety of seeds to ensure uniqueness
 const commonSeeds = [
     'Max', 'Mia', 'Leo', 'Zoe', 'Sam', 'Ava', 'Ben', 'Lily', 'Tom', 'Eva', 'Alex', 'Ruby',
     'Jack', 'Chloe', 'Oscar', 'Ivy', 'Finn', 'Nora', 'Kai', 'Isla', 'Owen', 'Luna', 'Milo', 'Aria',
@@ -30,12 +28,10 @@ const commonSeeds = [
 
 const generateAvatarUrl = (style: string, seed: string) => `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}`;
 
-// Generate a diverse set of avatars by combining styles and seeds
 const generatedAvatars = avatarStyles.flatMap(style => 
     commonSeeds.map(seed => generateAvatarUrl(style, seed))
 );
 
-// Shuffle the array to make the initial view more varied and interesting
 const shuffleArray = <T,>(array: T[]): T[] => {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -44,7 +40,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
     return array;
 }
 
-export const defaultAvatars = shuffleArray(Array.from(new Set(generatedAvatars))); // Use Set to ensure no duplicates if any arise
+export const defaultAvatars = shuffleArray(Array.from(new Set(generatedAvatars)));
 
 
 const adjectives = ['Cosmic', 'Groovy', 'Funky', 'Retro', 'Electric', 'Sonic', 'Vivid', 'Lazy', 'Happy', 'Stellar', 'Digital', 'Golden', 'Crimson', 'Silent', 'Midnight'];

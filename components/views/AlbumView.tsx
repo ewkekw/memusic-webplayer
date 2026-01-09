@@ -1,35 +1,29 @@
 
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
-import { Album, Song, View } from '../../types';
+import { Album, View } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { Loader } from '../ui/Loader';
 import { SongList } from '../ui/SongList';
-import { ModalContext } from '../../App';
+import { ModalContext } from '../../context/ModalContext';
 import { useAlbum } from '../../hooks/useAlbum';
 import { useTranslation } from '../../context/LanguageContext';
+import { CinematicHeader } from '../ui/CinematicHeader';
+import { SmartMenu } from '../ui/SmartMenu';
 
 declare const JSZip: any;
 
-const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
-  </svg>
-);
-const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="5" width="3" height="14" rx="1" />
-    <rect x="15" y="5" width="3" height="14" rx="1" />
-  </svg>
-);
-const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
-);
 const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>
 );
 const DownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
+);
+const QueueIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+);
+const ShuffleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
 );
 
 interface AlbumViewProps {
@@ -39,32 +33,15 @@ interface AlbumViewProps {
   navigateToPlaylist: (playlistId: string) => void;
 }
 
-const getTitleClass = (name: string): string => {
-    const base = "font-extrabold tracking-tighter leading-tight";
-    if (name.length > 50) return `${base} text-3xl sm:text-4xl`;
-    if (name.length > 30) return `${base} text-4xl sm:text-5xl`;
-    return `${base} text-4xl sm:text-6xl`;
-}
-
 const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateToArtist, navigateToPlaylist }) => {
   const { album, loading, error } = useAlbum(albumId);
   const { t } = useTranslation();
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
-  const actionMenuRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
   const { showModal, hideModal } = useContext(ModalContext);
 
   const { playSong, addSongsToEnd, isPlaying, togglePlay, selectedQuality, contextId } = useContext(PlayerContext);
   const { isFavoriteAlbum, toggleFavoriteAlbum } = useContext(UserMusicContext);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
-        setIsActionMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   if (loading) return <div className="flex items-center justify-center h-full"><Loader /></div>;
   if (error || !album) return <div className="p-8 text-center text-gray-400">{error || 'Album not found or failed to load.'}</div>;
@@ -110,7 +87,6 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
     for (const song of album.songs) {
         const url = song.downloadUrl.find(q => q.quality === '320kbps')?.url || song.downloadUrl[0]?.url;
         if (!url) {
-            console.warn(`Skipping ${song.name}: No download URL found.`);
             continue;
         }
         try {
@@ -208,71 +184,55 @@ const AlbumView: React.FC<AlbumViewProps> = ({ albumId, setActiveView, navigateT
       return t('albumView.duration', { duration: minutes });
   };
   const imageUrl = album.image?.find(img => img.quality === '500x500')?.url || album.image?.[0]?.url;
+  
+  const subtitle = (
+      <span>
+        {album.artists.primary.map((a, i) => (
+            <React.Fragment key={a.id}>
+                <span onClick={(e) => {e.stopPropagation(); navigateToArtist(a.id)}} className="hover:text-white hover:underline cursor-pointer transition-colors font-bold">{a.name}</span>
+                {i < album.artists.primary.length - 1 && ', '}
+            </React.Fragment>
+        ))}
+      </span>
+  );
+
+  const metaString = `${album.year} • ${t('albumView.songs', { count: album.songCount || 0 })} • ${formatTotalDuration(totalDuration)}`;
 
   return (
-    <div className="text-white">
-      <div className="p-4 md:p-8 flex flex-col sm:flex-row items-center sm:items-end gap-6 relative">
-          <div className="absolute inset-0 z-0 opacity-30 overflow-hidden">
-             <img src={imageUrl} className="w-full h-full object-cover blur-3xl scale-125" alt="" loading="lazy" />
-             <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/80 to-transparent"></div>
-          </div>
+    <div className="text-white pb-20">
+      <CinematicHeader
+        title={album.name}
+        type={t('albumView.album')}
+        subtitle={subtitle}
+        imageUrl={imageUrl}
+        meta={metaString}
+        isPlaying={isPlaying}
+        isCurrentContext={isAlbumCurrentlyPlaying}
+        onPlay={handlePlayAlbum}
+        isFavorite={isFavoriteAlbum(album.id)}
+        onToggleFavorite={() => toggleFavoriteAlbum(album)}
+      >
+        <button 
+            ref={moreButtonRef}
+            onClick={(e) => { e.stopPropagation(); setIsActionMenuOpen(p => !p); }} 
+            className="p-3 rounded-full hover:bg-white/10 transition-all active:scale-90 text-gray-300 hover:text-white"
+        >
+            <MoreIcon className="w-7 h-7" />
+        </button>
+      </CinematicHeader>
 
-          <img src={imageUrl} alt={album.name} className="w-40 h-40 sm:w-52 sm:h-52 rounded-lg shadow-2xl z-10 flex-shrink-0 object-cover animate-image-appear" loading="lazy" />
-          <div className="z-10 text-center sm:text-left">
-              <p className="text-sm font-bold uppercase tracking-wider">{t('albumView.album')}</p>
-              <h1 className={getTitleClass(album.name)}>{album.name}</h1>
-              <div className="flex items-center justify-center sm:justify-start text-gray-300 mt-2 text-sm flex-wrap">
-                  <span>
-                    {album.artists.primary.map((a, i) => (
-                        <React.Fragment key={a.id}>
-                            <span onClick={() => navigateToArtist(a.id)} className="hover:underline cursor-pointer">{a.name}</span>
-                            {i < album.artists.primary.length - 1 && ', '}
-                        </React.Fragment>
-                    ))}
-                  </span>
-                  <span className="mx-2 hidden sm:inline">&bull;</span>
-                  <span className="hidden sm:inline">{album.year}</span>
-                  <span className="mx-2 hidden sm:inline">&bull;</span>
-                  <span>{t('albumView.songs', { count: album.songCount || 0 })}, {formatTotalDuration(totalDuration)}</span>
-              </div>
-          </div>
-      </div>
-      
-      <div className="relative">
-        <div className="sticky top-0 z-20 backdrop-blur-md bg-gradient-to-b from-[#121212] via-[#121212]/70 to-transparent">
-            <div className="px-4 md:px-8 py-5">
-                <div className="flex items-center">
-                    <div className="flex items-center gap-4 md:gap-5">
-                        <button 
-                            onClick={handlePlayAlbum} 
-                            className="w-12 h-12 md:w-14 md:h-14 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 transition-all duration-200 active:scale-95"
-                        >
-                          {isAlbumCurrentlyPlaying && isPlaying ? <PauseIcon className="w-7 md:w-8 h-7 md:h-8"/> : <PlayIcon className="w-7 md:w-8 h-7 md:h-8"/>}
-                        </button>
-                        <button onClick={() => toggleFavoriteAlbum(album)} title={isFavoriteAlbum(album.id) ? t('albumView.removeFromFav') : t('albumView.addToFav')} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
-                            <HeartIcon className={`w-7 md:w-8 h-7 md:h-8 transition-all ${isFavoriteAlbum(album.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-400 hover:text-white'}`}/>
-                        </button>
-                        <button onClick={handleDownloadAll} title={t('albumView.downloadAll')} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
-                            <DownloadIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white"/>
-                        </button>
-                        <div className="relative" ref={actionMenuRef}>
-                            <button onClick={() => setIsActionMenuOpen(p => !p)} title={t('albumView.moreOptions')} className="p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors">
-                                <MoreIcon className="w-7 md:w-8 h-7 md:h-8 text-gray-400 hover:text-white"/>
-                            </button>
-                            {isActionMenuOpen && (
-                                <div className="absolute top-full left-0 mt-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30">
-                                    <button onClick={handleAddToQueue} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('albumView.addToQueue')}</button>
-                                    <button onClick={handlePlayShuffle} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('albumView.playShuffle')}</button>
-                                    <button onClick={handleDownloadM3U} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('albumView.downloadM3U')}</button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <SmartMenu isOpen={isActionMenuOpen} onClose={() => setIsActionMenuOpen(false)} triggerRef={moreButtonRef} width="w-64">
+        <div className="flex flex-col py-1">
+            <button onClick={handleAddToQueue} className="w-full flex items-center gap-3 text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 text-gray-200 transition-colors"><QueueIcon className="w-4 h-4" />{t('albumView.addToQueue')}</button>
+            <button onClick={handlePlayShuffle} className="w-full flex items-center gap-3 text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 text-gray-200 transition-colors"><ShuffleIcon className="w-4 h-4" />{t('albumView.playShuffle')}</button>
+            <div className="h-px bg-white/10 my-1 mx-2" />
+            <button onClick={() => {handleDownloadAll(); setIsActionMenuOpen(false);}} className="w-full flex items-center gap-3 text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 text-gray-200 transition-colors"><DownloadIcon className="w-4 h-4"/>{t('albumView.downloadAll')}</button>
+            <button onClick={handleDownloadM3U} className="w-full flex items-center gap-3 text-left px-3 py-2 text-sm rounded-lg hover:bg-white/10 text-gray-200 transition-colors"><DownloadIcon className="w-4 h-4"/>{t('albumView.downloadM3U')}</button>
         </div>
+      </SmartMenu>
 
-        <div className="px-4 sm:px-8 pb-8">
+      <div className="px-6 md:px-12 mt-8">
+        <div className="bg-white/5 rounded-[2rem] border border-white/5 p-2 md:p-6 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
             <SongList
                 songs={album.songs || []}
                 navigateToArtist={navigateToArtist}

@@ -78,7 +78,6 @@ const JoinView: React.FC<JoinViewProps> = ({ setView, onClose, initialCode }) =>
         if (initialCode && initialCode.length === 5 && !didAttemptJoin.current) {
             handleJoin();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialCode]);
 
     return (
@@ -181,7 +180,6 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
             setView('share');
         } catch (e: any) {
             console.error("Failed to create party", e);
-            // If it's our specific connection error code, simplified message
             if (e.message === 'CONNECTION_FAILED') {
                 setError('CONNECTION_FAILED');
             } else {
@@ -193,7 +191,6 @@ const CreateView: React.FC<{ setView: (view: 'landing' | 'share') => void, setPa
         }
     };
 
-    // CLEAN ERROR VIEW (Replaces the entire view content)
     if (error === 'CONNECTION_FAILED') {
         return (
             <div className="animate-in fade-in zoom-in-95 duration-300 ease-out text-center flex flex-col items-center">

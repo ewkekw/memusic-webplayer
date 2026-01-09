@@ -9,7 +9,6 @@ export const Loader: React.FC = () => {
   );
 };
 
-// --- New Component ---
 export interface TabItem<T extends string> {
   id: T;
   label: string;
@@ -40,7 +39,6 @@ export const AnimatedTabs = <T extends string>({ tabs, activeTab, onTabClick }: 
       });
     }
 
-    // Delay enabling transitions to prevent animation on initial load, but only if an active tab is found.
     if (!isReadyForTransition && activeTabElement) {
         const timer = setTimeout(() => setIsReadyForTransition(true), 50);
         return () => clearTimeout(timer);

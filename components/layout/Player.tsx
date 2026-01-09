@@ -3,53 +3,60 @@ import React, { useContext, useMemo, useState, useRef, useEffect, useCallback } 
 import { PlayerContext } from '../../context/PlayerContext';
 import { UserMusicContext } from '../../context/UserMusicContext';
 import { CreatePlaylistForm } from '../ui/CreatePlaylistForm';
-import { ModalContext } from '../../App';
+import { ModalContext } from '../../context/ModalContext';
 import { Song } from '../../types';
 import { PartyContext } from '../../context/PartyContext';
 import { PartyModal } from '../party/PartyModal';
 import { useTranslation } from '../../context/LanguageContext';
+import { SmartMenu } from '../ui/SmartMenu';
 
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+    <path d="M5 3l14 9-14 9V3z" />
   </svg>
 );
 const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="5" width="3" height="14" rx="1" />
-    <rect x="15" y="5" width="3" height="14" rx="1" />
+    <rect x="6" y="4" width="4" height="16" rx="2" />
+    <rect x="14" y="4" width="4" height="16" rx="2" />
   </svg>
 );
 const NextIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-        <path className="chevron-inner" strokeLinecap="round" strokeLinejoin="round" d="M13 5l5 7-5 7" />
-        <path className="chevron-outer" strokeLinecap="round" strokeLinejoin="round" d="M6 5l5 7-5 7" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M5 4l10 8-10 8V4z" />
+        <path d="M19 5h-2v14h2V5z" />
     </svg>
 );
 const PrevIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-        <path className="chevron-inner" strokeLinecap="round" strokeLinejoin="round" d="M11 19l-5-7 5-7" />
-        <path className="chevron-outer" strokeLinecap="round" strokeLinejoin="round" d="M18 19l-5-7 5-7" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 4l-10 8 10 8V4z" />
+        <path d="M5 5h2v14H5V5z" />
     </svg>
 );
 const VolumeUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
   </svg>
 );
 const VolumeDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 9.75a3 3 0 010 4.5M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
     </svg>
 );
 const VolumeMuteIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+        <line x1="23" y1="9" x2="17" y2="15" />
+        <line x1="17" y1="9" x2="23" y2="15" />
     </svg>
 );
 const DownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
     </svg>
 );
 const SpinnerIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -59,23 +66,58 @@ const SpinnerIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 const PlusCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="16" />
+        <line x1="8" y1="12" x2="16" y2="12" />
     </svg>
 );
 const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
 );
 const QueueIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <line x1="8" y1="6" x2="21" y2="6" />
+        <line x1="8" y1="12" x2="21" y2="12" />
+        <line x1="8" y1="18" x2="21" y2="18" />
+        <line x1="3" y1="6" x2="3.01" y2="6" />
+        <line x1="3" y1="12" x2="3.01" y2="12" />
+        <line x1="3" y1="18" x2="3.01" y2="18" />
     </svg>
 );
 const SignalIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+      <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
+    </svg>
+);
+const ShuffleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 3h5v5" />
+        <path d="M4 20L21 3" />
+        <path d="M21 16v5h-5" />
+        <path d="M15 15l6 6" />
+        <path d="M4 4l5 5" />
+    </svg>
+);
+const RepeatIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="m17 2 4 4-4 4" />
+        <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+        <path d="m7 22-4-4 4-4" />
+        <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+    </svg>
+);
+const MicIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="22" />
+        <line x1="8" y1="22" x2="16" y2="22" />
     </svg>
 );
 
@@ -95,16 +137,34 @@ const decodeHtml = (html: string | null) => {
 };
 
 const SongInfo: React.FC<{ song: Song; navigateToArtist: (id: string) => void }> = React.memo(({ song, navigateToArtist }) => {
-    const smallImage = song.image?.find(img => img.quality === '50x50')?.url || song.image?.[0]?.url;
+    const smallImage = song.image?.find(img => img.quality === '150x150')?.url || song.image?.[0]?.url;
+    
     return (
-        <div className="flex items-center space-x-3 md:space-x-4 min-w-0 overflow-hidden">
-            {smallImage && <img src={smallImage} alt={decodeHtml(song.name)} className="w-12 h-12 md:w-14 md:h-14 rounded-md shadow-lg flex-shrink-0 animate-image-appear" loading="lazy" />}
-            <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-white truncate text-sm md:text-base" title={decodeHtml(song.name)}>{decodeHtml(song.name)}</h3>
-                <p className="text-xs md:text-sm text-gray-400 truncate">
+        <div className="flex items-center space-x-4 min-w-0 overflow-hidden relative group p-2 rounded-xl transition-colors hover:bg-white/5">
+            {/* Ambient shadow for album art - The "Glow" Effect */}
+            <div className="absolute left-3 w-10 h-10 md:w-14 md:h-14 blur-xl opacity-60 rounded-full transition-opacity duration-700 animate-pulse"
+                 style={{ backgroundImage: `url(${smallImage})`, backgroundSize: 'cover' }}></div>
+            
+            {smallImage && (
+                <div className="relative z-10">
+                    <img 
+                        src={smallImage} 
+                        alt={decodeHtml(song.name)} 
+                        className="w-12 h-12 md:w-14 md:h-14 rounded-lg shadow-lg flex-shrink-0 animate-image-appear object-cover border border-white/5 ring-1 ring-white/5" 
+                        loading="lazy" 
+                    />
+                </div>
+            )}
+            <div className="flex-1 min-w-0 z-10 flex flex-col justify-center">
+                <div className="relative overflow-hidden mask-linear-fade">
+                    <h3 className="font-bold text-white truncate text-sm md:text-base leading-tight tracking-tight drop-shadow-sm cursor-default hover:text-[#fc4b08] transition-colors" title={decodeHtml(song.name)}>
+                        {decodeHtml(song.name)}
+                    </h3>
+                </div>
+                <p className="text-xs text-gray-400 truncate mt-0.5 font-medium tracking-wide">
                     {song.artists.primary.map((artist, index) => (
                         <React.Fragment key={artist.id}>
-                            <span onClick={(e) => { e.stopPropagation(); navigateToArtist(artist.id); }} className="hover:underline cursor-pointer" title={decodeHtml(artist.name)}>
+                            <span onClick={(e) => { e.stopPropagation(); navigateToArtist(artist.id); }} className="hover:text-white hover:underline cursor-pointer transition-colors" title={decodeHtml(artist.name)}>
                                 {decodeHtml(artist.name)}
                             </span>
                             {index < song.artists.primary.length - 1 && ', '}
@@ -127,66 +187,66 @@ const PlayerControls: React.FC<{
     cycleRepeatMode: () => void;
 }> = ({ isPlaying, isShuffle, repeatMode, togglePlay, playPrev, playNext, toggleShuffle, cycleRepeatMode }) => {
     const { t } = useTranslation();
-    const prevButtonRef = useRef<HTMLButtonElement>(null);
-    const nextButtonRef = useRef<HTMLButtonElement>(null);
     const { partyState, isHost, togglePartyPlayer, playNextParty, playPrevParty } = useContext(PartyContext);
 
     const canControlPlayback = !partyState || isHost || (partyState.mode === 'collaborative');
     const canControlSettings = !partyState || isHost;
 
-    const handleAnimation = (buttonRef: React.RefObject<HTMLButtonElement>, animationClass: string) => {
-        const button = buttonRef.current;
-        if (button) {
-            button.classList.remove(animationClass);
-            void button.offsetWidth; // Trigger reflow to restart animation
-            button.classList.add(animationClass);
-            button.addEventListener('animationend', () => button.classList.remove(animationClass), { once: true });
-        }
-    };
-
-    const handlePlayPrev = () => {
-        if (!canControlPlayback) return;
-        if (partyState) playPrevParty(); else playPrev();
-
-        if (!partyState || isHost) {
-            handleAnimation(prevButtonRef, 'animate-skip-prev');
-        }
-    };
-
-    const handlePlayNext = () => {
-        if (!canControlPlayback) return;
-        if (partyState) playNextParty(); else playNext();
-        
-        if (!partyState || isHost) {
-            handleAnimation(nextButtonRef, 'animate-skip-next');
-        }
-    };
-    
-    const handleTogglePlay = () => {
-        if (!canControlPlayback) return;
-        if (partyState) togglePartyPlayer(); else togglePlay();
-    };
+    const handlePlayPrev = () => { if (canControlPlayback) (partyState ? playPrevParty() : playPrev()); };
+    const handlePlayNext = () => { if (canControlPlayback) (partyState ? playNextParty() : playNext()); };
+    const handleTogglePlay = () => { if (canControlPlayback) (partyState ? togglePartyPlayer() : togglePlay()); };
 
     return (
-        <div className={`flex items-center space-x-2 ${!canControlPlayback ? 'opacity-60' : ''}`}>
-            <button disabled={!canControlSettings} onClick={toggleShuffle} title={t('player.shuffle')} className={`relative transition-colors w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 ${isShuffle ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'} disabled:cursor-not-allowed disabled:opacity-60`}>
-                <span className="font-bold text-lg leading-none transition-transform duration-200 ease-in-out group-hover:scale-105">S</span>
-                <div className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#fc4b08] rounded-full transition-transform duration-200 ease-out origin-bottom ${isShuffle ? 'scale-y-100' : 'scale-y-0'}`}></div>
-            </button>
-            <button disabled={!canControlPlayback} ref={prevButtonRef} onClick={handlePlayPrev} className="group text-gray-300 hover:text-[#fc4b08] transition-colors p-2 rounded-full hover:bg-white/10 active:scale-95 disabled:cursor-not-allowed"><PrevIcon className="w-6 h-6 chevron-prev" /></button>
+        <div className={`flex items-center gap-6 md:gap-8 ${!canControlPlayback ? 'opacity-50 pointer-events-none' : ''}`}>
             <button 
-                disabled={!canControlPlayback}
-                onClick={handleTogglePlay} 
-                className={`w-10 h-10 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 hover:brightness-110 hover:shadow-xl hover:shadow-[#fc4b08]/40 transition-all duration-200 active:scale-95 play-pause-container ${isPlaying ? 'is-playing' : ''} disabled:cursor-not-allowed`}
+                disabled={!canControlSettings} 
+                onClick={toggleShuffle} 
+                title={t('player.shuffle')} 
+                className={`group relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ${isShuffle ? 'text-[#fc4b08]' : 'text-gray-500 hover:text-white'}`}
             >
-                <PauseIcon className="w-6 h-6 pause-icon" />
-                <PlayIcon className="w-6 h-6 play-icon" />
+                <ShuffleIcon className="w-4 h-4" />
+                {isShuffle && <span className="absolute -bottom-1 w-1 h-1 bg-[#fc4b08] rounded-full shadow-[0_0_5px_#fc4b08]" />}
             </button>
-            <button disabled={!canControlPlayback} ref={nextButtonRef} onClick={handlePlayNext} className="group text-gray-300 hover:text-[#fc4b08] transition-colors p-2 rounded-full hover:bg-white/10 active:scale-95 disabled:cursor-not-allowed"><NextIcon className="w-6 h-6 chevron-next" /></button>
-            <button disabled={!canControlSettings} onClick={cycleRepeatMode} title={t('player.repeat', { mode: repeatMode })} className={`relative transition-colors w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 ${repeatMode !== 'off' ? 'text-[#fc4b08]' : 'text-gray-400 hover:text-white'} disabled:cursor-not-allowed disabled:opacity-60`}>
-                <span className="font-bold text-lg leading-none transition-transform duration-200 ease-in-out group-hover:scale-105">R</span>
-                <div className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#fc4b08] rounded-full transition-transform duration-200 ease-out origin-bottom ${repeatMode !== 'off' ? 'scale-y-100' : 'scale-y-0'}`}></div>
-                <span className={`absolute top-0 right-1.5 text-[#fc4b08] text-[10px] font-bold leading-none transition-all duration-200 ease-out ${repeatMode === 'one' ? 'opacity-100 translate-y-0.5' : 'opacity-0 -translate-y-1'}`}>1</span>
+
+            <div className="flex items-center gap-4">
+                <button 
+                    disabled={!canControlPlayback} 
+                    onClick={handlePlayPrev} 
+                    className="text-gray-300 hover:text-white transition-all active:scale-90 hover:bg-white/5 p-2 rounded-full"
+                >
+                    <PrevIcon className="w-6 h-6 md:w-7 md:h-7" />
+                </button>
+                
+                <button 
+                    disabled={!canControlPlayback}
+                    onClick={handleTogglePlay} 
+                    className={`relative w-12 h-12 md:w-14 md:h-14 bg-white rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] transition-all duration-300 active:scale-95 group border-2 border-transparent hover:border-[#fc4b08]`}
+                >
+                    {isPlaying ? (
+                        <PauseIcon className="w-6 h-6 md:w-7 md:h-7 fill-black group-hover:fill-[#fc4b08] transition-colors" />
+                    ) : (
+                        <PlayIcon className="w-6 h-6 md:w-7 md:h-7 fill-black group-hover:fill-[#fc4b08] ml-1 transition-colors" />
+                    )}
+                </button>
+
+                <button 
+                    disabled={!canControlPlayback} 
+                    onClick={handlePlayNext} 
+                    className="text-gray-300 hover:text-white transition-all active:scale-90 hover:bg-white/5 p-2 rounded-full"
+                >
+                    <NextIcon className="w-6 h-6 md:w-7 md:h-7" />
+                </button>
+            </div>
+
+            <button 
+                disabled={!canControlSettings} 
+                onClick={cycleRepeatMode} 
+                title={t('player.repeat', { mode: repeatMode })} 
+                className={`group relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ${repeatMode !== 'off' ? 'text-[#fc4b08]' : 'text-gray-500 hover:text-white'}`}
+            >
+                <RepeatIcon className="w-4 h-4" />
+                {repeatMode !== 'off' && <span className="absolute -bottom-1 w-1 h-1 bg-[#fc4b08] rounded-full shadow-[0_0_5px_#fc4b08]" />}
+                {repeatMode === 'one' && <span className="absolute -top-1 -right-1 text-[8px] font-bold bg-[#fc4b08] text-black px-1 rounded-full leading-tight">1</span>}
             </button>
         </div>
     );
@@ -202,7 +262,6 @@ const PlayerProgressBar: React.FC<{
     const [seekTime, setSeekTime] = useState(0);
     const { partyState, isHost, seekPartyPlayer } = useContext(PartyContext);
     const canSeek = !partyState || isHost || (partyState.mode === 'collaborative');
-    const isDisabled = !canSeek;
 
     const progress = useMemo(() => {
         const time = isSeeking ? seekTime : currentTime;
@@ -218,33 +277,22 @@ const PlayerProgressBar: React.FC<{
     }, [duration]);
 
     const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (isDisabled) return;
+        if (!canSeek) return;
         e.preventDefault();
         setIsSeeking(true);
-        const newTime = calculateSeekTime(e.clientX);
-        setSeekTime(newTime);
+        setSeekTime(calculateSeekTime(e.clientX));
     };
 
     useEffect(() => {
         if (!isSeeking) return;
-
-        const handleMouseMove = (e: MouseEvent) => {
-            const newTime = calculateSeekTime(e.clientX);
-            setSeekTime(newTime);
-        };
+        const handleMouseMove = (e: MouseEvent) => setSeekTime(calculateSeekTime(e.clientX));
         const handleMouseUp = (e: MouseEvent) => {
             setIsSeeking(false);
             const finalTime = calculateSeekTime(e.clientX);
-            if (partyState) {
-                seekPartyPlayer(finalTime);
-            } else {
-                seek(finalTime);
-            }
+            partyState ? seekPartyPlayer(finalTime) : seek(finalTime);
         };
-
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
-
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
@@ -252,41 +300,27 @@ const PlayerProgressBar: React.FC<{
     }, [isSeeking, calculateSeekTime, seek, partyState, seekPartyPlayer]);
     
     return (
-        <div className="w-full flex items-center space-x-2">
-            <span className="text-xs text-gray-400 w-10 text-right">{formatTime(isSeeking ? seekTime : currentTime)}</span>
+        <div className="w-full flex items-center space-x-3 mt-1 group/bar select-none">
+            <span className="text-xs font-medium text-gray-500 w-10 text-right tabular-nums tracking-wide">{formatTime(isSeeking ? seekTime : currentTime)}</span>
             <div 
                 ref={progressBarRef}
-                className={`w-full h-1.5 bg-gray-600/50 rounded-full group relative ${isSeeking ? 'seeking' : ''} ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                className={`flex-1 h-6 flex items-center cursor-pointer ${!canSeek ? 'cursor-not-allowed opacity-50' : ''}`}
                 onMouseDown={handleMouseDown}
             >
-                <div className="bg-[#fc4b08] h-1.5 rounded-full group-hover:bg-[#ff5f22] progress-bar-fill" style={{ width: `${progress}%` }} />
-                <div 
-                    className="w-3 h-3 bg-white rounded-full absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 progress-bar-thumb"
-                    style={{ left: `${progress}%` }}
-                />
+                <div className="w-full h-1 bg-white/10 rounded-full relative overflow-visible group-hover/bar:h-1.5 transition-all duration-300">
+                    <div 
+                        className="absolute h-full bg-white rounded-full group-hover/bar:bg-[#fc4b08] shadow-[0_0_10px_rgba(255,255,255,0.2)] group-hover/bar:shadow-[0_0_15px_rgba(252,75,8,0.5)] transition-all duration-100" 
+                        style={{ width: `${progress}%` }} 
+                    >
+                        {/* Scrubber Handle */}
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md opacity-0 group-hover/bar:opacity-100 transition-opacity duration-200 transform scale-0 group-hover/bar:scale-100" />
+                    </div>
+                </div>
             </div>
-            <span className="text-xs text-gray-400 w-10 text-left">{formatTime(duration)}</span>
+            <span className="text-xs font-medium text-gray-500 w-10 text-left tabular-nums tracking-wide">{formatTime(duration)}</span>
         </div>
     );
 };
-
-const PlayerActionButton: React.FC<{
-    onClick?: () => void;
-    title: string;
-    children: React.ReactNode;
-    isActive?: boolean;
-    isDisabled?: boolean;
-    className?: string;
-}> = ({ onClick, title, children, isActive = false, isDisabled = false, className = '' }) => (
-    <button
-        onClick={onClick}
-        title={title}
-        disabled={isDisabled}
-        className={`flex items-center justify-center h-10 px-3 rounded-md transition-colors duration-200 ease-in-out ${isActive ? 'bg-[#fc4b08]/20 text-[#fc4b08]' : 'text-gray-300 hover:bg-white/10 hover:text-white'} disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-    >
-        {children}
-    </button>
-);
 
 const PlayerActions: React.FC<{
     song: Song | null;
@@ -302,12 +336,12 @@ const PlayerActions: React.FC<{
     const userMusicContext = useContext(UserMusicContext);
     const { partyState } = useContext(PartyContext);
 
-    const [openModal, setOpenModal] = useState<'playlist' | null>(null);
-    const playlistButtonRef = useRef<HTMLDivElement>(null);
+    const [openModal, setOpenModal] = useState(false);
+    const playlistButtonRef = useRef<HTMLButtonElement>(null);
     const volumeSliderRef = useRef<HTMLInputElement>(null);
     const [previousVolume, setPreviousVolume] = useState(playerContext.volume);
     
-    const { volume, setVolume } = playerContext;
+    const { volume, setVolume, toggleLyrics, isLyricsOpen } = playerContext;
     const isMuted = useMemo(() => volume === 0, [volume]);
 
     useEffect(() => {
@@ -316,80 +350,64 @@ const PlayerActions: React.FC<{
         }
     }, [volume]);
     
-    const handleMuteToggle = () => {
-        if (isMuted) {
-            setVolume(previousVolume > 0.01 ? previousVolume : 0.5);
-        } else {
-            setPreviousVolume(volume);
-            setVolume(0);
-        }
+    const toggleMute = () => {
+        if (isMuted) setVolume(previousVolume > 0.05 ? previousVolume : 0.5);
+        else { setPreviousVolume(volume); setVolume(0); }
     };
     
-    const VolumeIcon = useMemo(() => {
-        if (isMuted) return VolumeMuteIcon;
-        if (volume > 0.5) return VolumeUpIcon;
-        return VolumeDownIcon;
-    }, [volume, isMuted]);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Node;
-            if (playlistButtonRef.current && !playlistButtonRef.current.contains(target)) {
-                setOpenModal(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
     if (!song) return null;
 
     return (
-        <div className="flex items-center justify-end space-x-1">
-            <PlayerActionButton onClick={handlePartyModeClick} title={t('player.partyMode')} isActive={!!partyState}>
+        <div className="flex items-center justify-end gap-1 md:gap-2">
+            <button onClick={() => toggleLyrics()} title="Lyrics" className={`p-2 rounded-full transition-all duration-300 hover:bg-white/10 ${isLyricsOpen ? 'text-[#fc4b08] bg-[#fc4b08]/10 shadow-[0_0_10px_rgba(252,75,8,0.3)]' : 'text-gray-400 hover:text-white'}`}>
+                <MicIcon className="w-5 h-5"/>
+            </button>
+
+            <button onClick={handlePartyModeClick} title={t('player.partyMode')} className={`p-2 rounded-full transition-colors hover:bg-white/10 ${partyState ? 'text-[#fc4b08] bg-[#fc4b08]/10' : 'text-gray-400 hover:text-white'}`}>
                 <SignalIcon className="w-5 h-5"/>
-            </PlayerActionButton>
+            </button>
             
-            <PlayerActionButton onClick={onDownload} isDisabled={isDownloading} title={t('player.download')}>
+            <button onClick={onDownload} disabled={isDownloading} title={t('player.download')} className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50">
               {isDownloading ? <SpinnerIcon className="w-5 h-5 animate-spin" /> : <DownloadIcon className="w-5 h-5"/>}
-            </PlayerActionButton>
+            </button>
             
-            <div className="relative" ref={playlistButtonRef}>
-                <PlayerActionButton onClick={() => setOpenModal(p => p ? null : 'playlist')} isActive={openModal === 'playlist'} title={t('player.addToPlaylist')}>
-                    <div className={`transition-transform duration-300 ease-out transform-gpu will-change-transform ${openModal === 'playlist' ? 'rotate-[135deg]' : ''}`}>
-                        <PlusCircleIcon className="w-5 h-5"/>
+            <button ref={playlistButtonRef} onClick={() => setOpenModal(p => !p)} title={t('player.addToPlaylist')} className={`p-2 rounded-full transition-colors hover:bg-white/10 ${openModal ? 'text-white' : 'text-gray-400 hover:text-white'}`}>
+                <PlusCircleIcon className={`w-5 h-5 transition-transform duration-300 ${openModal ? 'rotate-[135deg]' : ''}`}/>
+            </button>
+            
+            <SmartMenu isOpen={openModal} onClose={() => setOpenModal(false)} triggerRef={playlistButtonRef}>
+                <div className="flex flex-col py-1">
+                    <p className="px-3 py-1.5 text-xs text-gray-400 font-bold uppercase">{t('player.addToPlaylist')}</p>
+                    <button onClick={() => { onAddToPlaylist(); setOpenModal(false); }} className="w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-white/10 text-white">{t('player.newPlaylist')}</button>
+                    <hr className="my-1 border-white/10"/>
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                        {userMusicContext.playlists.length > 0 ? userMusicContext.playlists.map(p => (
+                            <button key={p.id} onClick={() => { userMusicContext.addSongToPlaylist(p.id, song); setOpenModal(false); }} className="w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-white/10 truncate text-white">{p.name}</button>
+                        )) : <p className="px-3 py-1.5 text-sm text-gray-500">{t('player.noPlaylists')}</p>}
                     </div>
-                </PlayerActionButton>
-                <div className={`absolute bottom-full right-0 mb-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-lg p-2 z-30 max-h-48 overflow-y-auto custom-scrollbar transition-all duration-200 ease-out origin-bottom-right ${openModal === 'playlist' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
-                      <p className="px-3 py-1.5 text-xs text-gray-400 font-bold uppercase">{t('player.addToPlaylist')}</p>
-                      <button onClick={() => { onAddToPlaylist(); setOpenModal(null); }} className="w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-white/10">{t('player.newPlaylist')}</button>
-                      <hr className="my-1 border-white/10"/>
-                      {userMusicContext.playlists.length > 0 ? userMusicContext.playlists.map(p => (
-                        <button key={p.id} onClick={() => { userMusicContext.addSongToPlaylist(p.id, song); setOpenModal(null); }} className="w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-white/10 truncate">
-                          {p.name}
-                        </button>
-                      )) : <p className="px-3 py-1.5 text-sm text-gray-500">{t('player.noPlaylists')}</p>}
                 </div>
-            </div>
+            </SmartMenu>
 
-            <PlayerActionButton onClick={onToggleFavorite} title={t('player.favorite')}>
-              <HeartIcon className={`w-5 h-5 transition-all ${isHeartAnimating ? 'heart-pop' : ''} ${userMusicContext.isFavoriteSong(song.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : ''}`}/>
-            </PlayerActionButton>
+            <button onClick={onToggleFavorite} title={t('player.favorite')} className="p-2 rounded-full hover:bg-white/10 transition-colors group">
+              <HeartIcon className={`w-5 h-5 transition-all ${isHeartAnimating ? 'scale-125' : 'group-active:scale-90'} ${userMusicContext.isFavoriteSong(song.id) ? 'fill-[#fc4b08] text-[#fc4b08] drop-shadow-[0_0_8px_rgba(252,75,8,0.6)]' : 'text-gray-400 group-hover:text-white'}`}/>
+            </button>
 
-            <PlayerActionButton onClick={playerContext.toggleQueue} title={t('player.showQueue')} isActive={playerContext.isQueueOpen}>
+            <button onClick={() => playerContext.toggleQueue()} title={t('player.showQueue')} className={`p-2 rounded-full transition-colors hover:bg-white/10 ${playerContext.isQueueOpen ? 'text-[#fc4b08] bg-[#fc4b08]/10' : 'text-gray-400 hover:text-white'}`}>
                 <QueueIcon className="w-5 h-5"/>
-            </PlayerActionButton>
+            </button>
 
-            <div className="group flex items-center">
-                 <PlayerActionButton onClick={handleMuteToggle} title={isMuted ? t('player.unmute') : t('player.mute')}>
-                    <VolumeIcon className="w-5 h-5" />
-                </PlayerActionButton>
-                <div className="w-0 group-hover:w-32 transition-[width] duration-300 ease-in-out flex items-center h-10 overflow-hidden">
+            {/* Volume Control - Sleek Bar */}
+            <div className="flex items-center group/volume ml-2 pl-2 border-l border-white/10 h-8">
+                 <button onClick={toggleMute} className="p-1.5 text-gray-400 hover:text-white transition-colors">
+                    {isMuted ? <VolumeMuteIcon className="w-5 h-5" /> : volume > 0.5 ? <VolumeUpIcon className="w-5 h-5" /> : <VolumeDownIcon className="w-5 h-5" />}
+                </button>
+                <div className="w-0 group-hover/volume:w-24 transition-all duration-300 overflow-hidden flex items-center mx-1">
                     <input 
                         ref={volumeSliderRef}
                         type="range" min="0" max="1" step="0.01" value={volume} 
                         onChange={(e) => playerContext.setVolume(parseFloat(e.target.value))}
                         className="volume-slider" 
+                        title="Volume"
                     />
                 </div>
             </div>
@@ -416,7 +434,6 @@ export const Player: React.FC<PlayerProps> = ({ navigateToArtist }) => {
   const currentTime = (isHost || !partyState) ? playerContext.currentTime : partyState.currentTime;
   const duration = displayedSong?.duration ?? 0;
 
-  
   const handleDownload = async () => {
       if (!displayedSong || isDownloading) return;
       const songUrl = displayedSong.downloadUrl.find(q => q.quality === playerContext.currentQuality)?.url;
@@ -445,7 +462,6 @@ export const Player: React.FC<PlayerProps> = ({ navigateToArtist }) => {
   
   const handleToggleFavorite = () => {
     if (!displayedSong) return;
-    
     const isCurrentlyFavorite = userMusicContext.isFavoriteSong(displayedSong.id);
     if (!isCurrentlyFavorite) {
         setIsHeartAnimating(true);
@@ -481,46 +497,45 @@ export const Player: React.FC<PlayerProps> = ({ navigateToArtist }) => {
 
   if (!displayedSong) {
     return (
-      <div className="h-full bg-black/30 backdrop-blur-md border-t border-white/10 flex items-center justify-center">
-        <p className="text-gray-500">{t('player.noSong')}</p>
+      <div className="h-full glass-panel-heavy border-t border-white/10 flex items-center justify-center">
+        <p className="text-gray-500 font-medium tracking-wide text-sm uppercase">{t('player.noSong')}</p>
       </div>
     );
   }
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const isFav = userMusicContext.isFavoriteSong(displayedSong.id);
-  
   const { togglePlay, ...restOfPlayerContext } = playerContext;
   
-  // Use a different variable for mobile toggle play to avoid breaking desktop context
   const handleMobileTogglePlay = () => {
       if (partyState) {
-        if (isHost || partyState.mode === 'collaborative') {
-            togglePartyPlayer();
-        }
+        if (isHost || partyState.mode === 'collaborative') togglePartyPlayer();
       } else {
         togglePlay();
       }
   }
 
-
   return (
-    <div className="relative h-full bg-black/40 backdrop-blur-lg border-t border-white/10 p-2 md:p-4 grid grid-cols-[1fr_auto] md:grid-cols-[1fr_2fr_1fr] items-center gap-2 md:gap-4">
+    <div className="relative h-full glass-panel-heavy px-4 md:px-8 grid grid-cols-[1fr_auto] md:grid-cols-[300px_1fr_300px] items-center gap-4 z-50 transition-all duration-300 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+      
       {/* Mobile-only progress bar */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gray-600/50 md:hidden">
-          <div className="bg-[#fc4b08] h-full" style={{ width: `${progress}%` }} />
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-white/5 md:hidden pointer-events-none">
+          <div className="bg-[#fc4b08] h-full shadow-[0_0_10px_#fc4b08]" style={{ width: `${progress}%` }} />
       </div>
 
-      <SongInfo song={displayedSong} navigateToArtist={navigateToArtist} />
+      {/* Left: Song Info */}
+      <div className="flex justify-start min-w-0">
+        <SongInfo song={displayedSong} navigateToArtist={navigateToArtist} />
+      </div>
       
-      {/* Desktop Controls */}
-      <div className="hidden md:flex flex-col items-center justify-center gap-1 w-full">
+      {/* Center: Controls */}
+      <div className="hidden md:flex flex-col items-center justify-center w-full max-w-2xl mx-auto">
         <PlayerControls {...restOfPlayerContext} isPlaying={isPlaying} togglePlay={togglePlay} />
         <PlayerProgressBar currentTime={currentTime} duration={duration} seek={playerContext.seek} />
       </div>
       
-      {/* Desktop Actions */}
-      <div className="hidden md:block">
+      {/* Right: Actions */}
+      <div className="hidden md:flex justify-end">
           <PlayerActions
             song={displayedSong}
             onDownload={handleDownload}
@@ -533,16 +548,13 @@ export const Player: React.FC<PlayerProps> = ({ navigateToArtist }) => {
       </div>
 
       {/* Mobile Controls */}
-      <div className="flex md:hidden items-center gap-2">
+      <div className="flex md:hidden items-center gap-4 pr-2">
            <button onClick={handleToggleFavorite} title={t('player.favorite')} className="p-2">
-              <HeartIcon className={`w-6 h-6 transition-all ${isHeartAnimating ? 'heart-pop' : ''} ${isFav ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-300'}`}/>
-            </button>
-            <button onClick={handlePartyModeClick} title={t('player.partyMode')} className={`p-2 rounded-full ${!!partyState ? 'text-[#fc4b08]' : 'text-gray-300'}`}>
-                <SignalIcon className="w-6 h-6"/>
+              <HeartIcon className={`w-6 h-6 transition-all ${isHeartAnimating ? 'scale-125' : ''} ${isFav ? 'fill-[#fc4b08] text-[#fc4b08] drop-shadow-[0_0_5px_rgba(252,75,8,0.5)]' : 'text-gray-400'}`}/>
             </button>
             <button 
                 onClick={handleMobileTogglePlay} 
-                className={`w-10 h-10 bg-white/90 rounded-full flex items-center justify-center text-black transition-transform active:scale-95`}
+                className={`w-12 h-12 bg-white rounded-full flex items-center justify-center text-black shadow-lg shadow-white/10 active:scale-95 border-2 border-transparent ${isPlaying ? '' : 'border-[#fc4b08]'}`}
             >
                 {isPlaying ? <PauseIcon className="w-6 h-6" /> : <PlayIcon className="w-6 h-6 pl-0.5" />}
             </button>

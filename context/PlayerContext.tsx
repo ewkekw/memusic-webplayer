@@ -40,7 +40,6 @@ const smartShuffle = (songs: Song[]): Song[] => {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    // Reduce repeated artists in sequence
     for (let i = 1; i < shuffled.length; i++) {
         if (shuffled[i].artists.primary[0]?.id === shuffled[i - 1].artists.primary[0]?.id) {
             const swapIndex = shuffled.findIndex((song, j) => j > i && song.artists.primary[0]?.id !== shuffled[i].artists.primary[0]?.id);
@@ -64,6 +63,7 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children, player
   const [currentTime, setCurrentTime] = useState(0);
   const [currentQuality, setCurrentQuality] = useState<string | null>(null);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isLyricsOpen, setIsLyricsOpen] = useState(false);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [autoplayStartIndex, setAutoplayStartIndex] = useState<number | null>(null);
@@ -119,8 +119,7 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children, player
         const pannerDelay = context.createDelay(5.0); 
         
         pannerOscillator.frequency.value = 0.2;
-        pannerDelay.delayTime.value = (1 / 0.2) / 4; // Phase shift for circular 8D effect
-        
+        pannerDelay.delayTime.value = (1 / 0.2) / 4;
         pannerOscillator.connect(pannerGain); pannerGain.connect(panner.positionZ); pannerGain.connect(pannerDelay); pannerDelay.connect(panner.positionX);
         pannerOscillator.start();
 
@@ -425,7 +424,14 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children, player
     addToHistory(song);
   }, [isShuffle, updatePlayerQueue, addToHistory, fetchRecommendations]);
 
-  const toggleQueue = useCallback((force?: boolean) => setIsQueueOpen(p => force !== undefined ? force : !p), []);
+  const toggleQueue = useCallback((force?: boolean) => {
+      setIsQueueOpen(p => force !== undefined ? force : !p);
+  }, []);
+
+  const toggleLyrics = useCallback((force?: boolean) => {
+      setIsLyricsOpen(p => force !== undefined ? force : !p);
+  }, []);
+
   const seek = useCallback((time: number) => { if (audioRef.current) { audioRef.current.currentTime = time; setCurrentTime(time); } }, []);
   const setVolume = (v: number) => updatePlayerSettings(d => { d.volume = Math.max(0, Math.min(1, v)); });
   const setSelectedQuality = (q: string) => updatePlayerSettings(d => { d.selectedQuality = q; });
@@ -514,9 +520,9 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children, player
   }, [currentSong, isPlaying, playPrev, playNext, togglePlay, seek, currentTime, duration]);
   
   const contextValue: PlayerContextType = {
-      isPlaying, duration, currentTime, currentQuality, isQueueOpen, analyser, audioContext, autoplayStartIndex, playbackRate,
+      isPlaying, duration, currentTime, currentQuality, isQueueOpen, isLyricsOpen, analyser, audioContext, autoplayStartIndex, playbackRate,
       currentSong, currentQueue, volume, selectedQuality, isShuffle, repeatMode, eqSettings, isEqEnabled, is8DEnabled, isReverbEnabled, reverbMix, contextId, contextType,
-      playSong, togglePlay, seek, setVolume, setSelectedQuality, playNext, playPrev, playRadio, toggleQueue, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue,
+      playSong, togglePlay, seek, setVolume, setSelectedQuality, playNext, playPrev, playRadio, toggleQueue, toggleLyrics, addSongNext, addSongsToEnd, reorderQueue, removeSongFromQueue, moveSongInQueue,
       toggleShuffle, cycleRepeatMode, toggle8D, setEqGain, resetEq, toggleEq, toggleReverb, setReverbMix, setPlaybackRate,
       setIsShuffle: (s: boolean) => updatePlayerSettings(d => { d.isShuffle = s; }),
       setRepeatMode,

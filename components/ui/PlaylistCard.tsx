@@ -65,34 +65,40 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = React.memo(({ playlist,
   return (
     <div 
         onClick={() => onClick(playlist)}
-        className="group relative bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-colors duration-200 cursor-pointer"
+        className="group relative bg-white/5 p-4 rounded-2xl hover:bg-white/10 transition-all duration-300 cursor-pointer border border-white/5 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1"
     >
         <button
           onClick={handleFavoriteClick}
-          className="absolute top-2 right-2 p-2 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/70 z-10"
+          className="absolute top-3 right-3 p-2 rounded-full bg-black/40 backdrop-blur-md text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/60 z-20 hover:scale-110"
           aria-label={isFav ? t('albumView.removeFromFav') : t('albumView.addToFav')}
           title={isFav ? t('albumView.removeFromFav') : t('albumView.addToFav')}
         >
           <HeartIcon className={`w-5 h-5 transition-all ${isFav ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-300'}`} />
         </button>
-       <div className="relative w-full aspect-square mb-3">
+       <div className="relative w-full aspect-square mb-4 overflow-hidden rounded-xl">
         {imageUrl ? (
-            <img src={imageUrl} alt={playlist.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" />
+            <img 
+                src={imageUrl} 
+                alt={playlist.name} 
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 animate-image-appear" 
+                loading="lazy" 
+            />
         ) : (
              <div className="w-full h-full bg-gradient-to-br from-[#1e1e1e] to-[#121212] flex items-center justify-center rounded-md border border-white/5">
                 <PlaylistPlaceholderIcon className="w-1/2 h-1/2 text-white/10" />
             </div>
         )}
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
          <button
           onClick={handlePlayClick}
-          className="absolute bottom-2 right-2 w-12 h-12 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 opacity-0 group-hover:opacity-100 transform group-hover:scale-100 scale-90 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
+          className="absolute bottom-3 right-3 w-12 h-12 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/40 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 z-20 hover:scale-105 active:scale-95"
           aria-label={`Play songs from ${playlist.name}`}
         >
-            <PlayIcon className="w-7 h-7 ml-1" />
+            <PlayIcon className="w-6 h-6 ml-1" />
         </button>
       </div>
-      <h4 className="font-bold text-white mt-3 truncate">{playlist.name}</h4>
-      <p className="text-sm text-gray-400 truncate">{playlist.songCount} songs</p>
+      <h4 className="font-bold text-white mt-1 truncate text-lg tracking-tight group-hover:text-[#fc4b08] transition-colors">{playlist.name}</h4>
+      <p className="text-sm text-gray-400 truncate mt-0.5">{playlist.songCount} songs</p>
     </div>
   );
 });

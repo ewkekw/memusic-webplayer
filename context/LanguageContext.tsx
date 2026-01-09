@@ -2,10 +2,8 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { AppState } from '../types';
 
-// Define translations structure
 type Translations = { [key: string]: string | Translations };
 
-// Define translation files
 const en: Translations = {
   "sidebar": { "home": "Home", "search": "Search", "library": "Library", "settings": "Settings", "playlist": "Playlist" },
   "player": { "noSong": "No song selected", "shuffle": "Shuffle", "repeat": "Repeat: {{mode}}", "download": "Download song", "addToPlaylist": "Add to playlist", "newPlaylist": "New Playlist", "noPlaylists": "No playlists.", "favorite": "Favorite song", "showQueue": "Show queue", "unmute": "Unmute", "mute": "Mute", "partyMode": "Party Mode" },

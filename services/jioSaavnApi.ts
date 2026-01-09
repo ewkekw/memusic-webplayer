@@ -1,5 +1,6 @@
 
-import { SearchSongsResponse, SearchAlbumsResponse, SearchArtistsResponse, SearchPlaylistsResponse, SongSuggestionsResponse, GetAlbumDetailsResponse, GetArtistDetailsResponse, GetSongsResponse } from '../types';
+
+import { SearchSongsResponse, SearchAlbumsResponse, SearchArtistsResponse, SearchPlaylistsResponse, SongSuggestionsResponse, GetAlbumDetailsResponse, GetArtistDetailsResponse, GetSongsResponse, GetLyricsResponse } from '../types';
 
 const API_BASE_URL = 'https://lowkey-backend.vercel.app';
 
@@ -57,3 +58,4 @@ export const getArtistDetails = (artistId: string) => apiRequest<GetArtistDetail
 export const searchArtists = (query: string, page: number = 1, limit: number = 20) => apiRequest<SearchArtistsResponse>(`/api/search/artists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
 export const searchPlaylists = (query: string, page: number = 1, limit: number = 20) => apiRequest<SearchPlaylistsResponse>(`/api/search/playlists?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
 export const getSongSuggestions = (songId: string, limit: number = 10) => apiRequest<SongSuggestionsResponse>(`/api/songs/${songId}/suggestions?limit=${limit}`);
+export const getLyrics = (songId: string) => apiRequest<GetLyricsResponse>(`/api/songs/${songId}/lyrics`, `lyrics-${songId}`);

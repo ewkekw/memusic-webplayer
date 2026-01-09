@@ -4,21 +4,44 @@ import { Song } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
 import { PlayerContextTypeString } from '../../types';
 import { UserMusicContext } from '../../context/UserMusicContext';
-import { ModalContext } from '../../App';
+import { ModalContext } from '../../context/ModalContext';
 import { CreatePlaylistForm } from './CreatePlaylistForm';
 import { useTranslation } from '../../context/LanguageContext';
+import { SmartMenu } from './SmartMenu';
 
 const PlayIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.648c1.295.742 1.295 2.545 0 3.286L7.279 20.99c-1.25.717-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+    <path d="M5 3l14 9-14 9V3z" />
   </svg>
 );
-const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>);
-const TrashIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.067-2.09.921-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>);
-const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>);
+const PauseIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <rect x="6" y="4" width="4" height="16" rx="2" />
+    <rect x="14" y="4" width="4" height="16" rx="2" />
+  </svg>
+);
+const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+);
+const TrashIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+);
+const MoreIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="19" cy="12" r="1" />
+        <circle cx="5" cy="12" r="1" />
+    </svg>
+);
 const RadioIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.136 12.006a8.25 8.25 0 0113.728 0M1.984 8.974a12 12 0 0119.032 0M12 18.75a.75.75 0 01.75.75v.008c0 .414-.336.75-.75.75h-.008a.75.75 0 01-.75-.75v-.008c0-.414.336.75.75-.75z" />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="2" />
+        <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" />
     </svg>
 );
 
@@ -41,13 +64,15 @@ interface SongListItemProps {
 }
 
 const SongListItem: React.FC<SongListItemProps> = React.memo(({ song, index, songs, playlistId, context, navigateToArtist, onInteraction, navigateToPlaylist }) => {
-    const { playSong, addSongNext, addSongsToEnd, playRadio } = useContext(PlayerContext);
+    const { playSong, addSongNext, addSongsToEnd, playRadio, currentSong, isPlaying } = useContext(PlayerContext);
     const { isFavoriteSong, toggleFavoriteSong, removeSongFromPlaylist, playlists, createPlaylist, addSongToPlaylist } = useContext(UserMusicContext);
     const { showModal, hideModal } = useContext(ModalContext);
     const { t } = useTranslation();
     const [activeMenu, setActiveMenu] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
     
+    const isPlayingCurrent = currentSong?.id === song.id;
+
     const handlePlay = () => {
         onInteraction?.();
         if (context.type === 'search') {
@@ -57,14 +82,6 @@ const SongListItem: React.FC<SongListItemProps> = React.memo(({ song, index, son
         }
     }
     
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) setActiveMenu(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
     const handleMenuAction = (action: () => void) => {
         onInteraction?.();
         action();
@@ -85,36 +102,45 @@ const SongListItem: React.FC<SongListItemProps> = React.memo(({ song, index, son
     const imageUrl = song.image?.find(img => img.quality === '50x50')?.url || song.image?.[0]?.url;
 
     return (
-        <div onMouseLeave={() => setActiveMenu(false)} className="group flex items-center p-2 rounded-lg hover:bg-white/10 transition-colors duration-200 h-20">
-            <div className="w-8 text-center text-gray-400 mr-4 flex-shrink-0 group-hover:hidden">{index + 1}</div>
-            <button onClick={handlePlay} className="w-8 h-8 items-center justify-center rounded-full text-white hidden group-hover:flex mr-4 flex-shrink-0"><PlayIcon className="w-5 h-5" /></button>
-            <img src={imageUrl} alt={song.name} className="w-12 h-12 rounded-md mr-4 flex-shrink-0 animate-image-appear" loading="lazy" />
+        <div onMouseLeave={() => setActiveMenu(false)} className={`group flex items-center p-3 rounded-xl transition-all duration-200 border border-transparent ${isPlayingCurrent ? 'bg-white/10 border-white/5' : 'hover:bg-white/5 hover:border-white/5'} cursor-pointer`}>
+            <div className={`w-8 text-center mr-4 flex-shrink-0 font-medium ${isPlayingCurrent ? 'text-[#fc4b08]' : 'text-gray-500 group-hover:hidden'}`}>
+                {isPlayingCurrent ? (
+                    isPlaying ? <PauseIcon className="w-4 h-4 mx-auto text-[#fc4b08]" /> : <PlayIcon className="w-4 h-4 mx-auto text-[#fc4b08]" />
+                ) : index + 1}
+            </div>
+            <button onClick={handlePlay} className={`w-8 h-8 items-center justify-center rounded-full text-white mr-4 flex-shrink-0 bg-[#fc4b08] shadow-lg shadow-[#fc4b08]/30 ${isPlayingCurrent ? 'hidden' : 'hidden group-hover:flex animate-in zoom-in'}`}><PlayIcon className="w-4 h-4 ml-0.5" /></button>
+            
+            <img src={imageUrl} alt={song.name} className={`w-12 h-12 rounded-lg mr-4 flex-shrink-0 object-cover shadow-sm transition-transform duration-300 ${isPlayingCurrent ? 'scale-105 shadow-[#fc4b08]/20' : 'group-hover:scale-105'}`} loading="lazy" />
+            
             <div className="flex-1 min-w-0" onClick={handlePlay}>
-                <p className="font-semibold text-white leading-snug line-clamp-2 cursor-pointer" title={song.name}>{song.name}</p>
+                <p className={`font-semibold leading-snug line-clamp-1 ${isPlayingCurrent ? 'text-[#fc4b08]' : 'text-white'}`} title={song.name}>{song.name}</p>
                 <p className="text-sm text-gray-400 truncate leading-snug">
-                    {song.artists.primary.map((artist, i) => (<React.Fragment key={artist.id}><span onClick={(e) => { e.stopPropagation(); navigateToArtist(artist.id); }} className="hover:underline cursor-pointer">{artist.name}</span>{i < song.artists.primary.length - 1 && ', '}</React.Fragment>))}
+                    {song.artists.primary.map((artist, i) => (<React.Fragment key={artist.id}><span onClick={(e) => { e.stopPropagation(); navigateToArtist(artist.id); }} className="hover:text-white hover:underline cursor-pointer transition-colors">{artist.name}</span>{i < song.artists.primary.length - 1 && ', '}</React.Fragment>))}
                 </p>
             </div>
-            <div className="flex items-center space-x-2 ml-4">
-                <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => toggleFavoriteSong(song)); }} className="text-gray-400 hover:text-[#fc4b08] p-2 rounded-full hover:bg-white/10"><HeartIcon className={`w-5 h-5 ${isFavoriteSong(song.id) ? 'fill-[#fc4b08] text-[#fc4b08]' : ''}`} /></button>
-                {playlistId && (<button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => removeSongFromPlaylist(playlistId, song.id)); }} className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-white/10"><TrashIcon className="w-5 h-5" /></button>)}
-                <div className="relative" ref={menuRef}>
-                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(prev => !prev); }} className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/10"><MoreIcon className="w-5 h-5" /></button>
-                    {activeMenu && (
-                        <div className="absolute bottom-full right-0 mb-2 w-48 bg-[#282828] border border-white/10 rounded-lg shadow-2xl p-2 z-30 max-h-60 overflow-y-auto custom-scrollbar">
-                            <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => playRadio(song)) }} className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">
-                                <RadioIcon className="w-4 h-4" /> {t('songlist.menu.goToRadio')}
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => addSongNext(song)) }} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('songlist.menu.playNext')}</button>
-                            <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => addSongsToEnd([song])) }} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('songlist.menu.addToQueue')}</button>
-                            <hr className="border-t border-white/10 my-1"/>
-                            <p className="px-3 py-1.5 text-xs text-gray-400 font-bold uppercase">{t('player.addToPlaylist')}</p>
-                            <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => handleCreateNewPlaylist(song)) }} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10">{t('player.newPlaylist')}</button>
-                            {playlists.map(p => (<button key={p.id} onClick={(e) => { e.stopPropagation(); handleMenuAction(() => addSongToPlaylist(p.id, song)) }} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10 truncate">{p.name}</button>))}
+            <div className="flex items-center space-x-2 ml-4 relative">
+                <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => toggleFavoriteSong(song)); }} className="text-gray-400 hover:text-[#fc4b08] p-2 rounded-full hover:bg-white/10 transition-colors"><HeartIcon className={`w-5 h-5 transition-transform active:scale-125 ${isFavoriteSong(song.id) ? 'fill-[#fc4b08] text-[#fc4b08] drop-shadow-[0_0_5px_rgba(252,75,8,0.5)]' : ''}`} /></button>
+                {playlistId && (<button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => removeSongFromPlaylist(playlistId, song.id)); }} className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-white/10 transition-colors"><TrashIcon className="w-5 h-5" /></button>)}
+                
+                <button ref={triggerRef} onClick={(e) => { e.stopPropagation(); setActiveMenu(prev => !prev); }} className={`p-2 rounded-full hover:bg-white/10 transition-colors ${activeMenu ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white'}`}><MoreIcon className="w-5 h-5" /></button>
+                
+                <SmartMenu isOpen={activeMenu} onClose={() => setActiveMenu(false)} triggerRef={triggerRef}>
+                    <div className="flex flex-col py-1">
+                        <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => playRadio(song)) }} className="flex items-center gap-2 text-left px-3 py-2 text-sm rounded-md hover:bg-white/10 text-white transition-colors">
+                            <RadioIcon className="w-4 h-4" /> {t('songlist.menu.goToRadio')}
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => addSongNext(song)) }} className="text-left px-3 py-2 text-sm rounded-md hover:bg-white/10 text-white transition-colors">{t('songlist.menu.playNext')}</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => addSongsToEnd([song])) }} className="text-left px-3 py-2 text-sm rounded-md hover:bg-white/10 text-white transition-colors">{t('songlist.menu.addToQueue')}</button>
+                        <hr className="border-t border-white/10 my-1"/>
+                        <p className="px-3 py-1.5 text-xs text-gray-400 font-bold uppercase tracking-wider">{t('player.addToPlaylist')}</p>
+                        <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                            <button onClick={(e) => { e.stopPropagation(); handleMenuAction(() => handleCreateNewPlaylist(song)) }} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10 text-white transition-colors">{t('player.newPlaylist')}</button>
+                            {playlists.map(p => (<button key={p.id} onClick={(e) => { e.stopPropagation(); handleMenuAction(() => addSongToPlaylist(p.id, song)) }} className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-white/10 truncate text-white transition-colors">{p.name}</button>))}
                         </div>
-                    )}
-                </div>
-                <p className="text-sm text-gray-400 w-12 text-right hidden sm:block">{formatDuration(song.duration)}</p>
+                    </div>
+                </SmartMenu>
+
+                <p className="text-sm text-gray-400 w-12 text-right hidden sm:block font-variant-numeric tabular-nums">{formatDuration(song.duration)}</p>
             </div>
         </div>
     );
@@ -134,7 +160,7 @@ export const SongList: React.FC<SongListProps> = (props) => {
   const { t } = useTranslation();
 
   if (!songs || songs.length === 0) {
-    return <p className="text-gray-400 p-4 text-center">{t('songlist.noSongs')}</p>;
+    return <p className="text-gray-400 p-8 text-center">{t('songlist.noSongs')}</p>;
   }
 
   return (

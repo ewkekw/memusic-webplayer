@@ -144,7 +144,6 @@ export const useStorage = (): [AppState, (updater: (draft: AppState) => void) =>
                 
                 updater(currentDraft);
                 
-                // Check for accidental deletions of top-level keys
                 for (const key of Object.keys(defaultAppState) as Array<keyof AppState>) {
                     if (currentDraft[key] === undefined) {
                         (currentDraft as any)[key] = defaultAppState[key];

@@ -48,7 +48,7 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
         },
         onConnectionLost: () => {
-            if (partyStateRef.current) {
+             if (partyStateRef.current) {
                 setPartyEndedMessage({ key: 'modals.partyEnded.connectionLost', replacements: { partyId: partyStateRef.current?.partyId || '' } });
                 leaveParty();
             }
@@ -111,7 +111,7 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 const songChanged = prev.currentSong?.id !== currentSong?.id;
                 const playingChanged = prev.isPlaying !== isPlaying;
                 const queueChanged = prev.currentQueue.length !== currentQueue.length || 
-                                     (prev.currentQueue.length > 0 && prev.currentQueue[0].id !== currentQueue[0].id);
+                                     (prev.currentQueue.length > 0 && currentQueue.length > 0 && prev.currentQueue[0].id !== currentQueue[0].id);
 
                 const newState: PartyState = {
                     ...prev,
@@ -122,7 +122,7 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     hostPing: Date.now() 
                 };
 
-                if (songChanged || playingChanged || queueChanged || Date.now() - prev.lastStateUpdate > 1000) {
+                if (songChanged || playingChanged || queueChanged || Date.now() - prev.lastStateUpdate > 1500) {
                     const stateToSend = { ...newState, lastStateUpdate: Date.now() };
                     hostRef.current?.broadcast(stateToSend);
                     return stateToSend;
@@ -137,14 +137,21 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     useEffect(() => {
         if (isHost || !partyState || !guestRef.current) return;
 
-        const interval = setInterval(() => {
+        const syncInterval = setInterval(() => {
             synchronizePlayback(partyState, playerContextRef.current, guestRef.current?.timeOffset || null);
         }, 500);
+
+        const pingInterval = setInterval(() => {
+            if (guestRef.current) {
+                guestRef.current.send('PING', Date.now());
+            }
+        }, 2000);
 
         synchronizePlayback(partyState, playerContextRef.current, guestRef.current?.timeOffset || null);
 
         return () => {
-            clearInterval(interval);
+            clearInterval(syncInterval);
+            clearInterval(pingInterval);
             if (playerContextRef.current.playbackRate !== 1) {
                 playerContextRef.current.setPlaybackRate(1);
             }
@@ -154,6 +161,8 @@ export const PartyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const togglePartyPlayer = () => {
         if (isHost || partyState?.mode === 'collaborative') {
             if(isHost) playerContext.togglePlay();
+            else {
+            }
         }
     };
 

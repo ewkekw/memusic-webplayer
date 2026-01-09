@@ -36,21 +36,21 @@ export const EphemeralReactions: React.FC = () => {
         const newEmoji: FloatingEmoji = {
             id: latestReaction.id,
             emoji: latestReaction.emoji,
-            x: Math.random() * 20 + 75, // Start from right side
-            y: 95, // Start from bottom, above player
-            size: Math.random() * 24 + 32, // 32px to 56px
+            x: Math.random() * 20 + 75,
+            y: 95,
+            size: Math.random() * 24 + 32,
             opacity: 1,
-            vy: -1 - Math.random() * 0.8, // Strong initial upward velocity
-            vx: (Math.random() - 0.5) * 0.3, // Initial horizontal velocity
+            vy: -1 - Math.random() * 0.8,
+            vx: (Math.random() - 0.5) * 0.3,
             sway: Math.random() * Math.PI * 2,
             swaySpeed: 0.05 + Math.random() * 0.05,
             swayMagnitude: 0.15 + Math.random() * 0.1,
             rotation: Math.random() * 40 - 20,
             rotationSpeed: (Math.random() - 0.5) * 1.5,
             age: 0,
-            maxAge: 100 + Math.random() * 50, // Lifetime in frames (3-5 seconds at ~30fps)
+            maxAge: 100 + Math.random() * 50,
         };
-        setFloatingEmojis(prev => [...prev.slice(-15), newEmoji]); // Keep max 15 emojis on screen
+        setFloatingEmojis(prev => [...prev.slice(-15), newEmoji]);
       }
     }
   }, [partyState?.reactions]);
@@ -65,18 +65,18 @@ export const EphemeralReactions: React.FC = () => {
               ...emoji,
               age: emoji.age + 1,
               y: emoji.y + emoji.vy,
-              vy: emoji.vy * 0.98 + 0.02, // Apply gravity and air resistance
+              vy: emoji.vy * 0.98 + 0.02,
               x: emoji.x + emoji.vx + Math.sin(emoji.sway) * emoji.swayMagnitude,
               sway: emoji.sway + emoji.swaySpeed,
-              vx: emoji.vx * 0.97, // Air resistance
+              vx: emoji.vx * 0.97,
               rotation: emoji.rotation + emoji.rotationSpeed,
-              rotationSpeed: emoji.rotationSpeed * 0.97, // Air resistance on rotation
-              opacity: 1 - Math.pow(lifeRatio, 2.5), // Ease-out fade
+              rotationSpeed: emoji.rotationSpeed * 0.97,
+              opacity: 1 - Math.pow(lifeRatio, 2.5),
             };
           })
           .filter(emoji => emoji.age < emoji.maxAge)
       );
-    }, 33); // ~30 FPS for smoother animation
+    }, 33);
 
     return () => clearInterval(interval);
   }, []);

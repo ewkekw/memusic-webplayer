@@ -1,5 +1,4 @@
 
-
 import React, { useContext } from 'react';
 import { Album } from '../../types';
 import { PlayerContext } from '../../context/PlayerContext';
@@ -62,32 +61,38 @@ export const AlbumCard: React.FC<AlbumCardProps> = React.memo(({ album, onAlbumC
 
   return (
     <div 
-      className="group relative bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-colors duration-200 cursor-pointer"
+      className="group relative bg-white/5 p-4 rounded-2xl hover:bg-white/10 transition-all duration-300 cursor-pointer border border-white/5 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1"
       onClick={() => onAlbumClick(album.id)}
     >
        <button
           onClick={handleFavoriteClick}
-          className="absolute top-2 right-2 p-2 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/70 z-10"
+          className="absolute top-3 right-3 p-2 rounded-full bg-black/40 backdrop-blur-md text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/60 z-20 hover:scale-110"
           aria-label={isFav ? t('albumView.removeFromFav') : t('albumView.addToFav')}
           title={isFav ? t('albumView.removeFromFav') : t('albumView.addToFav')}
         >
           <HeartIcon className={`w-5 h-5 transition-all ${isFav ? 'fill-[#fc4b08] text-[#fc4b08]' : 'text-gray-300'}`} />
         </button>
-      <div className="relative w-full aspect-square mb-3">
-        <img src={imageUrl} alt={album.name} className="w-full h-full object-cover rounded-md shadow-lg animate-image-appear" loading="lazy" />
+      <div className="relative w-full aspect-square mb-4 overflow-hidden rounded-xl">
+        <img 
+            src={imageUrl} 
+            alt={album.name} 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 animate-image-appear" 
+            loading="lazy" 
+        />
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         <button
           onClick={handlePlayClick}
-          className="absolute bottom-2 right-2 w-12 h-12 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/30 opacity-0 group-hover:opacity-100 transform group-hover:scale-100 scale-90 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
+          className="absolute bottom-3 right-3 w-12 h-12 bg-[#fc4b08] rounded-full flex items-center justify-center text-black shadow-lg shadow-[#fc4b08]/40 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 z-20 hover:scale-105 active:scale-95"
           aria-label={`Play ${album.name}`}
         >
-            <PlayIcon className="w-7 h-7 ml-1" />
+            <PlayIcon className="w-6 h-6 ml-1" />
         </button>
       </div>
-      <h4 className="font-bold text-white truncate">{album.name}</h4>
-      <div className="text-sm text-gray-400 truncate">
+      <h4 className="font-bold text-white truncate text-lg tracking-tight group-hover:text-[#fc4b08] transition-colors">{album.name}</h4>
+      <div className="text-sm text-gray-400 truncate mt-1">
           {album.artists.primary.map((artist, index) => (
               <React.Fragment key={artist.id}>
-                  <span onClick={(e) => handleArtistClick(e, artist.id)} className="hover:underline">
+                  <span onClick={(e) => handleArtistClick(e, artist.id)} className="hover:text-white hover:underline transition-colors">
                       {artist.name}
                   </span>
                   {index < album.artists.primary.length - 1 && ', '}
